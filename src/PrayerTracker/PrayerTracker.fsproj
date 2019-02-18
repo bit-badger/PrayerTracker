@@ -1,0 +1,47 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <AssemblyVersion>7.1.0.0</AssemblyVersion>
+    <FileVersion>7.0.0.0</FileVersion>
+    <Authors></Authors>
+    <Company>Bit Badger Solutions</Company>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Remove="appsettings.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="appsettings.json" />
+    <Compile Include="Extensions.fs" />
+    <Compile Include="Cookies.fs" />
+    <Compile Include="Email.fs" />
+    <Compile Include="CommonFunctions.fs" />
+    <Compile Include="Church.fs" />
+    <Compile Include="Help.fs" />
+    <Compile Include="Home.fs" />
+    <Compile Include="PrayerRequest.fs" />
+    <Compile Include="SmallGroup.fs" />
+    <Compile Include="User.fs" />
+    <Compile Include="App.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Giraffe" Version="3.1.0" />
+    <PackageReference Include="Giraffe.TokenRouter" Version="1.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.App" Version="2.1.5" />
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.1.5" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="2.1.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PrayerTracker.Data\PrayerTracker.Data.fsproj" />
+    <ProjectReference Include="..\PrayerTracker.UI\PrayerTracker.UI.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="FSharp.Core" Version="4.5.2" />
+  </ItemGroup>
+
+</Project>

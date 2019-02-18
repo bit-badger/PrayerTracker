@@ -1,0 +1,398 @@
+/**
+ * This is the main stylesheet for the PrayerTracker application.
+ */
+body {
+  background-color: #222;
+  margin: 0;
+  margin-bottom: 25px;
+  font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif;
+  font-size: 1rem;
+}
+acronym {
+  border-bottom: dotted 1px black;
+}
+p {
+  margin: 1em 0;
+} 
+a,
+a:link,
+a:visited {
+  text-decoration: none;
+  color: navy;
+}
+a:hover {
+  border-bottom: dotted 1px navy;
+} 
+a > img {
+  border: 0;
+}
+.pt-title-bar {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  overflow: hidden;
+  width: 100%;
+  background-image: linear-gradient(to bottom, #222, #444);
+  margin-bottom: 0;
+}
+.pt-title-bar-left,
+.pt-title-bar-right {
+  flex-grow: 0;
+}
+.pt-title-bar-center {
+  flex-grow: 4;
+}
+.pt-title-bar-home {
+  float: left;
+  font-size: 1.25rem;
+  font-weight: bold;
+  padding: .5rem 1rem 0 1rem;
+}
+.pt-title-bar-home a:link,
+.pt-title-bar-home a:visited {
+  color: white;
+}
+.pt-title-bar-home a:hover {
+  border-bottom: none;
+}
+.pt-title-bar ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  display: inline-block;
+}
+.pt-title-bar li {
+  float: left;
+}
+.pt-title-bar li a,
+.pt-title-bar .dropbtn,
+.pt-title-bar .home-link {
+  display: inline-block;
+  color: #9d9d9d;
+  text-align: center;
+  padding: .75rem 1rem;
+  text-decoration: none;
+}
+.pt-title-bar .home-link {
+  font-size: 1.1rem;
+}
+.pt-title-bar li a:hover,
+.pt-title-bar .dropdown:hover .dropbtn {
+  color: white;
+  border-bottom: none;
+}
+.pt-title-bar li.dropdown {
+  display: inline-block;
+}
+.pt-title-bar .dropdown-content {
+  display: none;
+  position: absolute;
+  background-image: linear-gradient(to bottom, #444, #888);
+  min-width: 160px;
+  box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);
+  z-index: 1;
+}
+.pt-title-bar .dropdown-content a {
+  color: white;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+  text-align: left;
+}
+.pt-title-bar .dropdown-content a:hover {
+  background-color: #222;
+}
+.pt-title-bar .dropdown:hover .dropdown-content {
+  display: block;
+}
+#pt-body {
+  background-color: #fcfcfc;
+  padding-bottom: 10px;
+}
+#pt-language {
+  background-color: lightgray;
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: space-between;
+  border-bottom: solid 1px darkgray;
+  border-top: solid 1px darkgray;
+}
+#pt-page-title {
+  text-align: center;
+  border-bottom: dotted 1px lightgray;
+}
+.pt-content {
+  margin: auto;
+  max-width: 60rem;
+}
+.pt-content.pt-full-width {
+  max-width: unset;
+  margin-left: .5%;
+  margin-right: .5%;
+}
+@media screen and (max-width: 60rem) {
+  .pt-content {
+    margin-left: .5%;
+    margin-right: .5%;
+  }
+}
+fieldset {
+  margin: auto;
+  border: solid 1px #ccc;
+  border-radius: 1rem;
+  margin-bottom: 1rem;
+}
+input[type=email],
+input[type=text],
+input[type=password],
+input[type=date],
+input[type=number],
+select {
+  border-radius: 5px;
+  font-size: 1rem;
+  padding: .2rem;
+  font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif;
+}
+input:nth-of-type(2) {
+  margin-left: 2rem;
+}
+button[type=submit] {
+  border-radius: 10px;
+  padding: .2rem 1rem;
+  margin-top: .5rem;
+  background-color: #444;
+  border: none;
+  color: white;
+}
+button[type=submit]:hover {
+  background-color: #222;
+  cursor:pointer;
+}
+footer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  border-bottom: solid 10px #222;
+}
+#pt-legal {
+  background-color: #222;
+  margin: 0 0 -30px 0;
+  padding-left: 10px;
+}
+#pt-legal a:link,
+#pt-legal a:visited {
+  color: lightgray;
+  color: rgba(255, 255, 255, .5);
+  font-size: 10pt;
+}
+#pt-footer {
+  border: solid 2px navy;
+  border-bottom: 0;
+  border-top-left-radius: 7px;
+  border-top-right-radius: 7px;
+  padding: 2px 5px 0 5px;
+  margin: 0 10px -11px auto;
+  font-size: 70%;
+  color: navy;
+  background-color: #eee;
+  float:right;
+  vertical-align: bottom;
+}
+#pt-footer img {
+  vertical-align: bottom;
+}
+footer a:hover {
+  border-bottom: 0;
+}
+.pt-center-columns {
+  display: flex;
+  flex-flow: column;
+  align-content: center;
+}
+.pt-field-row {
+  display: flex;
+  flex-flow: row wrap;
+  align-items: center;
+  justify-content: center;
+}
+.pt-field {
+  display: flex;
+  flex-flow: column;
+  padding-bottom: .5rem;
+}
+.pt-checkbox-field {
+  display: block;
+  margin: auto;
+  padding-bottom: .5rem;
+}
+.pt-field > label,
+.pt-checkbox-field > label {
+  font-size: .75rem;
+  text-transform: uppercase;
+  color: #777;
+}
+.pt-field ~ .pt-field {
+  margin-left: 3rem;
+}
+.pt-center-text {
+  text-align: center;
+}
+.pt-right-text {
+  text-align: right;
+}
+.pt-table {
+  margin: auto;
+  border-collapse: collapse;
+}
+.pt-table tr:hover {
+  background-color: #eee;
+}
+.pt-table tr th,
+.pt-table tr td {
+  padding: .25rem .5rem;
+}
+.pt-table tr td {
+  border-bottom: dotted 1px #444;
+}
+.pt-action-table tr td:first-child {
+  white-space: nowrap;
+  border-bottom: 0;
+}
+.pt-action-table tr td:first-child a {
+  background-color: lightgray;
+  color: white;
+  border-radius: .5rem;
+  padding: .125rem .5rem .5rem .5rem;
+  margin: 0 .125rem;
+}
+.pt-action-table tr:hover td:first-child a {
+  background-color: navy;
+}
+.pt-action-table tr td:first-child a:hover {
+  border-bottom: 0;
+}
+/* TODO: Figure out nice CSS transitions for these; these don't work */
+.pt-fadeable {
+  height: 0;
+  overflow: hidden;
+  transition: all ease-out .5s;
+}
+.pt-shown {
+  height: auto;
+  transition: all ease-in .5s;
+}
+.pt-icon-link {
+  white-space: nowrap;
+}
+article.pt-overview {
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: space-around;
+  align-items: flex-start;
+}
+article.pt-overview section {
+  max-width: 20rem;
+  border: solid 1px #444;
+  border-radius: 1rem;
+  margin: 2rem;
+}
+article.pt-overview section header {
+  text-align: center;
+  border-top-left-radius: 1rem;
+  border-top-right-radius: 1rem;
+  background-image: linear-gradient(to bottom, #444, #888);
+  padding: .5rem 1rem;
+  color: white;
+}
+article.pt-overview section div {
+  padding: .5rem;
+}
+article.pt-overview section div hr {
+  color: #444;
+  margin: .5rem -.5rem;
+}
+article.pt-overview section div p {
+  margin: 0;
+}
+.pt-editor {
+  width: 100%;
+}
+.pt-msg {
+  margin: .5rem auto;
+  border-top-right-radius: .5rem;
+  border-bottom-left-radius: .5rem;
+  border-width: 2px;
+  border-style: solid;
+  border-collapse: inherit;
+}
+.pt-msg ul {
+  text-align: left;
+}
+.pt-msg td {
+  padding: 5px 30px;
+  margin-bottom: 2px;
+  text-align: center;
+}
+.pt-msg.error {
+  background-color: #ffb6c1;
+  border-color: #ff0000;
+}
+.pt-msg.error strong {
+  color: #ff0000;
+}
+.pt-msg.warning {
+  background-color: #fafad2;
+  border-color: #a0522d;
+}
+.pt-msg.warning strong {
+  color: #a0522d;
+}
+.pt-msg.info {
+  background-color: #add8e6;
+  border-color: #000064;
+}
+.pt-msg .description {
+  display: inline-block;
+  vertical-align: top;
+  margin: auto;
+  text-align: left;
+  padding: .25rem 0;
+}
+.pt-email-heading {
+  text-decoration: underline;
+  font-style: italic;
+}
+.pt-email-canvas {
+  background-color: white;
+  width: 95%;
+  border: dotted 1px navy;
+  border-radius: 5px;
+  margin: auto;
+}
+.pt-request-update {
+  font-style: italic;
+}
+.pt-request-expired {
+  text-decoration: line-through;
+}
+.material-icons.md-18 {
+  font-size: 18px;
+}
+.material-icons.md-24 {
+  font-size: 24px;
+}
+.material-icons.md-36 {
+  font-size: 36px;
+}
+.material-icons.md-48 {
+  font-size: 48px;
+}
+.material-icons.md-72 {
+  font-size: 72px;
+}
+.material-icons {
+  vertical-align: middle;
+}
+#pt-help {
+  background-color: #fcfcfc;
+}

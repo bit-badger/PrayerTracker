@@ -1,0 +1,192 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="(as of July 31, 2018)" xml:space="preserve">
+    <value>(al 31 de julio de 2018)</value>
+  </data>
+  <data name="Access to servers and backups is strictly controlled and monitored for unauthorized access attempts." xml:space="preserve">
+    <value>El acceso a servidores y copias de seguridad está estrictamente controlado y monitoreado para intentos de acceso no autorizados.</value>
+  </data>
+  <data name="At any time, you may choose to discontinue using {0}; just e-mail Daniel, as you did to register, and request deletion of your small group." xml:space="preserve">
+    <value>En cualquier momento, puede optar por dejar de usar {0}; solo envíe un correo electrónico a Daniel, como lo hizo para registrarse, y solicite la eliminación de su pequeño grupo.</value>
+  </data>
+  <data name="Both of these cookies are encrypted, both in your browser and in transit." xml:space="preserve">
+    <value>Ambas cookies están encriptadas, tanto en su navegador como en tránsito.</value>
+  </data>
+  <data name="Data for your small group is returned to you, as required, to display and edit." xml:space="preserve">
+    <value>Los datos para su pequeño grupo se le devuelven, según sea necesario, para mostrar y editar.</value>
+  </data>
+  <data name="Distinct e-mails are sent to each user, as to not disclose the other recipients." xml:space="preserve">
+    <value>Se envían correos electrónicos distintos a cada usuario para no revelar a los demás destinatarios.</value>
+  </data>
+  <data name="Finally, a third cookie is used to maintain your currently selected language, so that this selection is maintained across browser sessions." xml:space="preserve">
+    <value>Finalmente, se usa una tercera cookie para mantener el idioma seleccionado actualmente, de modo que esta selección se mantenga en todas las sesiones del navegador.</value>
+  </data>
+  <data name="How Your Data Is Accessed / Secured" xml:space="preserve">
+    <value>Cómo se Accede / se Aseguran Sus Datos</value>
+  </data>
+  <data name="Identifying Data" xml:space="preserve">
+    <value>Identificando Datos</value>
+  </data>
+  <data name="If you utilize the “{0}” box on sign in, a second cookie is stored, and transmitted to establish a session; this cookie is removed by clicking the “{1}” link." xml:space="preserve">
+    <value>Si utilizas el cuadro "{0}" al iniciar sesión, se almacena una segunda cookie y se transmite para establecer una sesión; esta cookie se elimina haciendo clic en el enlace "{1}".</value>
+  </data>
+  <data name="It also stores names and e-mail addreses of small group members, and plain-text passwords for small groups with password-protected lists." xml:space="preserve">
+    <value>También almacena nombres y direcciones de correo electrónico de miembros de grupos pequeños, y contraseñas de texto sin formato para grupos pequeños con listas protegidas por contraseña.</value>
+  </data>
+  <data name="On the server, all data is stored in a controlled-access database." xml:space="preserve">
+    <value>En el servidor, todos los datos se almacenan en una base de datos de acceso controlado.</value>
+  </data>
+  <data name="Removing Your Data" xml:space="preserve">
+    <value>Eliminar Tus Datos</value>
+  </data>
+  <data name="The items below will help you understand the data we collect, access, and store on your behalf as you use this service." xml:space="preserve">
+    <value>Los siguientes elementos le ayudarán a comprender los datos que recopilamos, accedemos y almacenamos en su nombre a medida que utiliza este servicio.</value>
+  </data>
+  <data name="The nature of the service is one where privacy is a must." xml:space="preserve">
+    <value>La naturaleza del servicio es uno donde la privacidad es imprescindible.</value>
+  </data>
+  <data name="These backups are stored in a private cloud data repository." xml:space="preserve">
+    <value>Estas copias de seguridad se almacenan en un repositorio de datos de nube privada.</value>
+  </data>
+  <data name="User Provided Data" xml:space="preserve">
+    <value>Datos Proporcionados por el Usuario</value>
+  </data>
+  <data name="Users are also associated with one or more small groups." xml:space="preserve">
+    <value>Los usuarios también están asociados con uno o más grupos pequeños.</value>
+  </data>
+  <data name="What We Collect" xml:space="preserve">
+    <value>Lo Que Recolectamos</value>
+  </data>
+  <data name="While you are signed in, {0} utilizes a session cookie, and transmits that cookie to the server to establish your identity." xml:space="preserve">
+    <value>Mientras está registrado, {0} utiliza una cookie de sesión y transmite esa cookie al servidor para establecer su identidad.</value>
+  </data>
+  <data name="Your data is backed up, along with other Bit Badger Solutions hosted systems, in a rolling manner; backups are preserved for the prior 7 days, and backups from the 1st and 15th are preserved for 3 months." xml:space="preserve">
+    <value>Sus datos están respaldados, junto con otros sistemas hospedados de Soluciones de Bit Badger, de manera continua; las copias de seguridad se conservan durante los 7 días anteriores, y las copias de seguridad de la 1ª y la 15ª se conservan durante 3 meses.</value>
+  </data>
+  <data name="{0} also sends e-mails on behalf of the configured owner of a small group; these e-mails are sent from prayer@djs-consulting.com, with the “Reply To” header set to the configured owner of the small group." xml:space="preserve">
+    <value>{0} también envía correos electrónicos en nombre del propietario configurado de un grupo pequeño; estos correos electrónicos se envían desde prayer@djs-consulting.com, con el encabezado “Reply To” configurado en el propietario configurado del grupo pequeño.</value>
+  </data>
+  <data name="{0} stores the first and last names, e-mail addresses, and hashed passwords of all authorized users." xml:space="preserve">
+    <value>{0} almacena los nombres y apellidos, las direcciones de correo electrónico y las contraseñas hash de todos los usuarios autorizados.</value>
+  </data>
+  <data name="{0} stores the text of prayer requests." xml:space="preserve">
+    <value>{0} almacena el texto de las solicitudes de oración.</value>
+  </data>
+</root>

@@ -1,0 +1,195 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Apart from the icons on the request maintenance page, this is the only other way to expire “{0}” and “{1}” requests, but it can be used for any request type." xml:space="preserve">
+    <value>Aparte de los iconos de la página de mantenimiento de las peticiones, ésta es la única otra forma de expirar peticiones del tipos “{0}” y “{1}”, pero puede ser utilizada para cualquier tipo de petición.</value>
+  </data>
+  <data name="Click or tab into the box to display the calendar, which will be preselected to today's date." xml:space="preserve">
+    <value>Haga clic en la pestaña o en la caja para mostrar el calendario, que será preseleccionada para la fecha de hoy.</value>
+  </data>
+  <data name="For all types, it is optional; I used to have an announcement with no subject that ran every week, telling where to send requests and updates." xml:space="preserve">
+    <value>Para todos los tipos, es opcional, yo solía tener un anuncio con ningún tema que iba todas las semanas, diciendo a dónde enviar peticiones y actualizaciones.</value>
+  </data>
+  <data name="For announcements, this should contain the subject of the announcement." xml:space="preserve">
+    <value>Para los anuncios, este debe contener el objeto del anuncio.</value>
+  </data>
+  <data name="For existing requests, there will be a check box labeled “{0}”." xml:space="preserve">
+    <value>Para peticiones existentes, habrá una casilla de verificación “{0}”.</value>
+  </data>
+  <data name="For new requests, this is a box with a calendar date picker." xml:space="preserve">
+    <value>Para nuevas peticiones, se trata de una caja con un selector de fechas del calendario.</value>
+  </data>
+  <data name="For requests or praises, this field is for the name of the person who made the request or offered the praise report." xml:space="preserve">
+    <value>Para las peticiones o alabanzas, este campo es el nombre de la persona que hizo la petición o que ofrece el informe de alabanza.</value>
+  </data>
+  <data name="Hover over each icon to see what each button does." xml:space="preserve">
+    <value>Pase el ratón sobre cada icono para ver qué hace cada botón.</value>
+  </data>
+  <data name="If you are editing an existing request, a third option appears." xml:space="preserve">
+    <value>Si está editando una petición existente, aparece una tercera opción.</value>
+  </data>
+  <data name="It also supports undo and redo, and the editor supports full-screen mode." xml:space="preserve">
+    <value>También es compatible con deshacer y rehacer, y el editor soporta modo de pantalla completa.</value>
+  </data>
+  <data name="The editor provides many formatting capabilities, including “Spell Check as you Type” (enabled by default), “Paste from Word”, and “Paste Plain”, as well as “Source” view, if you want to edit the HTML yourself." xml:space="preserve">
+    <value>El editor ofrece muchas capacidades de formato, como "El Corrector Ortográfico al Escribir" (habilitado predeterminado), "Pegar desde Word" y "Pegar sin formato", así como "Código Fuente" punto de vista, si quieres editar el código HTML usted mismo.</value>
+  </data>
+  <data name="The order above is the order in which the request types appear on the list." xml:space="preserve">
+    <value>El orden anterior es el orden en que los tipos de peticiones aparecen en la lista.</value>
+  </data>
+  <data name="There are 5 request types in {0}." xml:space="preserve">
+    <value>Hay 5 tipos de peticiones en {0}.</value>
+  </data>
+  <data name="This can be used if you are correcting spelling or punctuation, and do not have an actual update to make to the request." xml:space="preserve">
+    <value>Esto puede ser usado si corrige la ortografía ni la puntuacion, y no tienen una actualización real de hacer la petición.</value>
+  </data>
+  <data name="This is the text of the request." xml:space="preserve">
+    <value>Este es el texto de la petición.</value>
+  </data>
+  <data name="This page allows you to enter or update a new prayer request." xml:space="preserve">
+    <value>Esta página le permite introducir o actualizar una petición de oración nueva.</value>
+  </data>
+  <data name="“{0}” and “{1}” are not subject to the automatic expiration (set on the “{2}” page) that the other requests are." xml:space="preserve">
+    <value>“{0}” y “{1}” no están sujetos a la caducidad automática (establecida en el “{2}” de la página) que las peticiones son otros.</value>
+  </data>
+  <data name="“{0}” are like “{1}”, but instead of a request, they are simply passing information along about something coming up." xml:space="preserve">
+    <value>“{0}” son como “{1}”, pero en lugar de una petición, simplemente se pasa la información a lo largo de algo por venir.</value>
+  </data>
+  <data name="“{0}” are like “{1}”, but they are answers to prayer to share with your group." xml:space="preserve">
+    <value>“{0}” son como “{1}”, pero son respuestas a la oración para compartir con su grupo.</value>
+  </data>
+  <data name="“{0}” are requests that may occur repeatedly or continue indefinitely." xml:space="preserve">
+    <value>“{0}” son peticiones que pueden ocurrir varias veces, o continuar indefinidamente.</value>
+  </data>
+  <data name="“{0}” are your regular requests that people may have regarding things happening over the next week or so." xml:space="preserve">
+    <value>“{0}” son sus peticiones habituales que la gente pueda tener acerca de las cosas que suceden durante la próxima semana o así.</value>
+  </data>
+  <data name="“{0}” can be used to make a request never expire (note that this is redundant for “{1}” and “{2}”)." xml:space="preserve">
+    <value>“{0}” se puede utilizar para hacer una petición que no caduque nunca (nótese que esto es redundante para los tipos “{1}” y “{2}”).</value>
+  </data>
+  <data name="“{0}” is for those who are pregnant.&quot;" xml:space="preserve">
+    <value>“{0}” es para aquellos que están embarazadas.</value>
+  </data>
+  <data name="“{0}” means that the request is subject to the expiration days in the group preferences." xml:space="preserve">
+    <value>“{0}” significa que la petición está sujeta a los días de vencimiento de las preferencias del grupo.</value>
+  </data>
+  <data name="“{0}” will make the request expire when it is saved." xml:space="preserve">
+    <value>“{0}” hará que la petición expirará cuando se guarda.</value>
+  </data>
+</root>

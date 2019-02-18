@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="TestLocalization.fs" />
+    <Compile Include="Data\EntitiesTests.fs" />
+    <Compile Include="UI\UtilsTests.fs" />
+    <Compile Include="UI\ViewModelsTests.fs" />
+    <Compile Include="UI\CommonFunctionsTests.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Expecto" Version="8.4.2" />
+    <PackageReference Include="Expecto.VisualStudio.TestAdapter" Version="10.0.0" />
+    <PackageReference Include="NodaTime.Testing" Version="2.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PrayerTracker.Data\PrayerTracker.Data.fsproj" />
+    <ProjectReference Include="..\PrayerTracker.UI\PrayerTracker.UI.fsproj" />
+    <ProjectReference Include="..\PrayerTracker\PrayerTracker.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="FSharp.Core" Version="4.5.2" />
+  </ItemGroup>
+
+</Project>

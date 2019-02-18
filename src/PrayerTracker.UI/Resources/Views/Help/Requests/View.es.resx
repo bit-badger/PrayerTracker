@@ -1,0 +1,153 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="(NOTE: If you are logged in as a group member, the only option you will see is to view a printable list.)" xml:space="preserve">
+    <value>(NOTA: Si usted está registrado como miembro de la clase, la única opción que se ve es para ver una lista para imprimir.)</value>
+  </data>
+  <data name="Clicking this link will display the list in a format that is suitable for printing; it does not have the normal {0} header across the top." xml:space="preserve">
+    <value>Hacer clic en este vínculo, se muestra la lista en un formato que sea adecuado para imprimir, sino que no tiene el encabezado normal de {0} en la parte superior.</value>
+  </data>
+  <data name="Clicking this link will send the list you are currently viewing to your group members." xml:space="preserve">
+    <value>Al hacer clic en este enlace le enviará la lista que está viendo en ese momento a los miembros del grupo.</value>
+  </data>
+  <data name="From this page, you can view the request list (for today or for the next Sunday), view a printable version of the list, and e-mail the list to the members of your group." xml:space="preserve">
+    <value>Desde esta página, puede ver la lista de peticiones (para hoy o para el próximo Domingo), ver una versión imprimible de la lista, y por correo electrónico la lista de los miembros de su grupo.</value>
+  </data>
+  <data name="If you proceed, you will see a page that shows to whom the list was sent, and what the list looked like." xml:space="preserve">
+    <value>Si continúa, usted verá una página que muestra a la que la lista fue enviado, y lo que la lista parecía.</value>
+  </data>
+  <data name="Note that this link does not appear if it is Sunday." xml:space="preserve">
+    <value>Tenga en cuenta que este enlace no aparece si es Domingo.</value>
+  </data>
+  <data name="Once you have clicked the link, you can print it using your browser's standard “Print” functionality." xml:space="preserve">
+    <value>Una vez que haya hecho clic en el enlace, se puede imprimir con el navegador estándar de “Imprimir” funcionalidad.</value>
+  </data>
+  <data name="The page will remind you that you are about to do that, and ask for your confirmation." xml:space="preserve">
+    <value>La página te recordará que estás a punto de hacerlo, y pedir su confirmación.</value>
+  </data>
+  <data name="This can be used, for example, to see what requests will expire, or allow you to print a list with Sunday's date on Saturday evening." xml:space="preserve">
+    <value>Esto puede ser usado, por ejemplo, para ver lo que peticiones de caducidad, ni le permite imprimir una lista con la fecha del Domingo en la noche del Sábado.</value>
+  </data>
+  <data name="This will modify the date for the list, so it will look like it is currently next Sunday." xml:space="preserve">
+    <value>Esto modificará la fecha de la lista, por lo que se verá como es en la actualidad el próximo Domingo.</value>
+  </data>
+  <data name="You may safely use your browser's “Back” button to navigate away from the page." xml:space="preserve">
+    <value>Usted puede utilizar con seguridad de su navegador botón “Atrás” para navegar fuera de la página.</value>
+  </data>
+</root>

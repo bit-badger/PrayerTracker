@@ -1,0 +1,201 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="(And, once requests do “drop off”, they are not gone - they may be recovered if needed.)" xml:space="preserve">
+    <value>(Y, una vez que se las peticiones “dejar”, no se han ido - que se puede recuperar si es necesario.)</value>
+  </data>
+  <data name="All fonts, colors, and sizes can be customized." xml:space="preserve">
+    <value>Todos los tipos de letra, colores y tamaños pueden ser personalizados.</value>
+  </data>
+  <data name="Check out the “{0}” link above - it details each of the processes and how they work." xml:space="preserve">
+    <value>Echa un vistazo a la “{0}” enlace de arriba - que detalla cada uno de los procesos y cómo funcionan.</value>
+  </data>
+  <data name="Do I Have to Register to See the Requests?" xml:space="preserve">
+    <value>¿Tengo que Registrarme para Ver las Peticiones?</value>
+  </data>
+  <data name="E-mails are sent individually to each person, which keeps the e-mail list private and keeps the messages from being flagged as spam." xml:space="preserve">
+    <value>Los correos electrónicos se envían de forma individual a cada persona, lo que mantiene la lista de correo electrónico privado y mantiene los mensajes de ser marcado como spam.</value>
+  </data>
+  <data name="How Can Your Organization Use {0}?" xml:space="preserve">
+    <value>¿Cómo Puede Su Organización Utilizan {0}?</value>
+  </data>
+  <data name="How Does It Work?" xml:space="preserve">
+    <value>¿Cómo Funciona?</value>
+  </data>
+  <data name="If you click on the “{0}” link above, you will see a list of groups - those that do not indicate that they require logging in are publicly viewable." xml:space="preserve">
+    <value>Si hace clic en la “{0}” enlace de arriba, podrás ver una lista de grupos - los que no indican que se requiere el registro en el son públicos y visibles.</value>
+  </data>
+  <data name="If your organization would like to get set up, just &lt;a href=&quot;mailto:daniel@djs-consulting.com?subject=New%20{0}%20Class&quot;&gt;e-mail&lt;/a&gt; Daniel and let him know." xml:space="preserve">
+    <value>Si su organización quiere ponerse en marcha, &lt;a href="mailto:daniel@djs-consulting.com?subject=Nueva%20Clase%20de%20{0}"&gt;enviar por correo electrónico a Daniel&lt;/a&gt; y le hizo saber.</value>
+  </data>
+  <data name="It drops old requests off the list automatically." xml:space="preserve">
+    <value>Suelta las peticiones de edad fuera de la lista automáticamente.</value>
+  </data>
+  <data name="It is provided at no charge, as a ministry and a community service." xml:space="preserve">
+    <value>Se proporciona sin costo alguno, como un ministerio y un servicio a la comunidad.</value>
+  </data>
+  <data name="Like God’s gift of salvation, {0} is free for the asking for any church, Sunday School class, or other organization who wishes to use it." xml:space="preserve">
+    <value>Como un regalo de Dios de la salvación, {0} es un país libre para pedir para cualquier iglesia, la clase de escuela dominical, o cualquier otra organización que desee utilizarlo.</value>
+  </data>
+  <data name="Lists can be configured to be password-protected, but they do not have to be." xml:space="preserve">
+    <value>Las listas pueden ser configurados para estar protegido por contraseña, pero no tiene que ser.</value>
+  </data>
+  <data name="Lists can be e-mailed to a pre-defined list of members." xml:space="preserve">
+    <value>Las listas pueden ser enviados por correo electrónico a una lista predefinida de los miembros.</value>
+  </data>
+  <data name="Lists can be made public, or they can be secured with a password, if desired." xml:space="preserve">
+    <value>Las listas pueden hacerse públicos, o pueden ser asegurados con una contraseña, si lo desea.</value>
+  </data>
+  <data name="Requests can be viewed any time." xml:space="preserve">
+    <value>Peticiones se pueden ver en cualquier momento.</value>
+  </data>
+  <data name="Requests other than “{0}” requests will expire at 14 days, though this can be changed by the organization." xml:space="preserve">
+    <value>Peticiones que no sean “{0}” peticiones finalizará a los 14 días, aunque esto puede ser cambiado por la organización.</value>
+  </data>
+  <data name="Some of the things it can do..." xml:space="preserve">
+    <value>Algunas de las cosas que puede hacer...</value>
+  </data>
+  <data name="The look and feel of the list can be configured for each group." xml:space="preserve">
+    <value>La mirada y la sensación de la lista se puede configurar para cada grupo.</value>
+  </data>
+  <data name="This allows for configuration of large-print lists, among other things." xml:space="preserve">
+    <value>Esto permite que para la configuración de gran impresión listas, entre otras cosas.</value>
+  </data>
+  <data name="This can be useful for folks who may not be able to write down all the requests during class, but want a list so that they can pray for them the rest of week." xml:space="preserve">
+    <value>Esto puede ser útil para la gente que no puede ser capaz de escribir todas las las peticiones durante la clase, pero quiero una lista para que puedan orar por ellos el resto de la semana.</value>
+  </data>
+  <data name="This depends on the group." xml:space="preserve">
+    <value>Esto depende del grupo.</value>
+  </data>
+  <data name="This expiration is based on the last update, not the initial request." xml:space="preserve">
+    <value>Esta caducidad se basa en la última actualización, no de la petición inicial.</value>
+  </data>
+  <data name="Welcome to &lt;strong&gt;{0}&lt;/strong&gt;!" xml:space="preserve">
+    <value>¡Bienvenido a &lt;strong&gt;{0}&lt;/strong&gt;!</value>
+  </data>
+  <data name="What Does It Do?" xml:space="preserve">
+    <value>¿Qué Hacer?</value>
+  </data>
+  <data name="{0} has what you need to make maintaining a prayer request list a breeze." xml:space="preserve">
+    <value>{0} tiene lo que usted necesita para hacer el mantenimiento de una lista de peticiones de la oración sencilla.</value>
+  </data>
+  <data name="{0} is an interactive website that provides churches, Sunday School classes, and other organizations an easy way to keep up with their prayer requests." xml:space="preserve">
+    <value>{0} es un sitio web interactivo que ofrece a iglesias, clases de escuela dominical, y otras organizaciones una manera fácil de mantenerse al día con sus peticiones de oración.</value>
+  </data>
+</root>

@@ -1,0 +1,849 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Actions" xml:space="preserve">
+    <value>Acciones</value>
+  </data>
+  <data name="Add / Edit a Request" xml:space="preserve">
+    <value>Agregar / Editar una Petición</value>
+  </data>
+  <data name="Add a New Church" xml:space="preserve">
+    <value>Agregar una Iglesia Nueva</value>
+  </data>
+  <data name="Add a New Group Member" xml:space="preserve">
+    <value>Añadir un Nuevo Miembro del Grupo</value>
+  </data>
+  <data name="Added" xml:space="preserve">
+    <value>Agregado</value>
+  </data>
+  <data name="Administration" xml:space="preserve">
+    <value>Administración</value>
+  </data>
+  <data name="and added it to the request list" xml:space="preserve">
+    <value>y agregado a la lista de peticiones</value>
+  </data>
+  <data name="Announcement for {0} - {1:MMMM d, yyyy} {2}" xml:space="preserve">
+    <value>Anuncio para {0} - {1:MMMM d, yyyy} {2}</value>
+  </data>
+  <data name="Announcements" xml:space="preserve">
+    <value>Anuncios</value>
+  </data>
+  <data name="Aqua" xml:space="preserve">
+    <value>Verde Azulado Brillante</value>
+  </data>
+  <data name="Are you want to delete this {0}?  This action cannot be undone." xml:space="preserve">
+    <value>¿Está desea eliminar este {0}? Esta acción no se puede deshacer.</value>
+  </data>
+  <data name="Attached PDF" xml:space="preserve">
+    <value>PDF Adjunto</value>
+  </data>
+  <data name="Black" xml:space="preserve">
+    <value>Negro</value>
+  </data>
+  <data name="Blue" xml:space="preserve">
+    <value>Azul</value>
+  </data>
+  <data name="Change Preferences" xml:space="preserve">
+    <value>Cambiar las Preferencias</value>
+  </data>
+  <data name="Change to English" xml:space="preserve">
+    <value>Change to English</value>
+  </data>
+  <data name="Change Your Password" xml:space="preserve">
+    <value>Cambiar Su Contraseña</value>
+  </data>
+  <data name="Check to not update the date" xml:space="preserve">
+    <value>Seleccionar para no actualizar la fecha</value>
+  </data>
+  <data name="Church" xml:space="preserve">
+    <value>Iglesia</value>
+  </data>
+  <data name="Churches" xml:space="preserve">
+    <value>Iglesias</value>
+  </data>
+  <data name="Click for Help on This Page" xml:space="preserve">
+    <value>Haga Clic para Obtener Ayuda en Esta Página</value>
+  </data>
+  <data name="Click to Close This Window" xml:space="preserve">
+    <value>Haga Clic para Cerrar Esta Ventana</value>
+  </data>
+  <data name="Close Window" xml:space="preserve">
+    <value>Cerrar Esta Ventana</value>
+  </data>
+  <data name="Current Requests" xml:space="preserve">
+    <value>Peticiones Actuales</value>
+  </data>
+  <data name="Currently Logged On" xml:space="preserve">
+    <value>Conectado como</value>
+  </data>
+  <data name="Delete This Church" xml:space="preserve">
+    <value>Eliminar Este Iglesia</value>
+  </data>
+  <data name="Delete This Group Member" xml:space="preserve">
+    <value>Eliminar Este Miembro del Grupo</value>
+  </data>
+  <data name="Displaying {0} Entries" xml:space="preserve">
+    <value>Mostrando {0} Entradas</value>
+  </data>
+  <data name="Displaying {0} Entry" xml:space="preserve">
+    <value>Mostrando {0} Entrada</value>
+  </data>
+  <data name="E-mail Address" xml:space="preserve">
+    <value>Dirección de Correo Electrónico</value>
+  </data>
+  <data name="Edit Church" xml:space="preserve">
+    <value>Editar la Iglesia</value>
+  </data>
+  <data name="Edit This Church" xml:space="preserve">
+    <value>Editar Este Iglesia</value>
+  </data>
+  <data name="Edit This Group Member" xml:space="preserve">
+    <value>Editar Este Miembro del Grupo</value>
+  </data>
+  <data name="English" xml:space="preserve">
+    <value>Inglés</value>
+  </data>
+  <data name="Expecting" xml:space="preserve">
+    <value>Embarazada</value>
+  </data>
+  <data name="Expire Immediately" xml:space="preserve">
+    <value>Expirará Inmediatamente</value>
+  </data>
+  <data name="Expire Normally" xml:space="preserve">
+    <value>Expirará Normalmente</value>
+  </data>
+  <data name="footer_en" xml:space="preserve">
+    <value>footer_es</value>
+  </data>
+  <data name="Format" xml:space="preserve">
+    <value>Formato</value>
+  </data>
+  <data name="from Bit Badger Solutions" xml:space="preserve">
+    <value>de Soluciones Bit Badger</value>
+  </data>
+  <data name="Fuchsia" xml:space="preserve">
+    <value>Fucsia</value>
+  </data>
+  <data name="Generated by P R A Y E R T R A C K E R" xml:space="preserve">
+    <value>Generado por S E G U I D O R O R A C I Ó N</value>
+  </data>
+  <data name="Gray" xml:space="preserve">
+    <value>Gris</value>
+  </data>
+  <data name="Green" xml:space="preserve">
+    <value>Verde</value>
+  </data>
+  <data name="Group" xml:space="preserve">
+    <value>Grupo</value>
+  </data>
+  <data name="Group Default" xml:space="preserve">
+    <value>Grupo Predeterminada</value>
+  </data>
+  <data name="Group Members" xml:space="preserve">
+    <value>Los Miembros del Grupo</value>
+  </data>
+  <data name="Group preferences updated successfully" xml:space="preserve">
+    <value>Las preferencias del grupo actualizaron con éxito</value>
+  </data>
+  <data name="Groups" xml:space="preserve">
+    <value>Grupos</value>
+  </data>
+  <data name="Help" xml:space="preserve">
+    <value>Ayuda</value>
+  </data>
+  <data name="Help Topics" xml:space="preserve">
+    <value>Los Temas de Ayuda</value>
+  </data>
+  <data name="HTML Format" xml:space="preserve">
+    <value>Formato HTML</value>
+  </data>
+  <data name="Interface?" xml:space="preserve">
+    <value>¿Interfaz?</value>
+  </data>
+  <data name="Invalid credentials - log on unsuccessful" xml:space="preserve">
+    <value>Credenciales no válidas - de inicio de sesión sin éxito</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>Lengua</value>
+  </data>
+  <data name="Lime" xml:space="preserve">
+    <value>Lima</value>
+  </data>
+  <data name="Location" xml:space="preserve">
+    <value>Ubicación</value>
+  </data>
+  <data name="Log Off" xml:space="preserve">
+    <value>Cierre de Sesión</value>
+  </data>
+  <data name="Log On" xml:space="preserve">
+    <value>Iniciar Sesión</value>
+  </data>
+  <data name="Log On Successful • Welcome to {0}" xml:space="preserve">
+    <value>Iniciar Sesión con Éxito • Bienvenido a {0}</value>
+  </data>
+  <data name="Log Off Successful • Have a nice day!" xml:space="preserve">
+    <value>Cerrar la Sesión con Éxito • ¡Tener un Buen Día!</value>
+  </data>
+  <data name="Logged On as a Member of" xml:space="preserve">
+    <value>Conectado como Miembro de</value>
+  </data>
+  <data name="Long-Term Requests" xml:space="preserve">
+    <value>Peticiones a Largo Plazo</value>
+  </data>
+  <data name="Maintain" xml:space="preserve">
+    <value>Mantener</value>
+  </data>
+  <data name="Maintain Churches" xml:space="preserve">
+    <value>Mantener las Iglesias</value>
+  </data>
+  <data name="Maintain Group Members" xml:space="preserve">
+    <value>Mantener los Miembros del Grupo</value>
+  </data>
+  <data name="Maintain Requests" xml:space="preserve">
+    <value>Mantener las Peticiones</value>
+  </data>
+  <data name="Maroon" xml:space="preserve">
+    <value>Granate</value>
+  </data>
+  <data name="Name" xml:space="preserve">
+    <value>Nombre</value>
+  </data>
+  <data name="Navy" xml:space="preserve">
+    <value>Azul Oscuro</value>
+  </data>
+  <data name="No Entries to Display" xml:space="preserve">
+    <value>No hay Entradas para Mostrar</value>
+  </data>
+  <data name="Olive" xml:space="preserve">
+    <value>Oliva</value>
+  </data>
+  <data name="Password incorrect - login unsuccessful" xml:space="preserve">
+    <value>Contraseña incorrecta - de inicio de sesión sin éxito</value>
+  </data>
+  <data name="Plain-Text Format" xml:space="preserve">
+    <value>Formato de Texto Plano</value>
+  </data>
+  <data name="Please select at least one group for which this user ({0}) is authorized" xml:space="preserve">
+    <value>Por favor, seleccione al menos uno grupo para la que este usuario ({0}) puede iniciar sesión en</value>
+  </data>
+  <data name="Praise Reports" xml:space="preserve">
+    <value>Informes de Alabanza</value>
+  </data>
+  <data name="Prayer Requests for {0} - {1:MMMM d, yyyy}" xml:space="preserve">
+    <value>Las Peticiones de Oración para {0} - {1:MMMM d, yyyy}</value>
+  </data>
+  <data name="PrayerTracker" xml:space="preserve">
+    <value>SeguidorOración</value>
+  </data>
+  <data name="Purple" xml:space="preserve">
+    <value>Púrpura</value>
+  </data>
+  <data name="Red" xml:space="preserve">
+    <value>Rojo</value>
+  </data>
+  <data name="Request Never Expires" xml:space="preserve">
+    <value>Petición no Expira Nunca</value>
+  </data>
+  <data name="Requests" xml:space="preserve">
+    <value>Peticiones</value>
+  </data>
+  <data name="Sample" xml:space="preserve">
+    <value>Muestra</value>
+  </data>
+  <data name="Save Church" xml:space="preserve">
+    <value>Guardar la Iglesia</value>
+  </data>
+  <data name="Select" xml:space="preserve">
+    <value>Seleccionar</value>
+  </data>
+  <data name="Send Announcement" xml:space="preserve">
+    <value>Enviar un Anuncio</value>
+  </data>
+  <data name="Silver" xml:space="preserve">
+    <value>Plata</value>
+  </data>
+  <data name="Sorry, an error occurred while processing your request." xml:space="preserve">
+    <value>Lo sentimos, ha ocurrido un error al procesar su solicitud.</value>
+  </data>
+  <data name="Spanish" xml:space="preserve">
+    <value>Español</value>
+  </data>
+  <data name="Successfully deleted user {0}" xml:space="preserve">
+    <value>Eliminado correctamente de usuario {0}</value>
+  </data>
+  <data name="Successfully sent announcement to all {0}{1}" xml:space="preserve">
+    <value>Enviado anuncio a todos {0}{1} con éxito</value>
+  </data>
+  <data name="Successfully updated group permissions for {0}" xml:space="preserve">
+    <value>Actualizado permisos del grupo para {0} con éxito</value>
+  </data>
+  <data name="Successfully {0} group member" xml:space="preserve">
+    <value>El miembro del grupo {0} con éxito</value>
+  </data>
+  <data name="Successfully {0} prayer request" xml:space="preserve">
+    <value>Petición la oración {0} con éxito</value>
+  </data>
+  <data name="Successfully {0} user" xml:space="preserve">
+    <value>Usuario {0} con éxito</value>
+  </data>
+  <data name="Teal" xml:space="preserve">
+    <value>Verde Azulado</value>
+  </data>
+  <data name="The group member “{0}” was deleted successfully" xml:space="preserve">
+    <value>El miembro del grupo “{0}” se eliminó con éxito</value>
+  </data>
+  <data name="The group {0} and its {1} prayer request(s) was deleted successfully (revoked access from {2} user(s))" xml:space="preserve">
+    <value>El grupo {0} y sus {1} peticion(es) de oración se ha eliminado correctamente (acceso revocada por {2} usuario(s))</value>
+  </data>
+  <data name="The old password was incorrect - your password was NOT changed" xml:space="preserve">
+    <value>La contraseña antigua es incorrecta - la contraseña NO ha cambiado</value>
+  </data>
+  <data name="The page you requested requires authentication; please log on below." xml:space="preserve">
+    <value>La página solicitada requiere autenticación, por favor, inicio de sesión mediante el siguiente formulario.</value>
+  </data>
+  <data name="The prayer request was deleted successfully" xml:space="preserve">
+    <value>La petición de oración se ha eliminado correctamente</value>
+  </data>
+  <data name="The prayer request you tried to access is not assigned to your group" xml:space="preserve">
+    <value>La petición de oración que ha intentado acceder no se ha asignado a su grupo</value>
+  </data>
+  <data name="The request list for the group you tried to view is not public." xml:space="preserve">
+    <value>La lista de peticiones para el grupo que desea ver no es pública.</value>
+  </data>
+  <data name="There are no classes with passwords defined" xml:space="preserve">
+    <value>No hay clases con contraseñas se define</value>
+  </data>
+  <data name="This is likely due to one of the following reasons:&lt;ul&gt;&lt;li&gt;The e-mail address “{0}” is invalid.&lt;/li&gt;&lt;li&gt;The password entered does not match the password for the given e-mail address.&lt;/li&gt;&lt;li&gt;You are not authorized to administer the group “{1}”.&lt;/li&gt;&lt;/ul&gt;" xml:space="preserve">
+    <value>Esto es probablemente debido a una de las siguientes razones:&lt;ul&gt;&lt;li&gt;La dirección de correo electrónico “{0}” no es válida.&lt;/li&gt;&lt;li&gt;La contraseña introducida no coincide con la contraseña de la determinada dirección de correo electrónico.&lt;/li&gt;&lt;li&gt;Usted no está autorizado para administrar el grupo “{1}”.&lt;/li&gt;&lt;/ul&gt;</value>
+  </data>
+  <data name="This page loaded in {0:N3} seconds" xml:space="preserve">
+    <value>Esta página cargada en {0:N3} segundos</value>
+  </data>
+  <data name="This request is expired." xml:space="preserve">
+    <value>Esta petición ha expirado.</value>
+  </data>
+  <data name="To make it active again, update it as necessary, leave “{0}” and “{1}” unchecked, and it will return as an active request." xml:space="preserve">
+    <value>Para que sea más activa de nuevo, que se actualizará cuando sea necesario, salir de “{0}” y “{1}” no seleccionado, y volverá como una petición activa.</value>
+  </data>
+  <data name="Toggle Navigation" xml:space="preserve">
+    <value>Navegación de Palanca</value>
+  </data>
+  <data name="Updated" xml:space="preserve">
+    <value>Actualizaron</value>
+  </data>
+  <data name="User" xml:space="preserve">
+    <value>Usuario</value>
+  </data>
+  <data name="Users" xml:space="preserve">
+    <value>Usuarios</value>
+  </data>
+  <data name="View List" xml:space="preserve">
+    <value>Vista de lista</value>
+  </data>
+  <data name="View Request List" xml:space="preserve">
+    <value>Ver la Lista de Peticiones</value>
+  </data>
+  <data name="WARNING" xml:space="preserve">
+    <value>ADVERTENCIA</value>
+  </data>
+  <data name="White" xml:space="preserve">
+    <value>Blanco</value>
+  </data>
+  <data name="Yellow" xml:space="preserve">
+    <value>Amarillo</value>
+  </data>
+  <data name="Yes" xml:space="preserve">
+    <value>Sí</value>
+  </data>
+  <data name="You are not authorized to view the requested page." xml:space="preserve">
+    <value>No tiene permisos para acceder a la página solicitada.</value>
+  </data>
+  <data name="You must select at least one group to assign" xml:space="preserve">
+    <value>Debe seleccionar al menos uno grupo para asignar</value>
+  </data>
+  <data name="Your password was changed successfully" xml:space="preserve">
+    <value>La contraseña se cambió con éxito</value>
+  </data>
+  <data name="{0} users" xml:space="preserve">
+    <value>{0} usuarios</value>
+  </data>
+  <data name="Add a New Request" xml:space="preserve">
+    <value>Agregar una Nueva Petición</value>
+  </data>
+  <data name="Edit Request" xml:space="preserve">
+    <value>Editar la Petición</value>
+  </data>
+  <data name="Typo Corrections" xml:space="preserve">
+    <value>Corrección de Errata</value>
+  </data>
+  <data name="Unauthorized Access" xml:space="preserve">
+    <value>El Acceso No Autorizado</value>
+  </data>
+  <data name="Welcome!" xml:space="preserve">
+    <value>¡Bienvenidos!</value>
+  </data>
+  <data name="Add to Request List" xml:space="preserve">
+    <value>Agregar a la Lista de Peticiones En</value>
+  </data>
+  <data name="Announcement Text" xml:space="preserve">
+    <value>Texto del Anuncio</value>
+  </data>
+  <data name="Colors" xml:space="preserve">
+    <value>Colores</value>
+  </data>
+  <data name="Date" xml:space="preserve">
+    <value>Fecha</value>
+  </data>
+  <data name="Delete a Group Member" xml:space="preserve">
+    <value>Eliminar un Miembro del Grupo</value>
+  </data>
+  <data name="Delete a Request" xml:space="preserve">
+    <value>Eliminar una Petición</value>
+  </data>
+  <data name="E-mail Format" xml:space="preserve">
+    <value>Formato de Correo Electrónico</value>
+  </data>
+  <data name="E-mail “From” Name and Address" xml:space="preserve">
+    <value>Correo Electrónico “De” Nombre y Dirección</value>
+  </data>
+  <data name="Edit Group Member" xml:space="preserve">
+    <value>Editar el Miembro del Grupo</value>
+  </data>
+  <data name="Expiration" xml:space="preserve">
+    <value>Expiración</value>
+  </data>
+  <data name="Fonts" xml:space="preserve">
+    <value>Fuentes</value>
+  </data>
+  <data name="Fonts{0} for List" xml:space="preserve">
+    <value>Fuentes{0} de la Lista</value>
+  </data>
+  <data name="Group Log On" xml:space="preserve">
+    <value>Iniciar Sesión como Grupo</value>
+  </data>
+  <data name="Heading / List Text Size" xml:space="preserve">
+    <value>Tamaño del Texto de Partida y Lista</value>
+  </data>
+  <data name="Heading Text Size" xml:space="preserve">
+    <value>Partida el Tamaño del Texto</value>
+  </data>
+  <data name="List Text Size" xml:space="preserve">
+    <value>Lista el Tamaño del Texto</value>
+  </data>
+  <data name="Long-Term Requests Alerted for Update" xml:space="preserve">
+    <value>Peticiones a Largo Plazo Alertó para la Actualización</value>
+  </data>
+  <data name="Making a “Large Print” List" xml:space="preserve">
+    <value>Realización de una Lista de “Letra Grande”</value>
+  </data>
+  <data name="Password Protected" xml:space="preserve">
+    <value>Protegido por Contraseña</value>
+  </data>
+  <data name="Remember Me" xml:space="preserve">
+    <value>Acuérdate de Mí</value>
+  </data>
+  <data name="Request" xml:space="preserve">
+    <value>Petición</value>
+  </data>
+  <data name="Request List Visibility" xml:space="preserve">
+    <value>La Visibilidad del la Lista de las Peticiones</value>
+  </data>
+  <data name="Request Sorting" xml:space="preserve">
+    <value>Orden de Peticiones</value>
+  </data>
+  <data name="Request Type" xml:space="preserve">
+    <value>Tipo de Petición</value>
+  </data>
+  <data name="Requestor / Subject" xml:space="preserve">
+    <value>Peticionario / Sujeto</value>
+  </data>
+  <data name="Requests Expire After" xml:space="preserve">
+    <value>Peticiones Expiran Después de</value>
+  </data>
+  <data name="Requests “New” For" xml:space="preserve">
+    <value>Peticiones “Nuevas” Para</value>
+  </data>
+  <data name="Sort by Requestor Name" xml:space="preserve">
+    <value>Ordenar por Nombre del Solicitante</value>
+  </data>
+  <data name="Time Zone" xml:space="preserve">
+    <value>Zona Horaria</value>
+  </data>
+  <data name="List for Next Sunday" xml:space="preserve">
+    <value>Lista para el Próximo Domingo</value>
+  </data>
+  <data name="Restore an Inactive Request" xml:space="preserve">
+    <value>Restaurar una Petición Inactivo</value>
+  </data>
+  <data name="Send via E-mail" xml:space="preserve">
+    <value>Enviar por correo electrónico</value>
+  </data>
+  <data name="User Log On" xml:space="preserve">
+    <value>Iniciar Sesión como Usuario</value>
+  </data>
+  <data name="View Printable" xml:space="preserve">
+    <value>Versión Imprimible</value>
+  </data>
+  <data name="Add a New Group" xml:space="preserve">
+    <value>Agregar un Grupo Nuevo</value>
+  </data>
+  <data name="Add a New User" xml:space="preserve">
+    <value>Agregar un Usuario Nuevo</value>
+  </data>
+  <data name="Admin?" xml:space="preserve">
+    <value>¿Admin?</value>
+  </data>
+  <data name="All {0} Users" xml:space="preserve">
+    <value>Todos los Usuarios {0}</value>
+  </data>
+  <data name="Announcement Sent" xml:space="preserve">
+    <value>El Anuncio Enviado</value>
+  </data>
+  <data name="Assign Groups" xml:space="preserve">
+    <value>Asignar Grupos</value>
+  </data>
+  <data name="Assign Groups to This User" xml:space="preserve">
+    <value>Asignar Grupos a Este Usuario</value>
+  </data>
+  <data name="Case-Sensitive" xml:space="preserve">
+    <value>Entre Mayúsculas y Minúsculas</value>
+  </data>
+  <data name="Color of Heading Lines" xml:space="preserve">
+    <value>El Color de las Líneas de Partida</value>
+  </data>
+  <data name="Color of Heading Text" xml:space="preserve">
+    <value>Color del Texto de la Partida</value>
+  </data>
+  <data name="Dates" xml:space="preserve">
+    <value>Fechas</value>
+  </data>
+  <data name="Days" xml:space="preserve">
+    <value>Días</value>
+  </data>
+  <data name="Delete This Group" xml:space="preserve">
+    <value>Eliminar Este Grupo</value>
+  </data>
+  <data name="Do Not Show Inactive Requests" xml:space="preserve">
+    <value>No Muestran las Peticiones Inactivos</value>
+  </data>
+  <data name="E-mail" xml:space="preserve">
+    <value>Correo Electrónico</value>
+  </data>
+  <data name="Edit Group" xml:space="preserve">
+    <value>Editar Grupo</value>
+  </data>
+  <data name="Edit This Group" xml:space="preserve">
+    <value>Editar Este Grupo</value>
+  </data>
+  <data name="Edit This User" xml:space="preserve">
+    <value>Editiar Este Usuario</value>
+  </data>
+  <data name="Edit User" xml:space="preserve">
+    <value>Editar el Usuario</value>
+  </data>
+  <data name="Group Preferences" xml:space="preserve">
+    <value>Las Preferencias del Grupo</value>
+  </data>
+  <data name="Inactive requests are currently not shown" xml:space="preserve">
+    <value>Peticiones inactivas no se muestra actualmente</value>
+  </data>
+  <data name="Inactive requests are currently shown" xml:space="preserve">
+    <value>Peticiones inactivas se muestra actualmente</value>
+  </data>
+  <data name="Maintain Groups" xml:space="preserve">
+    <value>Mantener los Grupos</value>
+  </data>
+  <data name="Maintain Users" xml:space="preserve">
+    <value>Mantener los Usuarios</value>
+  </data>
+  <data name="Named Color" xml:space="preserve">
+    <value>Color con Nombre</value>
+  </data>
+  <data name="No change" xml:space="preserve">
+    <value>Sin alterar</value>
+  </data>
+  <data name="or" xml:space="preserve">
+    <value>o</value>
+  </data>
+  <data name="Other Settings" xml:space="preserve">
+    <value>Otros Ajustes</value>
+  </data>
+  <data name="Prayer Requests" xml:space="preserve">
+    <value>Las Peticiones de Oración</value>
+  </data>
+  <data name="Private" xml:space="preserve">
+    <value>Privado</value>
+  </data>
+  <data name="Public" xml:space="preserve">
+    <value>Público</value>
+  </data>
+  <data name="Red / Green / Blue Mix" xml:space="preserve">
+    <value>Mezcla de Rojo / Verde / Azul</value>
+  </data>
+  <data name="Request Lists" xml:space="preserve">
+    <value>Listas de Peticiones</value>
+  </data>
+  <data name="Requestor" xml:space="preserve">
+    <value>Peticionario</value>
+  </data>
+  <data name="Requires Cookies" xml:space="preserve">
+    <value>Requiere que las Cookies</value>
+  </data>
+  <data name="Save Group" xml:space="preserve">
+    <value>Guardar el Grupo</value>
+  </data>
+  <data name="Save Group Assignments" xml:space="preserve">
+    <value>Guardar las Autorizaciones del Grupo</value>
+  </data>
+  <data name="Save Preferences" xml:space="preserve">
+    <value>Guardar las Preferencias</value>
+  </data>
+  <data name="Save Request" xml:space="preserve">
+    <value>Guardar la Petición</value>
+  </data>
+  <data name="Save User" xml:space="preserve">
+    <value>Guardar el Usuario</value>
+  </data>
+  <data name="Send Announcement to" xml:space="preserve">
+    <value>Enviar anuncio a</value>
+  </data>
+  <data name="Show Inactive Requests" xml:space="preserve">
+    <value>Muestran las Peticiones Inactivos</value>
+  </data>
+  <data name="Sort by Last Updated Date" xml:space="preserve">
+    <value>Ordenar por Fecha de Última Actualización</value>
+  </data>
+  <data name="The request list was sent to the following people, via individual e-mails" xml:space="preserve">
+    <value>La lista de peticiones fue enviado a las siguientes personas, a través de correos electrónicos individuales</value>
+  </data>
+  <data name="This Group" xml:space="preserve">
+    <value>Este Grupo</value>
+  </data>
+  <data name="This will e-mail the current list to every member of your class, without further prompting.  Are you sure this is what you are ready to do?" xml:space="preserve">
+    <value>Esto enviará un correo electrónico la lista actual de todos los miembros de su clase, sin más indicaciones. ¿Estás seguro de que esto es lo que están dispuestos a hacer?</value>
+  </data>
+  <data name="To change your password, enter your current password in the specified box below, then enter your new password twice." xml:space="preserve">
+    <value>Para cambiar su contraseña, introduzca su contraseña actual en el cuadro se especifica a continuación, introduzca su nueva contraseña dos veces.</value>
+  </data>
+  <data name="Type" xml:space="preserve">
+    <value>Tipo</value>
+  </data>
+  <data name="Updated Date" xml:space="preserve">
+    <value>Fecha de Actualización</value>
+  </data>
+  <data name="View" xml:space="preserve">
+    <value>Ver</value>
+  </data>
+  <data name="Weeks" xml:space="preserve">
+    <value>Semanas</value>
+  </data>
+  <data name="Active Requests" xml:space="preserve">
+    <value>Peticiones Activas</value>
+  </data>
+  <data name="Delete This Request" xml:space="preserve">
+    <value>Eliminar esta petición</value>
+  </data>
+  <data name="Edit This Prayer Request" xml:space="preserve">
+    <value>Editar esta petición de oración</value>
+  </data>
+  <data name="Expire a Request" xml:space="preserve">
+    <value>Expirar una petición</value>
+  </data>
+  <data name="Expire This Request Immediately" xml:space="preserve">
+    <value>Expirar esta petición de oración de inmediato</value>
+  </data>
+  <data name="Maintain Prayer Requests" xml:space="preserve">
+    <value>Mantener las Peticiones de Oración</value>
+  </data>
+  <data name="Members" xml:space="preserve">
+    <value>Miembros</value>
+  </data>
+  <data name="Quick Actions" xml:space="preserve">
+    <value>Acciones Rápidas</value>
+  </data>
+  <data name="Restore This Inactive Request" xml:space="preserve">
+    <value>Restaurar esta petición inactiva</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>Guardar</value>
+  </data>
+  <data name="Total Requests" xml:space="preserve">
+    <value>Total de Peticiones</value>
+  </data>
+  <data name="View Prayer Request List" xml:space="preserve">
+    <value>Ver la Lista de Peticiones de Oración</value>
+  </data>
+  <data name="Central European" xml:space="preserve">
+    <value>Central Europeo</value>
+  </data>
+  <data name="Eastern" xml:space="preserve">
+    <value>Este</value>
+  </data>
+  <data name="MMMM d, yyyy" xml:space="preserve">
+    <value>d \de MMMM yyyy</value>
+  </data>
+  <data name="Mountain" xml:space="preserve">
+    <value>Montaña</value>
+  </data>
+  <data name="Mountain (Arizona)" xml:space="preserve">
+    <value>Montaña (Arizona)</value>
+  </data>
+  <data name="Pacific" xml:space="preserve">
+    <value>Pacífico</value>
+  </data>
+  <data name="Page Not Found" xml:space="preserve">
+    <value>Página No Encontrada</value>
+  </data>
+  <data name="Server Error" xml:space="preserve">
+    <value>Error del Servidor</value>
+  </data>
+  <data name="Privacy Policy" xml:space="preserve">
+    <value>Política de privacidad</value>
+  </data>
+  <data name="Terms of Service" xml:space="preserve">
+    <value>Términos de servicio</value>
+  </data>
+  <data name="Password" xml:space="preserve">
+    <value>Contraseña</value>
+  </data>
+  <data name="Current Password" xml:space="preserve">
+    <value>Contraseña Actual</value>
+  </data>
+  <data name="New Password Twice" xml:space="preserve">
+    <value>Nueva Contraseña Dos Veces</value>
+  </data>
+  <data name="Fonts** for List" xml:space="preserve">
+    <value>Fuentes** de la Lista</value>
+  </data>
+  <data name="From Address" xml:space="preserve">
+    <value>De Dirección</value>
+  </data>
+  <data name="From Name" xml:space="preserve">
+    <value>De Nombre</value>
+  </data>
+  <data name="Group Password (Used to Read Online)" xml:space="preserve">
+    <value>Contraseña del Grupo (Utilizado para Leer en Línea)</value>
+  </data>
+  <data name="Source &amp; Support" xml:space="preserve">
+    <value>Fuente y Soporte</value>
+  </data>
+  <data name="View source code and get technical support" xml:space="preserve">
+    <value>Ver código fuente y obtener soporte técnico</value>
+  </data>
+</root>

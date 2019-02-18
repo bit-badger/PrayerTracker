@@ -1,0 +1,234 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="(Changing this password will force all members of the group who logged in with the “{0}” box checked to provide the new password.)" xml:space="preserve">
+    <value>(Cambiar esta contraseña obligará a todos los miembros del grupo que se iniciar sesión en el "{0}" caja marcada para proporcionar la nueva contraseña.)</value>
+  </data>
+  <data name="(NOTE: In the plain-text e-mail, new requests are bulleted with a “+” symbol, and old are bulleted with a “-” symbol.)" xml:space="preserve">
+    <value>(NOTA: En el texto sin formato de correo electrónico, las nuevas solicitudes se identifican con un símbolo “+”, y pide a los viejos se identifican con un símbolo “-”.)</value>
+  </data>
+  <data name="A warning is good here; just because you have an obscure font and like the way that it looks does not mean that others have that same font." xml:space="preserve">
+    <value>Una advertencia de que es bueno aquí, sólo porque usted tiene una fuente oscura y gusta la forma en que se vea no significa que los demás tienen de que la misma fuente.</value>
+  </data>
+  <data name="All categories respect this setting." xml:space="preserve">
+    <value>Todas las categorías respetar esta opción.</value>
+  </data>
+  <data name="As this is a shared password, it is stored in plain text, so you can easily see what it is." xml:space="preserve">
+    <value>Como se trata de una contraseña compartida, se almacena en texto plano, así que usted puede ver fácilmente lo que es.</value>
+  </data>
+  <data name="By default, requests are sorted within each group by the last updated date, with the most recent on top." xml:space="preserve">
+    <value>De forma predeterminada, las solicitudes se ordenan dentro de cada grupo por la última fecha de actualización, con el más reciente en la parte superior.</value>
+  </data>
+  <data name="Changing at least the e-mail address to your address will ensure that you receive these e-mails, and can prune your e-mail list accordingly." xml:space="preserve">
+    <value>Cambiar por lo menos la dirección de correo electrónico a su dirección se asegurará de que usted recibe estos correos electrónicos, y se puede podar su lista de correo electrónico en consecuencia.</value>
+  </data>
+  <data name="Each section is addressed below." xml:space="preserve">
+    <value>Cada sección se aborda más adelante.</value>
+  </data>
+  <data name="However, some e-mail clients may not display this properly, so you can choose to default the email to a plain-text format, which does not have colors, italics, or other formatting." xml:space="preserve">
+    <value>Sin embargo, algunos clientes de correo electrónico no puede mostrar esto correctamente, para que pueda elegir el correo electrónico a un formato de texto plano predeterminadas, que no tiene colores, cursiva, u otro formato.</value>
+  </data>
+  <data name="If you do a typo correction on a request, if you do not check the box to update the date, this setting will change the bullet." xml:space="preserve">
+    <value>Si usted hace una corrección de errata en una petición, si no marque la caja para actualizar la fecha, este valor va a cambiar la bala.</value>
+  </data>
+  <data name="If you do not see your time zone listed, just &lt;a href=\&quot;mailto:daniel@djs-consulting.com?subject={0}%20{1}\&quot;&gt;contact Daniel&lt;/a&gt; and tell him what time zone you need." xml:space="preserve">
+    <value>Si no puede ver la zona horaria en la lista, ponte en &lt;a href="mailto:daniel@djs-consulting.com?subject={1}%20por%20{0}"&gt;contacto con Daniel&lt;/a&gt; y decirle lo que la zona horaria que usted necesita.</value>
+  </data>
+  <data name="If you select “{0}” but do not enter a password, the list remains private, which is also the default value." xml:space="preserve">
+    <value>Si selecciona "{0}" pero no introduce una contraseña, la lista sigue siendo privado, que también es el valor predeterminado.</value>
+  </data>
+  <data name="If you would prefer to have the list sorted by requestor or subject rather than by date, select “{0}” instead." xml:space="preserve">
+    <value>Si prefiere tener la lista ordenada por el solicitante o el sujeto en vez de por fecha, seleccione “{0}” en su lugar.</value>
+  </data>
+  <data name="If your group is comprised mostly of people who prefer large print, the following settings will make your list look like the typical large-print publication:" xml:space="preserve">
+    <value>Si el grupo está compuesta en su mayoría de la gente que prefiere letras grandes, los siguientes ajustes harán que su lista de parecerse a la típica la publicación “Letra Grande”:</value>
+  </data>
+  <data name="It is generally best to stick with the fonts that come with Windows - fonts like “Arial”, “Times New Roman”, “Tahoma”, and “Comic Sans MS”." xml:space="preserve">
+    <value>Generalmente es mejor quedarse con las fuentes que vienen con Windows - Fuentes como “Arial”, “Times New Roman”, “Tahoma”, y “Comic Sans MS”.</value>
+  </data>
+  <data name="Note that the categories “{0}” and “{1}” never expire automatically." xml:space="preserve">
+    <value>Tenga en cuenta que las categorías “{0}” y “{1}” no expirará automáticamente.</value>
+  </data>
+  <data name="Password-protected lists allow group members to log in and view the current request list online, using the “{0}” link and providing this password." xml:space="preserve">
+    <value>Protegidos con contraseña listas permiten miembros del grupo iniciar sesión y ver la lista de peticiones actual en el sito, utilizando el "{0}" enlace y proporcionar la contraseña.</value>
+  </data>
+  <data name="Public lists are available without logging in, and private lists are only available online to administrators (though the list can still be sent via e-mail by an administrator)." xml:space="preserve">
+    <value>Las listas públicas están disponibles sin iniciar sesión, y listas privadas sólo están disponibles en línea a los administradores (aunque la lista todavía puede ser enviado por correo electrónico por el administrador).</value>
+  </data>
+  <data name="Requests that have been updated within this many days are identified by a hollow circle for their bullet, as opposed to a filled circle for other requests." xml:space="preserve">
+    <value>Peticiones que han sido actualizadas dentro de esta cantidad de días se identifican por un círculo hueco para su bala, en oposición a un círculo relleno para otras peticiones.</value>
+  </data>
+  <data name="Requests that have not been updated in this many weeks are identified by an italic font on the “{0}” page, to remind you to seek updates on these requests so that your prayers can stay relevant and current." xml:space="preserve">
+    <value>Peticiones que no han sido actualizados en esta semana muchos se identifican con un tipo de letra cursiva en la página “{0}”, para recordarle que debe buscar novedades en estas peticiones para que vuestras oraciones pueden permanecer relevante y actual.</value>
+  </data>
+  <data name="The background color cannot be changed." xml:space="preserve">
+    <value>El color de fondo no puede ser cambiado.</value>
+  </data>
+  <data name="The default for the heading is 16pt, and the default for the text is 12pt." xml:space="preserve">
+    <value>El valor predeterminado para el título es 16 puntos, y el valor por defecto para el texto es 12 puntos.</value>
+  </data>
+  <data name="The default name is “PrayerTracker”, and the default e-mail address is “prayer@djs-consulting.com”." xml:space="preserve">
+    <value>El nombre predeterminado es “PrayerTracker”, y el valor predeterminado dirección de correo electrónico es “prayer@djs-consulting.com”.</value>
+  </data>
+  <data name="The group's request list can be either public, private, or password-protected." xml:space="preserve">
+    <value>La lista de peticiones del grupo puede ser pública, privada o protegida por contraseña.</value>
+  </data>
+  <data name="The setting on this page is the group default; you can select a format for each recipient on the “{0}” page." xml:space="preserve">
+    <value>La configuración en esta página es el valor predeterminado del grupo, se puede seleccionar un formato para cada destinatario de la página “{0}”.</value>
+  </data>
+  <data name="The {0} default is HTML, which sends the list just as you see it online." xml:space="preserve">
+    <value>El valor predeterminado de {0} es HTML, el cual envía la lista al igual que usted lo ve en el sitio.</value>
+  </data>
+  <data name="There is a link on the bottom of the page to a color list with more names and their RGB values, if you're really feeling artistic." xml:space="preserve">
+    <value>Hay un enlace en la parte inferior de la página para una lista de colores con más nombres y sus valores RGB, si realmente estás sintiendo artística.</value>
+  </data>
+  <data name="This is a comma-separated list of fonts that will be used for your request list." xml:space="preserve">
+    <value>Esta es una lista separada por comas de fuentes que se utilizarán para su lista de peticiones.</value>
+  </data>
+  <data name="This is the default e-mail format for your group." xml:space="preserve">
+    <value>Este es el valor predeterminado formato de correo electrónico para su grupo.</value>
+  </data>
+  <data name="This is the point size to use for each." xml:space="preserve">
+    <value>Este es el tamaño de punto a utilizar para cada uno.</value>
+  </data>
+  <data name="This is the time zone that you would like to use for your group." xml:space="preserve">
+    <value>Esta es la zona horaria que desea utilizar para su clase.</value>
+  </data>
+  <data name="This page allows you to change how your prayer request list looks and behaves." xml:space="preserve">
+    <value>Esta página le permite cambiar la forma en que su lista de peticiones de la oración se ve y se comporta.</value>
+  </data>
+  <data name="This will work, but any bounced e-mails and out-of-office replies will be sent to that address (which is not even a real address)." xml:space="preserve">
+    <value>Esto funciona, pero los mensajes devueltos, y las respuestas de fuera de la oficina serán enviados a esa dirección (que no es ni siquiera una dirección real).</value>
+  </data>
+  <data name="When a regular request goes this many days without being updated, it expires and no longer appears on the request list." xml:space="preserve">
+    <value>Cuando una petición regular va esta cantidad de días sin actualizar, caduca y ya no aparece en la lista de peticiones.</value>
+  </data>
+  <data name="You can customize the colors that are used for the headings and lines in your request list." xml:space="preserve">
+    <value>Usted puede personalizar los colores que se utilizan para las partidas y líneas en su lista de peticiones.</value>
+  </data>
+  <data name="You can select one of the 16 named colors in the drop down lists, or you can “mix your own” using red, green, and blue (RGB) values between 0 and 255." xml:space="preserve">
+    <value>Puede seleccionar uno de los 16 colores con nombre en las listas desplegables, o puede “mezclar su propia” en colores rojo, verde y azul (RGB) valores entre 0 y 255.</value>
+  </data>
+  <data name="You should also end the font list with either “serif” or “sans-serif”, which will use the browser's default serif (like “Times New Roman”) or sans-serif (like “Arial”) font." xml:space="preserve">
+    <value>También debe poner fin a la lista de fuentes, ya sea con “serif” o el “sans-serif”, que utilizará el fuente serif predeterminado (como “Times New Roman”) o el fuente sans-serif predeterminado (como “Arial”).</value>
+  </data>
+  <data name="{0} must put an name and e-mail address in the “from” position of each e-mail it sends." xml:space="preserve">
+    <value>{0} debe poner el nombre y la dirección de correo electrónico en el “de” posición de cada correo electrónico que envía.</value>
+  </data>
+</root>

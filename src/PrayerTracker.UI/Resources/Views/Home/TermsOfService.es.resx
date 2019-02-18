@@ -1,0 +1,168 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="(as of May 24, 2018)" xml:space="preserve">
+    <value>(a partir del 24 de mayo de 2018)</value>
+  </data>
+  <data name="Acceptance of Terms" xml:space="preserve">
+    <value>Aceptación de los Términos</value>
+  </data>
+  <data name="Additionally, the date at the top of this page will be updated." xml:space="preserve">
+    <value>Además, se actualizará la fecha en la parte superior de esta página.</value>
+  </data>
+  <data name="By accessing this web site, you are agreeing to be bound by these Terms and Conditions, and that you are responsible to ensure that your use of this site complies with all applicable laws." xml:space="preserve">
+    <value>Al acceder a este sitio web, usted acepta estar sujeto a estos Términos y condiciones, y que es responsable de garantizar que su uso de este sitio cumpla con todas las leyes aplicables.</value>
+  </data>
+  <data name="Description of Service and Registration" xml:space="preserve">
+    <value>Descripción del Servicio y Registro</value>
+  </data>
+  <data name="Liability" xml:space="preserve">
+    <value>Responsabilidad</value>
+  </data>
+  <data name="Registration is accomplished via e-mail to Daniel Summers (daniel at bitbadger dot solutions, substituting punctuation)." xml:space="preserve">
+    <value>El registro se realiza por correo electrónico a Daniel Summers (daniel en bitbadger dot solutions, sustituyendo la puntuación).</value>
+  </data>
+  <data name="See our {0} for details on the personal (user) information we maintain." xml:space="preserve">
+    <value>Vea nuestro {0} para obtener detalles sobre la información personal (usuario) que mantenemos.</value>
+  </data>
+  <data name="The service and its developers may not be held liable for any damages that may arise through the use of this service." xml:space="preserve">
+    <value>El servicio y sus desarrolladores no pueden ser considerados responsables de los daños que puedan surgir a través del uso de este servicio.</value>
+  </data>
+  <data name="These terms and conditions may be updated at any time." xml:space="preserve">
+    <value>Estos términos y condiciones pueden actualizarse en cualquier momento.</value>
+  </data>
+  <data name="This service is provided “as is”, and no warranty (express or implied) exists." xml:space="preserve">
+    <value>Este servicio se proporciona "tal cual", y no existe ninguna garantía (expresa o implícita).</value>
+  </data>
+  <data name="Updates to Terms" xml:space="preserve">
+    <value>Actualizaciones a los Términos</value>
+  </data>
+  <data name="When these terms are updated, users will be notified by a system-generated announcement." xml:space="preserve">
+    <value>Cuando se actualicen estos términos, los usuarios recibirán una notificación mediante un anuncio generado por el sistema.</value>
+  </data>
+  <data name="You may also wish to review our {0} to learn how we handle your data." xml:space="preserve">
+    <value>También puede consultar nuestro {0} para conocer cómo manejamos sus datos.</value>
+  </data>
+  <data name="Your continued use of this site implies your acceptance of these terms." xml:space="preserve">
+    <value>Su uso continuo de este sitio implica su aceptación de estos términos.</value>
+  </data>
+  <data name="{0} is a service that allows individuals to enter and amend prayer requests on behalf of organizations." xml:space="preserve">
+    <value>{0} es un servicio que permite a las personas ingresar y modificar las solicitudes de oración en nombre de las organizaciones.</value>
+  </data>
+</root>
