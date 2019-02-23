@@ -17,7 +17,7 @@ let edit (m : EditRequest) today ctx vi =
   let pageTitle = match m.isNew () with true -> "Add a New Request" | false -> "Edit Request"
   [ form [ _action "/prayer-request/save"; _method "post"; _class "pt-center-columns" ] [
       csrfToken ctx
-      input [ _type "hidden"; _name "requestId"; _value (m.requestId.ToString "N") ]
+      input [ _type "hidden"; _name "requestId"; _value (flatGuid m.requestId) ]
       div [ _class "pt-field-row" ] [
         yield div [ _class "pt-field" ] [
           label [ _for "requestType" ] [ encLocText s.["Request Type"] ]
@@ -139,7 +139,7 @@ let lists (grps : SmallGroup list) vi =
             ]
           grps
           |> List.map (fun grp ->
-              let grpId = grp.smallGroupId.ToString "N"
+              let grpId = flatGuid grp.smallGroupId
               tr [] [
                 match grp.preferences.isPublic with
                 | true ->
@@ -175,7 +175,7 @@ let maintain (reqs : PrayerRequest seq) (grp : SmallGroup) onlyActive (ctx : Htt
   let requests =
     reqs
     |> Seq.map (fun req ->
-        let reqId     = req.prayerRequestId.ToString "N"
+        let reqId     = flatGuid req.prayerRequestId
         let reqText   = Utils.htmlToPlainText req.text
         let delAction = sprintf "/prayer-request/%s/delete" reqId
         let delPrompt = s.["Are you want to delete this prayer request?  This action cannot be undone.\\n(If the prayer request has been answered, or an event has passed, consider inactivating it instead.)"].Value

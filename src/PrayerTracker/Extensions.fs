@@ -2,6 +2,7 @@
 module PrayerTracker.Extensions
 
 open Microsoft.AspNetCore.Http
+open Microsoft.FSharpLu
 open Newtonsoft.Json
 open PrayerTracker.Entities
 open PrayerTracker.ViewModels
@@ -19,14 +20,14 @@ type ISession with
     | v -> JsonConvert.DeserializeObject<'T> v
 
   member this.GetSmallGroup () =
-    this.GetObject<SmallGroup> Key.Session.currentGroup |> optRec
+    this.GetObject<SmallGroup> Key.Session.currentGroup |> Option.fromObject
   member this.SetSmallGroup (group : SmallGroup option) =
     match group with
     | Some g -> this.SetObject Key.Session.currentGroup g
     | None -> this.Remove Key.Session.currentGroup
 
   member this.GetUser () =
-    this.GetObject<User> Key.Session.currentUser |> optRec
+    this.GetObject<User> Key.Session.currentUser |> Option.fromObject
   member this.SetUser (user: User option) =
     match user with
     | Some u -> this.SetObject Key.Session.currentUser u

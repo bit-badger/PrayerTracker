@@ -9,6 +9,7 @@ open PrayerTracker
 open PrayerTracker.Cookies
 open PrayerTracker.Entities
 open PrayerTracker.ViewModels
+open PrayerTracker.Views.CommonFunctions
 open System
 open System.Threading.Tasks
 
@@ -133,7 +134,7 @@ let logOn (groupId : SmallGroupId option) : HttpHandler =
     let startTicks = DateTime.Now.Ticks
     task {
       let! grps  = ctx.dbContext().ProtectedGroups ()
-      let  grpId = match groupId with Some gid -> gid.ToString "N" |  None -> ""
+      let  grpId = match groupId with Some gid -> flatGuid gid |  None -> ""
       return!
         { viewInfo ctx startTicks with helpLink = Help.logOn }
         |> Views.SmallGroup.logOn grps grpId ctx
@@ -162,7 +163,7 @@ let logOnSubmit : HttpHandler =
             return! redirectTo false "/prayer-requests/view" next ctx
         | None ->
             addError ctx s.["Password incorrect - login unsuccessful"]
-            return! redirectTo false (sprintf "/small-group/log-on/%s" (m.smallGroupId.ToString "N")) next ctx
+            return! redirectTo false (sprintf "/small-group/log-on/%s" (flatGuid m.smallGroupId)) next ctx
       | Error e -> return! bindError e next ctx
       }
 

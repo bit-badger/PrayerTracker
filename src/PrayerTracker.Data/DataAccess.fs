@@ -3,14 +3,10 @@ module PrayerTracker.DataAccess
 
 open FSharp.Control.Tasks.ContextInsensitive
 open Microsoft.EntityFrameworkCore
+open Microsoft.FSharpLu
 open PrayerTracker.Entities
 open System.Collections.Generic
 open System.Linq
-
-/// EF can return null for record types with the CLIMutable attribute; this converts a possibly-null record type to an
-/// option
-let optRec<'T> (r : 'T) =
-  match box r with null -> None | _ -> Some r
 
 type AppDbContext with
   
@@ -34,7 +30,7 @@ type AppDbContext with
   member this.TryChurchById cId =
     task {
       let! church = this.Churches.AsNoTracking().FirstOrDefaultAsync (fun c -> c.churchId = cId)
-      return optRec church
+      return Option.fromObject church
       }
       
   /// Find all churches
@@ -50,7 +46,7 @@ type AppDbContext with
   member this.TryMemberById mId =
     task {
       let! mbr = this.Members.AsNoTracking().FirstOrDefaultAsync (fun m -> m.memberId = mId)
-      return optRec mbr
+      return Option.fromObject mbr
       }
 
   /// Find all members for a small group
@@ -74,7 +70,7 @@ type AppDbContext with
   member this.TryRequestById reqId =
     task {
       let! req = this.PrayerRequests.AsNoTracking().FirstOrDefaultAsync (fun pr -> pr.prayerRequestId = reqId)
-      return optRec req
+      return Option.fromObject req
       }
 
   /// Get all (or active) requests for a small group as of now or the specified date
@@ -121,7 +117,7 @@ type AppDbContext with
         this.SmallGroups.AsNoTracking()
           .Include(fun sg -> sg.preferences)
           .FirstOrDefaultAsync (fun sg -> sg.smallGroupId = gId)
-      return optRec grp
+      return Option.fromObject grp
       }
 
   /// Get small groups that are public or password protected
@@ -176,7 +172,7 @@ type AppDbContext with
           .ToListAsync ()
       return grps
         |> Seq.map (fun grp -> grp.smallGroupId.ToString "N", sprintf "%s | %s" grp.church.name grp.name)
-        |> Map.ofSeq
+        |> List.ofSeq
       }
 
   /// Log on a small group
@@ -213,7 +209,7 @@ type AppDbContext with
   member this.TryTimeZoneById tzId =
     task {
       let! tz = this.TimeZones.FirstOrDefaultAsync (fun t -> t.timeZoneId = tzId)
-      return optRec tz
+      return Option.fromObject tz
       }
 
   /// Get all time zones
@@ -229,7 +225,7 @@ type AppDbContext with
   member this.TryUserById uId =
     task {
       let! user = this.Users.AsNoTracking().FirstOrDefaultAsync (fun u -> u.userId = uId)
-      return optRec user
+      return Option.fromObject user
       }
 
   /// Find a user by its e-mail address and authorized small group
@@ -239,14 +235,14 @@ type AppDbContext with
         this.Users.AsNoTracking().FirstOrDefaultAsync (fun u ->
             u.emailAddress = email
             && u.smallGroups.Any (fun xref -> xref.smallGroupId = gId))
-      return optRec user
+      return Option.fromObject user
       }
 
   /// Find a user by its Id (tracked entity), eagerly loading the user's groups
   member this.TryUserByIdWithGroups uId =
     task {
       let! user = this.Users.Include(fun u -> u.smallGroups).FirstOrDefaultAsync (fun u -> u.userId = uId)
-      return optRec user
+      return Option.fromObject user
       }
 
   /// Get a list of all users
@@ -274,7 +270,7 @@ type AppDbContext with
           u.emailAddress = email
           && u.passwordHash = pwHash
           && u.smallGroups.Any (fun xref -> xref.smallGroupId = gId))
-      return optRec user
+      return Option.fromObject user
       }
 
   /// Find a user based on credentials stored in a cookie

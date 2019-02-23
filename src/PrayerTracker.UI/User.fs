@@ -5,12 +5,12 @@ open PrayerTracker.Entities
 open PrayerTracker.ViewModels
 
 /// View for the group assignment page
-let assignGroups m (groups : Map<string, string>) (curGroups : string list) ctx vi =
+let assignGroups m groups curGroups ctx vi =
   let s         = I18N.localizer.Force ()
   let pageTitle = sprintf "%s • %A" m.userName s.["Assign Groups"]
   form [ _action "/user/small-groups/save"; _method "post"; _class "pt-center-columns" ] [
     csrfToken ctx
-    input [ _type "hidden"; _name "userId"; _value (m.userId.ToString "N") ]
+    input [ _type "hidden"; _name "userId"; _value (flatGuid m.userId) ]
     input [ _type "hidden"; _name "userName"; _value m.userName ]
     table [ _class "pt-table" ] [
       thead [] [
@@ -20,19 +20,18 @@ let assignGroups m (groups : Map<string, string>) (curGroups : string list) ctx 
           ]
         ]
       groups
-      |> Seq.map (fun grp ->
-          let inputId = sprintf "id-%s" grp.Key
+      |> List.map (fun (grpId, grpName) ->
+          let inputId = sprintf "id-%s" grpId
           tr [] [
             td [] [
               input [ yield _type "checkbox"
                       yield _name "smallGroups"
                       yield _id inputId
-                      yield _value grp.Key
-                      match curGroups |> List.contains grp.Key with true -> yield _checked | false -> () ]
+                      yield _value grpId
+                      match curGroups |> List.contains grpId with true -> yield _checked | false -> () ]
               ]
-            td [] [ label [ _for inputId ] [ encodedText grp.Value ] ]
+            td [] [ label [ _for inputId ] [ encodedText grpName ] ]
             ])
-      |> List.ofSeq
       |> tbody []
       ]
     div [ _class "pt-field-row" ] [ submit [] "save" s.["Save Group Assignments"] ]
@@ -89,7 +88,7 @@ let edit (m : EditUser) ctx vi =
       style [ _scoped ]
         [ rawText "#firstName, #lastName, #password, #passwordConfirm { width: 10rem; } #emailAddress { width: 20rem; } " ]
       csrfToken ctx
-      input [ _type "hidden"; _name "userId"; _value (m.userId.ToString "N") ]
+      input [ _type "hidden"; _name "userId"; _value (flatGuid m.userId) ]
       div [ _class "pt-field-row" ] [
         div [ _class "pt-field" ] [
           label [ _for "firstName" ] [ encLocText s.["First Name"] ]
@@ -131,7 +130,7 @@ let edit (m : EditUser) ctx vi =
 
 
 /// View for the user log on page
-let logOn (m : UserLogOn) (groups : Map<string, string>) ctx vi =
+let logOn (m : UserLogOn) groups ctx vi =
   let s = I18N.localizer.Force ()
   form [ _action "/user/log-on"; _method "post"; _class "pt-center-columns" ] [
     style [ _scoped ] [ rawText "#emailAddress { width: 20rem; }" ]
@@ -153,7 +152,7 @@ let logOn (m : UserLogOn) (groups : Map<string, string>) ctx vi =
         label [ _for "smallGroupId" ] [ encLocText s.["Group"] ]
         seq {
           yield "", selectDefault s.["Select Group"].Value
-          yield! groups |> Seq.sortBy (fun x -> x.Value) |> Seq.map (fun x -> x.Key, x.Value)
+          yield! groups
           }
         |> selectList "smallGroupId" "" [ _required ]
                
@@ -193,7 +192,7 @@ let maintain (users : User list) ctx vi =
         ]
       users
       |> List.map (fun user ->
-          let userId    = user.userId.ToString "N"
+          let userId    = flatGuid user.userId
           let delAction = sprintf "/user/%s/delete" userId
           let delPrompt = s.["Are you want to delete this {0}?  This action cannot be undone.",
                               (sprintf "%s (%s)" (s.["User"].Value.ToLower()) user.fullName)].Value

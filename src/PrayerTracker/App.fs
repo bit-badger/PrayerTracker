@@ -161,10 +161,8 @@ module Configure =
     let log = app.ApplicationServices.GetRequiredService<ILoggerFactory>()
     (match env.IsDevelopment () with
      | true ->
-        log.AddConsole () |> ignore
         app.UseDeveloperExceptionPage ()
      | false ->
-        log.AddConsole LogLevel.Warning |> ignore
         try
           use scope = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>().CreateScope ()
           scope.ServiceProvider.GetService<AppDbContext>().Database.Migrate ()
@@ -182,12 +180,10 @@ module Configure =
 /// The web application
 module App =
   
-  open System
   open System.IO
 
-  let exitCode = 0
-
-  let CreateWebHostBuilder _ =
+  [<EntryPoint>]
+  let main _ =
     let contentRoot = Directory.GetCurrentDirectory ()
     WebHostBuilder()
       .UseContentRoot(contentRoot)
@@ -196,10 +192,7 @@ module App =
       .UseWebRoot(Path.Combine (contentRoot, "wwwroot"))
       .ConfigureServices(Configure.services)
       .ConfigureLogging(Configure.logging)
-      .Configure(Action<IApplicationBuilder> Configure.app)
-
-  [<EntryPoint>]
-  let main args =
-    CreateWebHostBuilder(args).Build().Run()
-        
-    exitCode
+      .Configure(System.Action<IApplicationBuilder> Configure.app)
+      .Build()
+      .Run ()
+    0

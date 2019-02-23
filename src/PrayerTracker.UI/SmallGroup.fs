@@ -20,7 +20,7 @@ let announcement isAdmin ctx vi =
           ]
         ]
       match isAdmin with
-      | true -> 
+      | true ->
           yield div [ _class "pt-field-row" ] [
             div [ _class "pt-field" ] [
               label [] [ encLocText s.["Send Announcement to"]; rawText ":" ]
@@ -77,7 +77,7 @@ let edit (m : EditSmallGroup) (churches : Church list) ctx vi =
   let pageTitle = match m.isNew () with true -> "Add a New Group" | false -> "Edit Group"
   form [ _action "/small-group/save"; _method "post"; _class "pt-center-columns" ] [
     csrfToken ctx
-    input [ _type "hidden"; _name "smallGroupId"; _value (m.smallGroupId.ToString "N") ]
+    input [ _type "hidden"; _name "smallGroupId"; _value (flatGuid m.smallGroupId) ]
     div [ _class "pt-field-row" ] [
       div [ _class "pt-field" ] [
         label [ _for "name" ] [ encLocText s.["Group Name"] ]
@@ -89,9 +89,9 @@ let edit (m : EditSmallGroup) (churches : Church list) ctx vi =
         label [ _for "churchId" ] [ encLocText s.["Church"] ]
         seq {
           yield  "", selectDefault s.["Select Church"].Value
-          yield! churches |> List.map (fun c -> c.churchId.ToString "N", c.name)
+          yield! churches |> List.map (fun c -> flatGuid c.churchId, c.name)
           }
-        |> selectList "churchId" (m.churchId.ToString "N") [ _required ] 
+        |> selectList "churchId" (flatGuid m.churchId) [ _required ] 
         ]
       ]
     div [ _class "pt-field-row" ] [ submit [] "save" s.["Save Group"] ]
@@ -108,7 +108,7 @@ let editMember (m : EditMember) (typs : (string * LocalizedString) seq) ctx vi =
   form [ _action "/small-group/member/save"; _method "post"; _class "pt-center-columns" ] [
     style [ _scoped ] [ rawText "#memberName { width: 15rem; } #emailAddress { width: 20rem; }" ]
     csrfToken ctx
-    input [ _type "hidden"; _name "memberId"; _value (m.memberId.ToString "N") ]
+    input [ _type "hidden"; _name "memberId"; _value (flatGuid m.memberId) ]
     div [ _class "pt-field-row" ] [
       div [ _class "pt-field" ] [
         label [ _for "memberName" ] [ encLocText s.["Member Name"] ]
@@ -148,7 +148,7 @@ let logOn (grps : SmallGroup list) grpId ctx vi =
             | _ ->
                 yield "", selectDefault s.["Select Group"].Value
                 yield! grps
-                  |> List.map (fun grp -> grp.smallGroupId.ToString "N", sprintf "%s | %s" grp.church.name grp.name)
+                  |> List.map (fun grp -> flatGuid grp.smallGroupId, sprintf "%s | %s" grp.church.name grp.name)
             }
           |> selectList "smallGroupId" grpId [ _required ]
           ]
@@ -197,7 +197,7 @@ let maintain (grps : SmallGroup list) ctx vi =
         ]
       grps
       |> List.map (fun g ->
-          let grpId     = g.smallGroupId.ToString "N"
+          let grpId     = flatGuid g.smallGroupId
           let delAction = sprintf "/small-group/%s/delete" grpId
           let delPrompt = s.["Are you want to delete this {0}?  This action cannot be undone.",
                                sprintf "%s (%s)" (s.["Small Group"].Value.ToLower ()) g.name].Value
@@ -243,7 +243,7 @@ let members (mbrs : Member list) (emailTyps : Map<string, LocalizedString>) ctx 
         ]
       mbrs
       |> List.map (fun mbr ->
-          let mbrId = mbr.memberId.ToString "N"
+          let mbrId     = flatGuid mbr.memberId
           let delAction = sprintf "/small-group/member/%s/delete" mbrId
           let delPrompt = s.["Are you want to delete this {0} ({1})?  This action cannot be undone.",
                               s.["group member"], mbr.memberName].Value

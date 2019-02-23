@@ -3,8 +3,6 @@
 open Giraffe.GiraffeViewEngine
 open PrayerTracker.Entities
 open PrayerTracker.ViewModels
-open System
-open System.Collections.Generic
 
 /// View for the church edit page
 let edit (m : EditChurch) ctx vi =
@@ -14,7 +12,7 @@ let edit (m : EditChurch) ctx vi =
       style [ _scoped ]
         [ rawText "#name { width: 20rem; } #city { width: 10rem; } #st { width: 3rem; } #interfaceAddress { width: 30rem; }" ]
       csrfToken ctx
-      input [ _type "hidden"; _name "churchId"; _value (m.churchId.ToString "N") ]
+      input [ _type "hidden"; _name "churchId"; _value (flatGuid m.churchId) ]
       div [ _class "pt-field-row" ] [
         div [ _class "pt-field" ] [
           label [ _for "name" ] [ encLocText s.["Church Name"] ]
@@ -79,7 +77,7 @@ let maintain (churches : Church list) (stats : Map<string, ChurchStats>) ctx vi 
         ]
       churches
       |> List.map (fun ch ->
-          let chId = ch.churchId.ToString "N"
+          let chId      = flatGuid ch.churchId
           let delAction = sprintf "/church/%s/delete" chId
           let delPrompt = s.["Are you want to delete this {0}?  This action cannot be undone.",
                               sprintf "%s (%s)" (s.["Church"].Value.ToLower ()) ch.name]

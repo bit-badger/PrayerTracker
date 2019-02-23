@@ -5,6 +5,7 @@ open Giraffe
 open PrayerTracker
 open PrayerTracker.Entities
 open PrayerTracker.ViewModels
+open PrayerTracker.Views.CommonFunctions
 open System
 open System.Threading.Tasks
 
@@ -14,7 +15,7 @@ let private findStats (db : AppDbContext) churchId =
     let! grps = db.CountGroupsByChurch   churchId
     let! reqs = db.CountRequestsByChurch churchId
     let! usrs = db.CountUsersByChurch    churchId
-    return (churchId.ToString "N"), { smallGroups = grps; prayerRequests = reqs; users = usrs }
+    return flatGuid churchId, { smallGroups = grps; prayerRequests = reqs; users = usrs }
     }
 
 

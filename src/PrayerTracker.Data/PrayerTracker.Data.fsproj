@@ -16,13 +16,14 @@
 
   <ItemGroup>
     <PackageReference Include="FSharp.EFCore.OptionConverter" Version="1.0.0" />
-    <PackageReference Include="NodaTime" Version="2.4.0" />
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="2.1.2" />
+    <PackageReference Include="Microsoft.FSharpLu" Version="0.10.29" />
+    <PackageReference Include="NodaTime" Version="2.4.4" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="2.2.0" />
     <PackageReference Include="TaskBuilder.fs" Version="2.1.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Update="FSharp.Core" Version="4.5.2" />
+    <PackageReference Update="FSharp.Core" Version="4.6.2" />
   </ItemGroup>
 
 </Project>

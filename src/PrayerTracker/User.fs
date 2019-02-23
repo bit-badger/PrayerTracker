@@ -8,6 +8,7 @@ open PrayerTracker
 open PrayerTracker.Cookies
 open PrayerTracker.Entities
 open PrayerTracker.ViewModels
+open PrayerTracker.Views.CommonFunctions
 open System
 open System.Collections.Generic
 open System.Net
@@ -270,7 +271,7 @@ let save : HttpHandler =
                         |> Some
                     }
                   |> addUserMessage ctx
-                  return! redirectTo false (sprintf "/user/%s/small-groups" (u.userId.ToString "N")) next ctx
+                  return! redirectTo false (sprintf "/user/%s/small-groups" (flatGuid u.userId)) next ctx
               | false ->
                   addInfo ctx s.["Successfully {0} user", s.["Updated"].Value.ToLower ()]
                   return! redirectTo false "/users" next ctx
@@ -292,7 +293,7 @@ let saveGroups : HttpHandler =
           match Seq.length m.smallGroups with
           | 0 ->
               addError ctx s.["You must select at least one group to assign"]
-              return! redirectTo false (sprintf "/user/%s/small-groups" (m.userId.ToString "N")) next ctx
+              return! redirectTo false (sprintf "/user/%s/small-groups" (flatGuid m.userId)) next ctx
           | _ ->
               let  db   = ctx.dbContext ()
               let! user = db.TryUserByIdWithGroups m.userId
@@ -330,12 +331,7 @@ let smallGroups userId : HttpHandler =
       match user with
       | Some u ->
           let! grps      = db.GroupList ()
-          let  curGroups =
-            seq {
-              for g in u.smallGroups do
-                yield g.smallGroupId.ToString "N"
-              }
-            |> List.ofSeq
+          let  curGroups = u.smallGroups |> Seq.map (fun g -> flatGuid g.smallGroupId) |> List.ofSeq
           return! 
             viewInfo ctx startTicks
             |> Views.User.assignGroups (AssignGroups.fromUser u) grps curGroups ctx

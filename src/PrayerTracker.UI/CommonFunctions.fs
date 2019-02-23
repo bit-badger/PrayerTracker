@@ -7,6 +7,7 @@ open Microsoft.AspNetCore.Antiforgery
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Mvc.Localization
 open Microsoft.Extensions.Localization
+open System
 open System.IO
 open System.Text.Encodings.Web
 
@@ -101,8 +102,11 @@ let selectDefault text = sprintf "— %s —" text
 /// Generate a standard submit button with icon and text
 let submit attrs ico text = button (_type "submit" :: attrs) [ icon ico; rawText " &nbsp;"; encLocText text ]
 
+/// Format a GUID with no dashes (used for URLs and forms)
+let flatGuid (x : Guid) = x.ToString "N"
+
 /// An empty GUID string (used for "add" actions)
-let emptyGuid = System.Guid.Empty.ToString "N"
+let emptyGuid = flatGuid Guid.Empty
 
 
 /// blockquote tag
