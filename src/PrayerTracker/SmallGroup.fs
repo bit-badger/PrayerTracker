@@ -24,7 +24,7 @@ let announcement : HttpHandler =
   requireAccess [ User ]
   >=> fun next ctx ->
     let startTicks = DateTime.Now.Ticks
-    { viewInfo ctx startTicks with helpLink = Help.sendAnnouncement; script = [ "ckeditor/ckeditor" ] }
+    { viewInfo ctx startTicks with helpLink = Some Help.sendAnnouncement; script = [ "ckeditor/ckeditor" ] }
     |> Views.SmallGroup.announcement (currentUser ctx).isAdmin ctx
     |> renderHtml next ctx
 
@@ -136,7 +136,7 @@ let logOn (groupId : SmallGroupId option) : HttpHandler =
       let! grps  = ctx.dbContext().ProtectedGroups ()
       let  grpId = match groupId with Some gid -> flatGuid gid |  None -> ""
       return!
-        { viewInfo ctx startTicks with helpLink = Help.logOn }
+        { viewInfo ctx startTicks with helpLink = Some Help.logOn }
         |> Views.SmallGroup.logOn grps grpId ctx
         |> renderHtml next ctx
       }
@@ -194,7 +194,7 @@ let members : HttpHandler =
       let! mbrs = db.AllMembersForSmallGroup grp.smallGroupId
       let  typs = ReferenceList.emailTypeList grp.preferences.defaultEmailType s |> Map.ofSeq
       return!
-        { viewInfo ctx startTicks with helpLink = Help.maintainGroupMembers }
+        { viewInfo ctx startTicks with helpLink = Some Help.maintainGroupMembers }
         |> Views.SmallGroup.members mbrs typs ctx
         |> renderHtml next ctx
       }
@@ -238,7 +238,7 @@ let preferences : HttpHandler =
     task {
       let! tzs = ctx.dbContext().AllTimeZones ()
       return!
-        { viewInfo ctx startTicks with helpLink = Help.groupPreferences }
+        { viewInfo ctx startTicks with helpLink = Some Help.groupPreferences }
         |> Views.SmallGroup.preferences (EditPreferences.fromPreferences (currentGroup ctx).preferences) tzs ctx
         |> renderHtml next ctx
       }

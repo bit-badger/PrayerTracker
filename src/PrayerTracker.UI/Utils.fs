@@ -154,53 +154,26 @@ module RequestVisibility =
   let ``private`` = 3
 
 
-/// A page with verbose user instructions
-type HelpPage =
-  { /// The module to which the help page applies
-    ``module`` : string
-    /// The topic for the help page
-    topic : string
-    /// The text with which this help page is linked (context help is linked with an icon)
-    linkedText : string
-    }
-  with
-    /// A help page that does not exist
-    static member None = { ``module`` = null; topic = null; linkedText = null }
-
-    /// The URL fragment for this page (appended to "/help/" for the full URL)
-    member this.Url = sprintf "%s/%s" this.``module`` this.topic
-
-
 /// Links for help locations
 module Help =
   /// Help link for small group preference edit page
-  let groupPreferences = { ``module`` = "group"; topic = "preferences"; linkedText = "Change Preferences" }
+  let groupPreferences = "small-group/preferences"
   /// Help link for send announcement page
-  let sendAnnouncement = { ``module`` = "group"; topic = "announcement"; linkedText = "Send Announcement" }
+  let sendAnnouncement = "small-group/announcement"
   /// Help link for maintain group members page
-  let maintainGroupMembers = { ``module`` = "group"; topic = "members"; linkedText = "Maintain Group Members" }
+  let maintainGroupMembers = "small-group/members"
   /// Help link for request edit page
-  let editRequest = { ``module`` = "requests"; topic = "edit"; linkedText = "Add / Edit a Request" }
+  let editRequest = "requests/edit"
   /// Help link for maintain requests page
-  let maintainRequests = { ``module`` = "requests"; topic = "maintain"; linkedText = "Maintain Requests" }
+  let maintainRequests = "requests/maintain"
   /// Help link for view request list page
-  let viewRequestList = { ``module`` = "requests"; topic = "view"; linkedText = "View Request List" }
+  let viewRequestList = "requests/view"
   /// Help link for user and class login pages
-  let logOn = { ``module`` = "user"; topic = "logon"; linkedText = "Log On" }
+  let logOn = "user/log-on"
   /// Help link for user password change page
-  let changePassword = { ``module`` = "user"; topic = "password"; linkedText = "Change Your Password" }
-  /// All help pages (the order is the order in which they are displayed on the main help page)
-  let all =
-    [ logOn
-      maintainRequests
-      editRequest
-      groupPreferences
-      maintainGroupMembers
-      viewRequestList
-      sendAnnouncement
-      changePassword
-      ]
-
+  let changePassword = "user/password"
+  /// Create a full link for a help page
+  let fullLink lang url = sprintf "https://docs.prayer.bitbadger.solutions/%s/%s.html" lang url
 
 /// This class serves as a common anchor for resources
 type Common () =

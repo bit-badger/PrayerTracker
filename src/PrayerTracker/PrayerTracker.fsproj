@@ -19,7 +19,6 @@
     <Compile Include="Email.fs" />
     <Compile Include="CommonFunctions.fs" />
     <Compile Include="Church.fs" />
-    <Compile Include="Help.fs" />
     <Compile Include="Home.fs" />
     <Compile Include="PrayerRequest.fs" />
     <Compile Include="SmallGroup.fs" />

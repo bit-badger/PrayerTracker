@@ -66,12 +66,8 @@ module Configure =
           route  "es"       Handlers.Church.maintain
           routef "/%O/edit" Handlers.Church.edit
           ]
-        route "/class/logon" (redirectTo true "/small-group/log-on")
-        routef "/error/%s" Handlers.Home.error
-        subRoute "/help" [
-          route  ""       Handlers.Help.index
-          routef "/%s/%s" Handlers.Help.show
-          ]
+        route  "/class/logon" (redirectTo true "/small-group/log-on")
+        routef "/error/%s"    Handlers.Home.error
         routef "/language/%s" Handlers.Home.language
         subRoute "/legal" [
           route "/privacy-policy"   Handlers.Home.privacyPolicy

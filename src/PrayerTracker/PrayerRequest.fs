@@ -58,7 +58,7 @@ let edit (reqId : PrayerRequestId) : HttpHandler =
       match reqId = Guid.Empty with
       | true ->
           return!
-            { viewInfo ctx startTicks with script = [ "ckeditor/ckeditor" ]; helpLink = Help.editRequest }
+            { viewInfo ctx startTicks with script = [ "ckeditor/ckeditor" ]; helpLink = Some Help.editRequest }
             |> Views.PrayerRequest.edit EditRequest.empty (now.ToString "yyyy-MM-dd") ctx
             |> renderHtml next ctx
       | false ->
@@ -78,7 +78,7 @@ let edit (reqId : PrayerRequestId) : HttpHandler =
                   |> addUserMessage ctx
               | false -> ()
               return!
-                { viewInfo ctx startTicks with script = [ "ckeditor/ckeditor" ]; helpLink = Help.editRequest }
+                { viewInfo ctx startTicks with script = [ "ckeditor/ckeditor" ]; helpLink = Some Help.editRequest }
                 |> Views.PrayerRequest.edit (EditRequest.fromRequest req) "" ctx
                 |> renderHtml next ctx
           | Error e -> return! e next ctx
@@ -199,7 +199,7 @@ let maintain onlyActive : HttpHandler =
     task {
       let reqs = db.AllRequestsForSmallGroup grp (ctx.GetService<IClock> ()) None onlyActive
       return!
-        { viewInfo ctx startTicks with helpLink = Help.maintainRequests }
+        { viewInfo ctx startTicks with helpLink = Some Help.maintainRequests }
         |> Views.PrayerRequest.maintain reqs grp onlyActive ctx
         |> renderHtml next ctx
       }

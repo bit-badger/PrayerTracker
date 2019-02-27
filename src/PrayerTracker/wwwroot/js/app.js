@@ -9,7 +9,7 @@ const PT = {
    * @param {string} url The URL for the help page.
    */
   showHelp(url) {
-    window.open(`/help/${url}`, 'helpWindow', 'height=600px,width=450px,toolbar=0,menubar=0,scrollbars=1')
+    window.open(url, 'helpWindow', 'height=600px,width=450px,toolbar=0,menubar=0,scrollbars=1')
     return false
   },
 

@@ -201,7 +201,7 @@ let logOn : HttpHandler =
           addWarning ctx s.["The page you requested requires authentication; please log on below."]
       | None -> ()
       return!
-        { viewInfo ctx startTicks with helpLink = Help.logOn }
+        { viewInfo ctx startTicks with helpLink = Some Help.logOn }
         |> Views.User.logOn { UserLogOn.empty with redirectUrl = url } groups ctx
         |> renderHtml next ctx
       }
@@ -225,7 +225,7 @@ let maintain : HttpHandler =
 let password : HttpHandler =
   requireAccess [ User ]
   >=> fun next ctx ->
-    { viewInfo ctx DateTime.Now.Ticks with helpLink = Help.changePassword }
+    { viewInfo ctx DateTime.Now.Ticks with helpLink = Some Help.changePassword }
     |> Views.User.changePassword ctx
     |> renderHtml next ctx
 

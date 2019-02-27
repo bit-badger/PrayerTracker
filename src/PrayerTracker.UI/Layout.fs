@@ -5,12 +5,16 @@ open Giraffe.GiraffeViewEngine
 open PrayerTracker
 open PrayerTracker.ViewModels
 open System
+open System.Globalization
   
+
+/// Get the two-character language code for the current request
+let langCode () = match CultureInfo.CurrentCulture.Name.StartsWith "es" with true -> "es" | _ -> "en"
+
+
 /// Navigation items
 module Navigation =
   
-  open System.Globalization
-    
   /// Top navigation bar
   let top m =
     let s = PrayerTracker.Views.I18N.localizer.Force ()
@@ -72,7 +76,11 @@ module Navigation =
                   [ icon "list"; space; encLocText s.["View Request List"] ]
                 ]
       yield li [] [
-        a [ _href "/help"; _aria "label" s.["Help"].Value; _title s.["View Help"].Value ]
+        a [ _href   (sprintf "https://docs.prayer.bitbadger.solutions/%s" <| langCode ())
+            _aria   "label" s.["Help"].Value;
+            _title  s.["View Help"].Value
+            _target "_blank"
+            ]
           [ icon "help"; space; encLocText s.["Help"] ]
         ]
       ]
@@ -113,12 +121,12 @@ module Navigation =
     header [ _id "pt-language" ] [
       div [] [
         yield span [ _class "u" ] [ encLocText s.["Language"]; rawText ": " ]
-        match CultureInfo.CurrentCulture.Name.StartsWith "es" with
-        | true -> 
+        match langCode () with
+        | "es" -> 
             yield encLocText s.["Spanish"]
             yield rawText " &nbsp; &bull; &nbsp; "
             yield a [ _href "/language/en" ] [ encLocText s.["Change to English"] ]
-        | false ->
+        | _ ->
             yield encLocText s.["English"]
             yield rawText " &nbsp; &bull; &nbsp; "
             yield a [ _href "/language/es" ] [ encLocText s.["Cambie a Español"] ]
@@ -145,6 +153,7 @@ module Navigation =
       | None -> []
       |> div []
       ]
+
 
 /// Content layouts
 module Content =
@@ -183,7 +192,7 @@ let private htmlHead m pageTitle =
 let private helpLink link =
   let s = I18N.localizer.Force ()
   sup [] [
-    a [ _href (sprintf "/help/%s" link)
+    a [ _href link
         _title s.["Click for Help on This Page"].Value
         _onclick (sprintf "return PT.showHelp('%s')" link) ] [
       icon "help_outline"
@@ -194,8 +203,8 @@ let private helpLink link =
 let private renderPageTitle m pageTitle =
   h2 [ _id "pt-page-title" ] [
     match m.helpLink with
-    | x when x = HelpPage.None -> ()
-    | _ -> yield helpLink m.helpLink.Url
+    | Some link -> yield  Help.fullLink (langCode ()) link |> helpLink
+    | None -> ()
     yield encLocText pageTitle
     ]
 

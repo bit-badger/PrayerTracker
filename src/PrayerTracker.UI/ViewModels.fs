@@ -83,7 +83,7 @@ type AppViewInfo =
     /// JavaScript files for the page
     script       : string list
     /// The link for help on this page
-    helpLink     : HelpPage
+    helpLink     : string option
     /// Messages to be displayed to the user
     messages     : UserMessage list
     /// The current version of PrayerTracker
@@ -100,7 +100,7 @@ type AppViewInfo =
     static member fresh =
       { style        = []
         script       = []
-        helpLink     = HelpPage.None
+        helpLink     = None
         messages     = []
         version      = ""
         requestStart = DateTime.Now.Ticks

@@ -13,7 +13,6 @@
     <Compile Include="CommonFunctions.fs" />
     <Compile Include="Layout.fs" />
     <Compile Include="Church.fs" />
-    <Compile Include="Help.fs" />
     <Compile Include="Home.fs" />
     <Compile Include="PrayerRequest.fs" />
     <Compile Include="SmallGroup.fs" />
@@ -36,33 +35,6 @@
 
   <ItemGroup>
     <EmbeddedResource Update="Resources\Common.es.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-    </EmbeddedResource>
-    <EmbeddedResource Update="Resources\Views\Help\Group\Announcement.es.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-    </EmbeddedResource>
-    <EmbeddedResource Update="Resources\Views\Help\Group\Members.es.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-    </EmbeddedResource>
-    <EmbeddedResource Update="Resources\Views\Help\Group\Preferences.es.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-    </EmbeddedResource>
-    <EmbeddedResource Update="Resources\Views\Help\Requests\Edit.es.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-    </EmbeddedResource>
-    <EmbeddedResource Update="Resources\Views\Help\Requests\Maintain.es.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-    </EmbeddedResource>
-    <EmbeddedResource Update="Resources\Views\Help\Requests\View.es.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-    </EmbeddedResource>
-    <EmbeddedResource Update="Resources\Views\Help\User\LogOn.es.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-    </EmbeddedResource>
-    <EmbeddedResource Update="Resources\Views\Help\User\Password.es.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-    </EmbeddedResource>
-    <EmbeddedResource Update="Resources\Views\Help\Index.es.resx">
       <Generator>ResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Resources\Views\Home\Error.es.resx">

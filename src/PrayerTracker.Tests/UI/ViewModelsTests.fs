@@ -100,7 +100,7 @@ let appViewInfoTests =
       let vi = AppViewInfo.fresh
       Expect.isEmpty vi.style "There should have been no styles set"
       Expect.isEmpty vi.script "There should have been no scripts set"
-      Expect.equal vi.helpLink.Url HelpPage.None.Url "The help link should have been set to none"
+      Expect.isNone vi.helpLink "The help link should have been set to none"
       Expect.isEmpty vi.messages "There should have been no messages set"
       Expect.equal vi.version "" "The version should have been blank"
       Expect.isGreaterThan vi.requestStart DateTime.MinValue.Ticks "The request start time should have been set"
