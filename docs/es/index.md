@@ -6,7 +6,7 @@ En todo el sistema, verá un icono (un signo de interrogación en un círculo) j
 
 ----
 
-<p class="pt-center-text">**Los Temas de Ayuda**</p>
+<p class="pt-center-text"><strong>Los Temas de Ayuda</strong></p>
 
 [Cambiar las Preferencias](./small-group/preferences.html)
 

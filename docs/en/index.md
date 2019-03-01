@@ -6,7 +6,7 @@ Throughout PrayerTracker, you'll see an icon (a question mark in a circle) next 
 
 ----
 
-<p class="pt-center-text">**Help Topics**</p>
+<p class="pt-center-text"><strong>Help Topics</strong></p>
 
 [Change Preferences](./small-group/preferences.html)
 
