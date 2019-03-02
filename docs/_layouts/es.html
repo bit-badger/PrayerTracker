@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ page.title }} &#xab; Ayuda de SeguidorOración</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://prayer.bitbadger.solutions/css/app.css" rel="stylesheet">
+    <link href="/css/help.css" rel="stylesheet">
+  </head>
+  <body>
+    <header class="pt-title-bar">
+      <section class="pt-title-bar-left"><span class="pt-title-bar-home"><a href="/" title="Home">SeguidorOración</a></span></section>
+      <section class="pt-title-bar-right">Ayuda</section>
+    </header>
+    <div id="pt-body">
+      <header id="pt-language">
+        <div>
+            Lengua: Español &bull;
+          <a href="{{ page.url | replace_first: "/es", "/en" }}">This page in English</a>
+        </div>
+      </header>
+      <h2 id="pt-page-title">{{ page.title }}</h2>
+      <div class="pt-content">
+        {{ content }}
+        {% if page.skip_footer %}
+        {% else %}
+          <div class="pt-close-window">
+            <p class="pt-center-text">
+              <a href="#" title="Haga Clic para Cerrar Esta Ventana" onclick="window.close();return false">
+                <i class="material-icons">cancel</i> Cerrar Esta Ventana
+              </a>
+            </p>
+          </div>
+          <div class="pt-help-index">
+            <p class="pt-center-text">
+              <a href="/es/" title="Índice de ayuda">&#xab; Volver al índice de ayuda</a>
+            </p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </body>
+</html>

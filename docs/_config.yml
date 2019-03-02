@@ -1,5 +1,11 @@
 defaults:
   -
+    scope:
+      path: "en"
     values:
-      layout: "default"
-# theme: jekyll-theme-tactile
+      layout: "en"
+  -
+    scope:
+      path: "es"
+    values:
+      layout: "es"

@@ -1,5 +1,6 @@
 ---
-title: PrayerTracker Help
+title: Help / Ayuda
+layout: home
 ---
 
 ## [English](/en)

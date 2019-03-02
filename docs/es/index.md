@@ -1,5 +1,6 @@
 ---
 title: Ayuda
+skip_footer: true
 ---
 
 En todo el sistema, verá un icono (un signo de interrogación en un círculo) junto al título de cada página. Al hacer clic en esta opción, se abrirá una nueva y pequeña ventana con instrucciones sobre cómo usar esa página. Si está buscando una descripción rápida de SeguidorOración, comience con las entradas "Agregar / Editar una Petición" y "Cambiar las Preferencias".
