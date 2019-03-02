@@ -3,16 +3,39 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ page.title }} | PrayerTracker Help</title>
+    <title>{{ page.title }} &#xab; PrayerTracker Help</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link href="https://prayer.bitbadger.solutions/css/app.css" rel="stylesheet">
-    <link href="https://prayer.bitbadger.solutions/css/help.css" rel="stylesheet">
+    <link href="/css/help.css" rel="stylesheet">
   </head>
   <body>
     <header class="pt-title-bar">
-      <section class="pt-title-bar-left"><span class="pt-title-bar-home"><a href="/" title="Home">PrayerTracker Help</a></span></section>
+      <section class="pt-title-bar-left"><span class="pt-title-bar-home"><a href="/" title="Home">PrayerTracker</a></span></section>
+      <section class="pt-title-bar-right">Help</section>
     </header>
-    <article class="pt-content">
-      {{ content }}
-    </article>
+    <div id="pt-body">
+      <header id="pt-language">
+        <div>
+          Language: English &bull;
+          <a href="{{ page.url | replace_first: "/en", "/es" }}">Esta pagina en español</a>
+        </div>
+      </header>
+      <h2 id="pt-page-title">{{ page.title }}</h2>
+      <div class="pt-content">
+        {{ content }}
+        <div class="pt-close-window">
+          <p class="pt-center-text">
+            <a href="#" title="Click to Close This Window" onclick="window.close();return false">
+              <i class="material-icons">cancel</i> Close Window
+            </a>
+          </p>
+        </div>
+        <div class="pt-help-index">
+          <p class="pt-center-text">
+            <a href="/en/" title="Help Index">&#xab; Back to Help Index</a>
+          </p>
+        </div>
+      </div>
+    </div>
   </body>
 </html>

@@ -1,0 +1,43 @@
+/**
+ * PrayerTracker Help styling
+ */
+.pt-content {
+  background-color: white;
+  padding: 0 .25em;
+}
+.pt-title-bar-home {
+  height: 2rem;
+}
+.pt-title-bar-left {
+  color: white;
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin-left: .5rem;
+}
+.pt-title-bar-right {
+  color: white;
+  color: rgba(255, 255, 255, .75);
+  font-size: 1.1rem;
+  font-variant: small-caps;
+  margin-right: 1rem;
+  align-self: center;
+}
+h2 {
+  margin-top: 0;
+  padding-left: .5rem;
+  border-bottom: solid 1px #444;
+}
+.pt-close-window, .pt-help-index {
+  font-size: 1.25rem;
+}
+.pt-help-index {
+  display: none;
+}
+@media screen and (min-width:451px) {
+  .pt-close-window {
+    display: none;
+  }
+  .pt-help-index {
+    display: block;
+  }
+}
