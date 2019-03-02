@@ -292,33 +292,3 @@ let bare pageTitle content =
       content
       ]
     ]
-
-/// Help layout
-let help pageTitle content =
-  let s   = I18N.localizer.Force ()
-  let ttl = s.[pageTitle]
-  html [ _lang "" ] [
-    head [] [
-      yield meta [ _charset "UTF-8" ]
-      yield title [] [ encLocText ttl; titleSep; encLocText s.["Help"]; titleSep; encLocText s.["PrayerTracker"] ]
-      yield! commonHead
-      yield link [ _rel "stylesheet"; _href "/css/help.css" ]
-      ]
-    body [] [
-      header [ _class "pt-title-bar" ] [
-        section [ _class "pt-title-bar-left" ] [ encLocText s.["PrayerTracker"] ]
-        section [ _class "pt-title-bar-right" ] [ encLocText s.["Help"] ]
-        ]
-      div [ _class "pt-content" ] [
-        yield h2 [] [ encLocText ttl ]
-        yield! content
-        yield p [ _class "pt-center-text" ] [
-          a [ _href "#"
-              _title s.["Click to Close This Window"].Value
-              _onclick "window.close();return false" ] [
-            tag "big" [] [ icon "cancel"; space; encLocText s.["Close Window"] ]
-            ]
-          ]
-        ]
-      ]
-    ]

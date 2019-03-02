@@ -120,9 +120,6 @@
   <data name="Actions" xml:space="preserve">
     <value>Acciones</value>
   </data>
-  <data name="Add / Edit a Request" xml:space="preserve">
-    <value>Agregar / Editar una Petición</value>
-  </data>
   <data name="Add a New Church" xml:space="preserve">
     <value>Agregar una Iglesia Nueva</value>
   </data>
@@ -176,15 +173,6 @@
   </data>
   <data name="Churches" xml:space="preserve">
     <value>Iglesias</value>
-  </data>
-  <data name="Click for Help on This Page" xml:space="preserve">
-    <value>Haga Clic para Obtener Ayuda en Esta Página</value>
-  </data>
-  <data name="Click to Close This Window" xml:space="preserve">
-    <value>Haga Clic para Cerrar Esta Ventana</value>
-  </data>
-  <data name="Close Window" xml:space="preserve">
-    <value>Cerrar Esta Ventana</value>
   </data>
   <data name="Current Requests" xml:space="preserve">
     <value>Peticiones Actuales</value>
@@ -441,9 +429,6 @@
   <data name="To make it active again, update it as necessary, leave “{0}” and “{1}” unchecked, and it will return as an active request." xml:space="preserve">
     <value>Para que sea más activa de nuevo, que se actualizará cuando sea necesario, salir de “{0}” y “{1}” no seleccionado, y volverá como una petición activa.</value>
   </data>
-  <data name="Toggle Navigation" xml:space="preserve">
-    <value>Navegación de Palanca</value>
-  </data>
   <data name="Updated" xml:space="preserve">
     <value>Actualizaron</value>
   </data>
@@ -519,9 +504,6 @@
   <data name="E-mail Format" xml:space="preserve">
     <value>Formato de Correo Electrónico</value>
   </data>
-  <data name="E-mail “From” Name and Address" xml:space="preserve">
-    <value>Correo Electrónico “De” Nombre y Dirección</value>
-  </data>
   <data name="Edit Group Member" xml:space="preserve">
     <value>Editar el Miembro del Grupo</value>
   </data>
@@ -530,9 +512,6 @@
   </data>
   <data name="Fonts" xml:space="preserve">
     <value>Fuentes</value>
-  </data>
-  <data name="Fonts{0} for List" xml:space="preserve">
-    <value>Fuentes{0} de la Lista</value>
   </data>
   <data name="Group Log On" xml:space="preserve">
     <value>Iniciar Sesión como Grupo</value>
@@ -548,9 +527,6 @@
   </data>
   <data name="Long-Term Requests Alerted for Update" xml:space="preserve">
     <value>Peticiones a Largo Plazo Alertó para la Actualización</value>
-  </data>
-  <data name="Making a “Large Print” List" xml:space="preserve">
-    <value>Realización de una Lista de “Letra Grande”</value>
   </data>
   <data name="Password Protected" xml:space="preserve">
     <value>Protegido por Contraseña</value>
@@ -587,9 +563,6 @@
   </data>
   <data name="List for Next Sunday" xml:space="preserve">
     <value>Lista para el Próximo Domingo</value>
-  </data>
-  <data name="Restore an Inactive Request" xml:space="preserve">
-    <value>Restaurar una Petición Inactivo</value>
   </data>
   <data name="Send via E-mail" xml:space="preserve">
     <value>Enviar por correo electrónico</value>
@@ -762,9 +735,6 @@
   <data name="Edit This Prayer Request" xml:space="preserve">
     <value>Editar esta petición de oración</value>
   </data>
-  <data name="Expire a Request" xml:space="preserve">
-    <value>Expirar una petición</value>
-  </data>
   <data name="Expire This Request Immediately" xml:space="preserve">
     <value>Expirar esta petición de oración de inmediato</value>
   </data>
@@ -845,5 +815,8 @@
   </data>
   <data name="View source code and get technical support" xml:space="preserve">
     <value>Ver código fuente y obtener soporte técnico</value>
+  </data>
+  <data name="Click for Help on This Page" xml:space="preserve">
+    <value>Haga Clic para Obtener Ayuda en Esta Página</value>
   </data>
 </root>
