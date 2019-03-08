@@ -64,32 +64,52 @@ let htmlToPlainTextTests =
     ]
 
 [<Tests>]
-let replaceFirstTests =
-  testList "replaceFirst" [
-    test "replaces the first occurrence when it is found at the beginning of the string" {
-      let testString = "unit unit unit"
-      Expect.equal (replaceFirst "unit" "test" testString) "test unit unit"
-        "First occurrence of a substring was not replaced properly at the beginning of the string"
-      }
-    test "replaces the first occurrence when it is found in the center of the string" {
-      let testString = "test unit test"
-      Expect.equal (replaceFirst "unit" "test" testString) "test test test"
-        "First occurrence of a substring was not replaced properly when it is in the center of the string"
-      }
-    test "returns the original string if the replacement isn't found" {
-      let testString = "unit tests"
-      Expect.equal (replaceFirst "tested" "testing" testString) "unit tests"
-        "String which did not have the target substring was not returned properly"
-      }
-    ]
-
-[<Tests>]
 let sndAsStringTests =
   testList "sndAsString" [
     test "converts the second item to a string" {
       Expect.equal (sndAsString ("a", 5)) "5" "The second part of the tuple should have been converted to a string"
       }
     ]
+
+module StringTests =
+  
+  open PrayerTracker.Utils.String
+
+  [<Tests>]
+  let replaceFirstTests =
+    testList "String.replaceFirst" [
+      test "replaces the first occurrence when it is found at the beginning of the string" {
+        let testString = "unit unit unit"
+        Expect.equal (replaceFirst "unit" "test" testString) "test unit unit"
+          "First occurrence of a substring was not replaced properly at the beginning of the string"
+        }
+      test "replaces the first occurrence when it is found in the center of the string" {
+        let testString = "test unit test"
+        Expect.equal (replaceFirst "unit" "test" testString) "test test test"
+          "First occurrence of a substring was not replaced properly when it is in the center of the string"
+        }
+      test "returns the original string if the replacement isn't found" {
+        let testString = "unit tests"
+        Expect.equal (replaceFirst "tested" "testing" testString) "unit tests"
+          "String which did not have the target substring was not returned properly"
+        }
+      ]
+   
+  [<Tests>]
+  let replaceTests =
+    testList "String.replace" [
+      test "succeeds" {
+        Expect.equal (replace "a" "b" "abacab") "bbbcbb" "String did not replace properly"
+        }
+      ]
+
+  [<Tests>]
+  let trimTests =
+    testList "String.trim" [
+      test "succeeds" {
+        Expect.equal (trim " abc ") "abc" "Space not trimmed from string properly"
+        }
+      ]
 
 [<Tests>]
 let stripTagsTests =
@@ -120,6 +140,30 @@ let wordWrapTests =
     test "wraps long line without a space" {
       let testString = "Asamatteroffact, the dog does too"
       Expect.equal (wordWrap 10 testString) "Asamattero\nffact, the\ndog does\ntoo\n"
+        "Longer line not broken correctly"
+      }
+    test "preserves blank lines" {
+      let testString = "Here is\n\na string with blank lines"
+      Expect.equal (wordWrap 80 testString) testString "Blank lines were not preserved"
+      }
+    ]
+
+[<Tests>]
+let wordWrapBTests =
+  testList "wordWrapB" [
+    test "breaks where it is supposed to" {
+      let testString = "The quick brown fox jumps over the lazy dog\nIt does!"
+      Expect.equal (wordWrap 20 testString) "The quick brown fox\njumps over the lazy\ndog\nIt does!\n"
+        "Line not broken correctly"
+      }
+    test "wraps long line without a space and a line with exact length" {
+      let testString = "Asamatteroffact, the dog does too"
+      Expect.equal (wordWrap 10 testString) "Asamattero\nffact, the\ndog does\ntoo\n"
+        "Longer line not broken correctly"
+      }
+    test "wraps long line without a space and a line with non-exact length" {
+      let testString = "Asamatteroffact, that dog does too"
+      Expect.equal (wordWrap 10 testString) "Asamattero\nffact,\nthat dog\ndoes too\n"
         "Longer line not broken correctly"
       }
     test "preserves blank lines" {

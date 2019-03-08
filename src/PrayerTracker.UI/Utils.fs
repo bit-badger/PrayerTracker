@@ -10,29 +10,39 @@ open System
 /// Hash a string with a SHA1 hash
 let sha1Hash (x : string) =
   use alg = SHA1.Create ()
-  alg.ComputeHash (ASCIIEncoding().GetBytes x)
+  alg.ComputeHash (Encoding.ASCII.GetBytes x)
   |> Seq.map (fun chr -> chr.ToString "x2")
-  |> Seq.reduce (+)
+  |> String.concat ""
 
 
 /// Hash a string using 1,024 rounds of PBKDF2 and a salt
 let pbkdf2Hash (salt : Guid) (x : string) =
   use alg = new Rfc2898DeriveBytes (x, Encoding.UTF8.GetBytes (salt.ToString "N"), 1024)
-  Convert.ToBase64String(alg.GetBytes 64)
+  (alg.GetBytes >> Convert.ToBase64String) 64
 
 
-/// Replace the first occurrence of a string with a second string within a given string
-let replaceFirst (needle : string) replacement (haystack : string) =
-  let i = haystack.IndexOf needle
-  match i with
-  | -1 -> haystack
-  | _ ->
-      seq {
-        yield haystack.Substring (0, i)
-        yield replacement
-        yield haystack.Substring (i + needle.Length)
-        }
-      |> Seq.reduce (+)
+/// String helper functions
+module String =
+  
+  /// string.Trim()
+  let trim (str: string) = str.Trim ()
+
+  /// string.Replace()
+  let replace (find : string) repl (str : string) = str.Replace (find, repl)
+
+
+  /// Replace the first occurrence of a string with a second string within a given string
+  let replaceFirst (needle : string) replacement (haystack : string) =
+    match haystack.IndexOf needle with
+    | -1 -> haystack
+    | idx ->
+        seq {
+          yield haystack.[0..idx - 1]
+          yield replacement
+          yield haystack.[idx + needle.Length..]
+          }
+        |> String.concat ""
+
 
 /// Strip HTML tags from the given string
 // Adapted from http://www.dijksterhuis.org/safely-cleaning-html-with-strip_tags-in-csharp/
@@ -51,21 +61,15 @@ let stripTags allowedTags input =
                 || htmlTag.IndexOf (sprintf "</%s" t) = 0) false
     match isAllowed with
     | true -> ()
-    | false -> output <- replaceFirst tag.Value "" output
+    | false -> output <- String.replaceFirst tag.Value "" output
   output
+
 
 /// Wrap a string at the specified number of characters
 let wordWrap charPerLine (input : string) =
   match input.Length with
   | len when len <= charPerLine -> input
   | _ ->
-      let rec findSpace (inp : string) idx =
-        match idx with
-        | 0 -> 0
-        | _ ->
-            match inp.Substring (idx, 1) with
-            | null | " " -> idx
-            | _ -> findSpace inp (idx - 1)
       seq {
         for line in input.Replace("\r", "").Split '\n' do
           let mutable remaining = line
@@ -73,41 +77,52 @@ let wordWrap charPerLine (input : string) =
           | 0 -> ()
           | _ ->
               while charPerLine < remaining.Length do
-                let spaceIdx = findSpace remaining charPerLine
-                match spaceIdx with
-                | 0 ->
-                    // No whitespace; just break it at [characters]
-                    yield remaining.Substring (0, charPerLine)
-                    remaining <- remaining.Substring charPerLine
-                | _ ->
-                    yield remaining.Substring (0, spaceIdx)
-                    remaining <- remaining.Substring (spaceIdx + 1)
-              match remaining.Length with
-              | 0 -> ()
-              | _ -> yield remaining
+                match charPerLine + 1 < remaining.Length && remaining.[charPerLine] = ' ' with
+                | true ->
+                    // Line length is followed by a space; return [charPerLine] as a line
+                    yield remaining.[0..charPerLine - 1]
+                    remaining <- remaining.[charPerLine + 1..]
+                | false ->
+                    match remaining.[0..charPerLine - 1].LastIndexOf ' ' with
+                    | -1 ->
+                        // No whitespace; just break it at [characters]
+                        yield remaining.[0..charPerLine - 1]
+                        remaining <- remaining.[charPerLine..]
+                    | spaceIdx ->
+                        // Break on the last space in the line
+                        yield remaining.[0..spaceIdx - 1]
+                        remaining <- remaining.[spaceIdx + 1..]
+              // Leftovers - yum!
+              match remaining.Length with 0 -> () | _ -> yield remaining
         }
       |> Seq.fold (fun (acc : StringBuilder) line -> acc.AppendFormat ("{0}\n", line)) (StringBuilder ())
       |> string
 
 /// Modify the text returned by CKEditor into the format we need for request and announcement text
 let ckEditorToText (text : string) =
-  text
-    .Replace("\n\t", "") // \r
-    .Replace("&nbsp;", " ")
-    .Replace("  ", "&#xa0; ")
-    .Replace("</p><p>", "<br><br>") // \r
-    .Replace("</p>", "")
-    .Replace("<p>", "")
-    .Trim()
-        
+  let trim (str : string) = str.Trim ()
+  [ "\n\t",    ""
+    "&nbsp;",  " "
+    "  ",      "&#xa0; "
+    "</p><p>", "<br><br>"
+    "</p>",    ""
+    "<p>",     ""
+    ]
+  |> List.fold (fun (txt : string) (x, y) -> String.replace x y txt) text
+  |> trim
+
 
 /// Convert an HTML piece of text to plain text
 let htmlToPlainText html =
   match html with
   | null | "" -> ""
   | _ ->
-      WebUtility.HtmlDecode((html.Trim() |> stripTags [ "br" ]).Replace("<br />", "\n").Replace("<br>", "\n"))
-        .Replace("\u00a0", " ")
+      html.Trim ()
+      |> stripTags [ "br" ]
+      |> String.replace "<br />" "\n"
+      |> String.replace "<br>" "\n"
+      |> WebUtility.HtmlDecode
+      |> String.replace "\u00a0" " "
 
 /// Get the second portion of a tuple as a string
 let sndAsString x = (snd >> string) x
