@@ -190,6 +190,8 @@ let lists : HttpHandler =
 
 
 /// GET /prayer-requests[/inactive?]
+///  - OR -
+/// GET /prayer-requests?search=[search-query]
 let maintain onlyActive : HttpHandler =
   requireAccess [ User ]
   >=> fun next ctx ->
@@ -197,7 +199,11 @@ let maintain onlyActive : HttpHandler =
     let db         = ctx.dbContext ()
     let grp        = currentGroup ctx
     task {
-      let reqs = db.AllRequestsForSmallGroup grp (ctx.GetService<IClock> ()) None onlyActive
+      let reqs = 
+        match ctx.GetQueryStringValue "search" with
+        | Ok srch ->
+            Seq.empty
+        | Error _ -> db.AllRequestsForSmallGroup grp (ctx.GetService<IClock> ()) None onlyActive
       return!
         { viewInfo ctx startTicks with helpLink = Some Help.maintainRequests }
         |> Views.PrayerRequest.maintain reqs grp onlyActive ctx

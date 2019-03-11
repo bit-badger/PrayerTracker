@@ -369,6 +369,12 @@ article.pt-overview section div p {
   border-radius: 5px;
   margin: auto;
 }
+.pt-search-form input,
+.pt-search-form button,
+.pt-search-form i.material-icons {
+  font-size: .8rem;
+}
+
 .pt-request-update {
   font-style: italic;
 }

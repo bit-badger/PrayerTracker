@@ -206,7 +206,7 @@ let maintain (reqs : PrayerRequest seq) (grp : SmallGroup) onlyActive (ctx : Htt
             yield
               match 60 > reqText.Length with
               | true -> rawText reqText
-              | false -> rawText (sprintf "%s&hellip;" (reqText.Substring (0, 60)))
+              | false -> rawText (sprintf "%s&hellip;" reqText.[0..59])
             ]
           ])
     |> List.ofSeq
@@ -217,9 +217,13 @@ let maintain (reqs : PrayerRequest seq) (grp : SmallGroup) onlyActive (ctx : Htt
       rawText " &nbsp; &nbsp; &nbsp; "
       a [ _href "/prayer-requests/view"; _title s.["View Prayer Request List"].Value ]
         [ icon "list"; rawText " &nbsp;"; encLocText s.["View Prayer Request List"] ]
-      br []
-      br []
       ]
+    form [ _action "/prayer-requests"; _method "get"; _class "pt-center-text pt-search-form" ] [
+      input [ _type "text"; _name "search"; _placeholder s.["Search requests..."].Value ]
+      space
+      submit [] "search" s.["Search"]
+      ]
+    br []
     tableSummary requests.Length s
     table [ _class "pt-table pt-action-table" ] [
       thead [] [
