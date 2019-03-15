@@ -15,15 +15,15 @@ let edit (m : EditChurch) ctx vi =
       input [ _type "hidden"; _name "churchId"; _value (flatGuid m.churchId) ]
       div [ _class "pt-field-row" ] [
         div [ _class "pt-field" ] [
-          label [ _for "name" ] [ encLocText s.["Church Name"] ]
+          label [ _for "name" ] [ locStr s.["Church Name"] ]
           input [ _type "text"; _name "name"; _id "name"; _required; _autofocus; _value m.name ]
           ]
         div [ _class "pt-field" ] [
-          label [ _for "City"] [ encLocText s.["City"] ]
+          label [ _for "City"] [ locStr s.["City"] ]
           input [ _type "text"; _name "city"; _id "city"; _required; _value m.city ]
           ]
         div [ _class "pt-field" ] [
-          label [ _for "ST" ] [ encLocText s.["State"] ]
+          label [ _for "ST" ] [ locStr s.["State"] ]
           input [ _type "text"; _name "st"; _id "st"; _required; _minlength "2"; _maxlength "2"; _value m.st ]
           ]
         ]
@@ -34,12 +34,12 @@ let edit (m : EditChurch) ctx vi =
                   yield _id "hasInterface"
                   yield _value "True"
                   match m.hasInterface with Some x when x -> yield _checked | _ -> () ]
-          label [ _for "hasInterface" ] [ encLocText s.["Has an interface with Virtual Prayer Room"] ]
+          label [ _for "hasInterface" ] [ locStr s.["Has an interface with Virtual Prayer Room"] ]
           ]
         ]
       div [ _class "pt-field-row pt-fadeable"; _id "divInterfaceAddress" ] [
         div [ _class "pt-field" ] [
-          label [ _for "interfaceAddress" ] [ encLocText s.["VPR Interface URL"] ]
+          label [ _for "interfaceAddress" ] [ locStr s.["VPR Interface URL"] ]
           input [ _type "url"; _name "interfaceAddress"; _id "interfaceAddress";
                   _value (match m.interfaceAddress with Some ia -> ia | None -> "") ]
           ]
@@ -62,13 +62,13 @@ let maintain (churches : Church list) (stats : Map<string, ChurchStats>) ctx vi 
         table [ _class "pt-table pt-action-table" ] [
           thead [] [
             tr [] [
-              th [] [ encLocText s.["Actions"] ]
-              th [] [ encLocText s.["Name"] ]
-              th [] [ encLocText s.["Location"] ]
-              th [] [ encLocText s.["Groups"] ]
-              th [] [ encLocText s.["Requests"] ]
-              th [] [ encLocText s.["Users"] ]
-              th [] [ encLocText s.["Interface?"] ]
+              th [] [ locStr s.["Actions"] ]
+              th [] [ locStr s.["Name"] ]
+              th [] [ locStr s.["Location"] ]
+              th [] [ locStr s.["Groups"] ]
+              th [] [ locStr s.["Requests"] ]
+              th [] [ locStr s.["Users"] ]
+              th [] [ locStr s.["Interface?"] ]
               ]
             ]
           churches
@@ -85,19 +85,19 @@ let maintain (churches : Church list) (stats : Map<string, ChurchStats>) ctx vi 
                       _onclick (sprintf "return PT.confirmDelete('%s','%A')" delAction delPrompt) ]
                     [ icon "delete_forever" ]
                   ]
-                td [] [ encodedText ch.name ]
-                td [] [ encodedText ch.city; rawText ", "; encodedText ch.st ]
+                td [] [ str ch.name ]
+                td [] [ str ch.city; rawText ", "; str ch.st ]
                 td [ _class "pt-right-text" ] [ rawText (stats.[chId].smallGroups.ToString "N0") ]
                 td [ _class "pt-right-text" ] [ rawText (stats.[chId].prayerRequests.ToString "N0") ]
                 td [ _class "pt-right-text" ] [ rawText (stats.[chId].users.ToString "N0") ]
-                td [ _class "pt-center-text" ] [ encLocText s.[match ch.hasInterface with true -> "Yes" | false -> "No"] ]
+                td [ _class "pt-center-text" ] [ locStr s.[match ch.hasInterface with true -> "Yes" | false -> "No"] ]
                 ])
           |> tbody []
           ]
   [ div [ _class "pt-center-text" ] [
       br []
       a [ _href (sprintf "/church/%s/edit" emptyGuid); _title s.["Add a New Church"].Value ]
-        [ icon "add_circle"; rawText " &nbsp;"; encLocText s.["Add a New Church"] ]
+        [ icon "add_circle"; rawText " &nbsp;"; locStr s.["Add a New Church"] ]
       br []
       br []
       ]

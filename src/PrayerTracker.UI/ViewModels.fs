@@ -548,13 +548,13 @@ with
       | true ->
           yield div [ _style (sprintf "text-align:center;font-family:%s" prefs.listFonts) ] [
             span [ _style (sprintf "font-size:%ipt;" prefs.headingFontSize) ] [
-              strong [] [ encodedText s.["Prayer Requests"].Value ]
+              strong [] [ str s.["Prayer Requests"].Value ]
               ]
             br []
             span [ _style (sprintf "font-size:%ipt;" prefs.textFontSize) ] [
-              strong [] [ encodedText this.listGroup.name ]
+              strong [] [ str this.listGroup.name ]
               br []
-              encodedText (this.date.ToString s.["MMMM d, yyyy"].Value)
+              str (this.date.ToString s.["MMMM d, yyyy"].Value)
               ]
             ]
           yield br []
@@ -572,7 +572,7 @@ with
             tr [] [
               td [ _style (sprintf "font-size:%ipt;color:%s;padding:3px 0;border-top:solid 3px %s;border-bottom:solid 3px %s;font-weight:bold;"
                                       prefs.headingFontSize prefs.headingColor prefs.lineColor prefs.lineColor) ] [
-                rawText "&nbsp; &nbsp; "; encodedText catName.Value; rawText "&nbsp; &nbsp; "
+                rawText "&nbsp; &nbsp; "; str catName.Value; rawText "&nbsp; &nbsp; "
                 ]
               ]
             ]
@@ -585,7 +585,7 @@ with
                                       bullet prefs.listFonts prefs.textFontSize) ] [
                 match req.requestor with
                 | Some rqstr when rqstr <> "" ->
-                    yield strong [] [ encodedText rqstr ]
+                    yield strong [] [ str rqstr ]
                     yield rawText " &mdash; "
                 | Some _ -> ()
                 | None -> ()
