@@ -709,7 +709,7 @@
     <value>Este Grupo</value>
   </data>
   <data name="This will e-mail the current list to every member of your class, without further prompting.  Are you sure this is what you are ready to do?" xml:space="preserve">
-    <value>Esto enviará un correo electrónico la lista actual de todos los miembros de su clase, sin más indicaciones. ¿Estás seguro de que esto es lo que están dispuestos a hacer?</value>
+    <value>Esto enviará un correo electrónico la lista actual de todos los miembros de su grupo, sin más indicaciones. ¿Estás seguro de que esto es lo que están dispuestos a hacer?</value>
   </data>
   <data name="To change your password, enter your current password in the specified box below, then enter your new password twice." xml:space="preserve">
     <value>Para cambiar su contraseña, introduzca su contraseña actual en el cuadro se especifica a continuación, introduzca su nueva contraseña dos veces.</value>

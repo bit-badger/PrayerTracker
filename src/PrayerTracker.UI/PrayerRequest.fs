@@ -302,7 +302,7 @@ let view m vi =
                 icon "update"; rawText " &nbsp;"; encLocText s.["List for Next Sunday"]
                 ]
               yield spacer
-          let emailPrompt = s.["This will e-mail the current list to every member of your class, without further prompting.  Are you sure this is what you are ready to do?"].Value
+          let emailPrompt = s.["This will e-mail the current list to every member of your group, without further prompting.  Are you sure this is what you are ready to do?"].Value
           yield a [ _class "pt-icon-link"
                     _href (sprintf "/prayer-requests/email/%s" dtString)
                     _title s.["Send via E-mail"].Value
