@@ -210,7 +210,7 @@ let maintain (reqs : PrayerRequest seq) (grp : SmallGroup) onlyActive (ctx : Htt
             ]
           ])
     |> List.ofSeq
-  [ div [ _class "pt-center-text" ] [
+  [ yield div [ _class "pt-center-text" ] [
       br []
       a [ _href (sprintf "/prayer-request/%s/edit" emptyGuid); _title s.["Add a New Request"].Value ]
         [ icon "add_circle"; rawText " &nbsp;"; encLocText s.["Add a New Request"] ]
@@ -220,20 +220,23 @@ let maintain (reqs : PrayerRequest seq) (grp : SmallGroup) onlyActive (ctx : Htt
       br []
       br []
       ]
-    tableSummary requests.Length s
-    table [ _class "pt-table pt-action-table" ] [
-      thead [] [
-        tr [] [
-          th [] [ encLocText s.["Actions"] ]
-          th [] [ encLocText s.["Updated Date"] ]
-          th [] [ encLocText s.["Type"] ]
-          th [] [ encLocText s.["Requestor"] ]
-          th [] [ encLocText s.["Request"] ]
+    yield tableSummary requests.Length s
+    match requests.Length with
+    | 0 -> ()
+    | _ ->
+        yield table [ _class "pt-table pt-action-table" ] [
+          thead [] [
+            tr [] [
+              th [] [ encLocText s.["Actions"] ]
+              th [] [ encLocText s.["Updated Date"] ]
+              th [] [ encLocText s.["Type"] ]
+              th [] [ encLocText s.["Requestor"] ]
+              th [] [ encLocText s.["Request"] ]
+              ]
+            ]
+          tbody [] requests
           ]
-        ]
-      tbody [] requests
-      ]
-    div [ _class "pt-center-text" ] [
+    yield div [ _class "pt-center-text" ] [
       yield br []
       match onlyActive with
       | true ->
@@ -245,7 +248,7 @@ let maintain (reqs : PrayerRequest seq) (grp : SmallGroup) onlyActive (ctx : Htt
           yield br []
           yield a [ _href "/prayer-requests" ] [ encLocText s.["Do Not Show Inactive Requests"] ]
       ]
-    form [ _id "DeleteForm"; _action ""; _method "post" ] [ csrfToken ctx ]
+    yield form [ _id "DeleteForm"; _action ""; _method "post" ] [ csrfToken ctx ]
     ]
   |> Layout.Content.wide
   |> Layout.standard vi "Maintain Requests"

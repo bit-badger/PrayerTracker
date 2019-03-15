@@ -174,7 +174,40 @@ let logOn (grps : SmallGroup list) grpId ctx vi =
 
 /// View for the small group maintenance page
 let maintain (grps : SmallGroup list) ctx vi =
-  let s = I18N.localizer.Force ()
+  let s      = I18N.localizer.Force ()
+  let grpTbl =
+    match grps with
+    | [] -> space
+    | _ ->
+        table [ _class "pt-table pt-action-table" ] [
+          thead [] [
+            tr [] [
+              th [] [ encLocText s.["Actions"] ]
+              th [] [ encLocText s.["Name"] ]
+              th [] [ encLocText s.["Church"] ]
+              th [] [ encLocText s.["Time Zone"] ]
+              ]
+            ]
+          grps
+          |> List.map (fun g ->
+              let grpId     = flatGuid g.smallGroupId
+              let delAction = sprintf "/small-group/%s/delete" grpId
+              let delPrompt = s.["Are you want to delete this {0}?  This action cannot be undone.",
+                                   sprintf "%s (%s)" (s.["Small Group"].Value.ToLower ()) g.name].Value
+              tr [] [
+                td [] [
+                  a [ _href (sprintf "/small-group/%s/edit" grpId); _title s.["Edit This Group"].Value ] [ icon "edit" ]
+                  a [ _href delAction
+                      _title s.["Delete This Group"].Value
+                      _onclick (sprintf "return PT.confirmDelete('%s','%s')" delAction delPrompt) ]
+                    [ icon "delete_forever" ]
+                  ]
+                td [] [ encodedText g.name ]
+                td [] [ encodedText g.church.name ]
+                td [] [ encLocText (TimeZones.name g.preferences.timeZoneId s) ]
+                ])
+          |> tbody []
+          ]
   [ div [ _class "pt-center-text" ] [
       br []
       a [ _href (sprintf "/small-group/%s/edit" emptyGuid); _title s.["Add a New Group"].Value ] [
@@ -186,35 +219,7 @@ let maintain (grps : SmallGroup list) ctx vi =
       br []
       ]
     tableSummary grps.Length s
-    table [ _class "pt-table pt-action-table" ] [
-      thead [] [
-        tr [] [
-          th [] [ encLocText s.["Actions"] ]
-          th [] [ encLocText s.["Name"] ]
-          th [] [ encLocText s.["Church"] ]
-          th [] [ encLocText s.["Time Zone"] ]
-          ]
-        ]
-      grps
-      |> List.map (fun g ->
-          let grpId     = flatGuid g.smallGroupId
-          let delAction = sprintf "/small-group/%s/delete" grpId
-          let delPrompt = s.["Are you want to delete this {0}?  This action cannot be undone.",
-                               sprintf "%s (%s)" (s.["Small Group"].Value.ToLower ()) g.name].Value
-          tr [] [
-            td [] [
-              a [ _href (sprintf "/small-group/%s/edit" grpId); _title s.["Edit This Group"].Value ] [ icon "edit" ]
-              a [ _href delAction
-                  _title s.["Delete This Group"].Value
-                  _onclick (sprintf "return PT.confirmDelete('%s','%s')" delAction delPrompt) ]
-                [ icon "delete_forever" ]
-              ]
-            td [] [ encodedText g.name ]
-            td [] [ encodedText g.church.name ]
-            td [] [ encLocText (TimeZones.name g.preferences.timeZoneId s) ]
-            ])
-      |> tbody []
-      ]
+    grpTbl
     form [ _id "DeleteForm"; _action ""; _method "post" ] [ csrfToken ctx ]
     ]
   |> Layout.Content.standard
@@ -223,7 +228,41 @@ let maintain (grps : SmallGroup list) ctx vi =
 
 /// View for the member maintenance page
 let members (mbrs : Member list) (emailTyps : Map<string, LocalizedString>) ctx vi =
-  let s = I18N.localizer.Force ()
+  let s      = I18N.localizer.Force ()
+  let mbrTbl =
+    match mbrs with
+    | [] -> space
+    | _ ->
+        table [ _class "pt-table pt-action-table" ] [
+          thead [] [
+            tr [] [
+              th [] [ encLocText s.["Actions"] ]
+              th [] [ encLocText s.["Name"] ]
+              th [] [ encLocText s.["E-mail Address"] ]
+              th [] [ encLocText s.["Format"] ]
+              ]
+            ]
+          mbrs
+          |> List.map (fun mbr ->
+              let mbrId     = flatGuid mbr.memberId
+              let delAction = sprintf "/small-group/member/%s/delete" mbrId
+              let delPrompt = s.["Are you want to delete this {0} ({1})?  This action cannot be undone.",
+                                  s.["group member"], mbr.memberName].Value
+              tr [] [
+                td [] [
+                  a [ _href (sprintf "/small-group/member/%s/edit" mbrId); _title s.["Edit This Group Member"].Value ]
+                    [ icon "edit" ]
+                  a [ _href delAction
+                      _title s.["Delete This Group Member"].Value
+                      _onclick (sprintf "return PT.confirmDelete('%s','%s')" delAction delPrompt) ]
+                    [ icon "delete_forever" ]
+                  ]
+                td [] [ encodedText mbr.memberName ]
+                td [] [ encodedText mbr.email ]
+                td [] [ encLocText emailTyps.[defaultArg mbr.format ""] ]
+                ])
+          |> tbody []
+          ]
   [ div [ _class"pt-center-text" ] [
       br []
       a [ _href (sprintf "/small-group/member/%s/edit" emptyGuid); _title s.["Add a New Group Member"].Value ]
@@ -232,36 +271,7 @@ let members (mbrs : Member list) (emailTyps : Map<string, LocalizedString>) ctx 
       br []
       ]
     tableSummary mbrs.Length s
-    table [ _class "pt-table pt-action-table" ] [
-      thead [] [
-        tr [] [
-          th [] [ encLocText s.["Actions"] ]
-          th [] [ encLocText s.["Name"] ]
-          th [] [ encLocText s.["E-mail Address"] ]
-          th [] [ encLocText s.["Format"] ]
-          ]
-        ]
-      mbrs
-      |> List.map (fun mbr ->
-          let mbrId     = flatGuid mbr.memberId
-          let delAction = sprintf "/small-group/member/%s/delete" mbrId
-          let delPrompt = s.["Are you want to delete this {0} ({1})?  This action cannot be undone.",
-                              s.["group member"], mbr.memberName].Value
-          tr [] [
-            td [] [
-              a [ _href (sprintf "/small-group/member/%s/edit" mbrId); _title s.["Edit This Group Member"].Value ]
-                [ icon "edit" ]
-              a [ _href delAction
-                  _title s.["Delete This Group Member"].Value
-                  _onclick (sprintf "return PT.confirmDelete('%s','%s')" delAction delPrompt) ]
-                [ icon "delete_forever" ]
-              ]
-            td [] [ encodedText mbr.memberName ]
-            td [] [ encodedText mbr.email ]
-            td [] [ encLocText emailTyps.[defaultArg mbr.format ""] ]
-            ])
-      |> tbody []
-      ]
+    mbrTbl
     form [ _id "DeleteForm"; _action ""; _method "post" ] [ csrfToken ctx ]
     ]
   |> Layout.Content.standard

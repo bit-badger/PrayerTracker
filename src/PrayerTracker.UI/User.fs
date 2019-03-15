@@ -173,7 +173,44 @@ let logOn (m : UserLogOn) groups ctx vi =
 
 /// View for the user maintenance page
 let maintain (users : User list) ctx vi =
-  let s = I18N.localizer.Force ()
+  let s      = I18N.localizer.Force ()
+  let usrTbl =
+    match users with
+    | [] -> space
+    | _ ->
+        table [ _class "pt-table pt-action-table" ] [
+          thead [] [
+            tr [] [
+              th [] [ encLocText s.["Actions"] ]
+              th [] [ encLocText s.["Name"] ]
+              th [] [ encLocText s.["Admin?"] ]
+              ]
+            ]
+          users
+          |> List.map (fun user ->
+              let userId    = flatGuid user.userId
+              let delAction = sprintf "/user/%s/delete" userId
+              let delPrompt = s.["Are you want to delete this {0}?  This action cannot be undone.",
+                                  (sprintf "%s (%s)" (s.["User"].Value.ToLower()) user.fullName)].Value
+              tr [] [
+                td [] [
+                  a [ _href (sprintf "/user/%s/edit" userId); _title s.["Edit This User"].Value ] [ icon "edit" ]
+                  a [ _href (sprintf "/user/%s/small-groups" userId); _title s.["Assign Groups to This User"].Value ]
+                    [ icon "group" ]
+                  a [ _href delAction
+                      _title s.["Delete This User"].Value
+                      _onclick (sprintf "return PT.confirmDelete('%s','%s')" delAction delPrompt) ]
+                    [ icon "delete_forever" ]
+                  ]
+                td [] [ encodedText user.fullName ]
+                td [ _class "pt-center-text" ] [
+                  match user.isAdmin with
+                  | true -> yield strong [] [ encLocText s.["Yes"] ]
+                  | false -> yield encLocText s.["No"]
+                  ]
+                ])
+          |> tbody []
+          ]
   [ div [ _class "pt-center-text" ] [
       br []
       a [ _href (sprintf "/user/%s/edit" emptyGuid); _title s.["Add a New User"].Value ]
@@ -182,39 +219,7 @@ let maintain (users : User list) ctx vi =
       br []
       ]
     tableSummary users.Length s
-    table [ _class "pt-table pt-action-table" ] [
-      thead [] [
-        tr [] [
-          th [] [ encLocText s.["Actions"] ]
-          th [] [ encLocText s.["Name"] ]
-          th [] [ encLocText s.["Admin?"] ]
-          ]
-        ]
-      users
-      |> List.map (fun user ->
-          let userId    = flatGuid user.userId
-          let delAction = sprintf "/user/%s/delete" userId
-          let delPrompt = s.["Are you want to delete this {0}?  This action cannot be undone.",
-                              (sprintf "%s (%s)" (s.["User"].Value.ToLower()) user.fullName)].Value
-          tr [] [
-            td [] [
-              a [ _href (sprintf "/user/%s/edit" userId); _title s.["Edit This User"].Value ] [ icon "edit" ]
-              a [ _href (sprintf "/user/%s/small-groups" userId); _title s.["Assign Groups to This User"].Value ]
-                [ icon "group" ]
-              a [ _href delAction
-                  _title s.["Delete This User"].Value
-                  _onclick (sprintf "return PT.confirmDelete('%s','%s')" delAction delPrompt) ]
-                [ icon "delete_forever" ]
-              ]
-            td [] [ encodedText user.fullName ]
-            td [ _class "pt-center-text" ] [
-              match user.isAdmin with
-              | true -> yield strong [] [ encLocText s.["Yes"] ]
-              | false -> yield encLocText s.["No"]
-              ]
-            ])
-      |> tbody []
-      ]
+    usrTbl
     form [ _id "DeleteForm"; _action ""; _method "post" ] [ csrfToken ctx ]
     ]
   |> Layout.Content.standard

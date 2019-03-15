@@ -54,7 +54,46 @@ let edit (m : EditChurch) ctx vi =
 
 /// View for church maintenance page
 let maintain (churches : Church list) (stats : Map<string, ChurchStats>) ctx vi =
-  let s = I18N.localizer.Force ()
+  let s     = I18N.localizer.Force ()
+  let chTbl =
+    match churches with
+    | [] -> space
+    | _ ->
+        table [ _class "pt-table pt-action-table" ] [
+          thead [] [
+            tr [] [
+              th [] [ encLocText s.["Actions"] ]
+              th [] [ encLocText s.["Name"] ]
+              th [] [ encLocText s.["Location"] ]
+              th [] [ encLocText s.["Groups"] ]
+              th [] [ encLocText s.["Requests"] ]
+              th [] [ encLocText s.["Users"] ]
+              th [] [ encLocText s.["Interface?"] ]
+              ]
+            ]
+          churches
+          |> List.map (fun ch ->
+              let chId      = flatGuid ch.churchId
+              let delAction = sprintf "/church/%s/delete" chId
+              let delPrompt = s.["Are you want to delete this {0}?  This action cannot be undone.",
+                                  sprintf "%s (%s)" (s.["Church"].Value.ToLower ()) ch.name]
+              tr [] [
+                td [] [
+                  a [ _href (sprintf "/church/%s/edit" chId); _title s.["Edit This Church"].Value ] [ icon "edit" ]
+                  a [ _href delAction
+                      _title s.["Delete This Church"].Value
+                      _onclick (sprintf "return PT.confirmDelete('%s','%A')" delAction delPrompt) ]
+                    [ icon "delete_forever" ]
+                  ]
+                td [] [ encodedText ch.name ]
+                td [] [ encodedText ch.city; rawText ", "; encodedText ch.st ]
+                td [ _class "pt-right-text" ] [ rawText (stats.[chId].smallGroups.ToString "N0") ]
+                td [ _class "pt-right-text" ] [ rawText (stats.[chId].prayerRequests.ToString "N0") ]
+                td [ _class "pt-right-text" ] [ rawText (stats.[chId].users.ToString "N0") ]
+                td [ _class "pt-center-text" ] [ encLocText s.[match ch.hasInterface with true -> "Yes" | false -> "No"] ]
+                ])
+          |> tbody []
+          ]
   [ div [ _class "pt-center-text" ] [
       br []
       a [ _href (sprintf "/church/%s/edit" emptyGuid); _title s.["Add a New Church"].Value ]
@@ -63,41 +102,7 @@ let maintain (churches : Church list) (stats : Map<string, ChurchStats>) ctx vi 
       br []
       ]
     tableSummary churches.Length s
-    table [ _class "pt-table pt-action-table" ] [
-      thead [] [
-        tr [] [
-          th [] [ encLocText s.["Actions"] ]
-          th [] [ encLocText s.["Name"] ]
-          th [] [ encLocText s.["Location"] ]
-          th [] [ encLocText s.["Groups"] ]
-          th [] [ encLocText s.["Requests"] ]
-          th [] [ encLocText s.["Users"] ]
-          th [] [ encLocText s.["Interface?"] ]
-          ]
-        ]
-      churches
-      |> List.map (fun ch ->
-          let chId      = flatGuid ch.churchId
-          let delAction = sprintf "/church/%s/delete" chId
-          let delPrompt = s.["Are you want to delete this {0}?  This action cannot be undone.",
-                              sprintf "%s (%s)" (s.["Church"].Value.ToLower ()) ch.name]
-          tr [] [
-            td [] [
-              a [ _href (sprintf "/church/%s/edit" chId); _title s.["Edit This Church"].Value ] [ icon "edit" ]
-              a [ _href delAction
-                  _title s.["Delete This Church"].Value
-                  _onclick (sprintf "return PT.confirmDelete('%s','%A')" delAction delPrompt) ]
-                [ icon "delete_forever" ]
-              ]
-            td [] [ encodedText ch.name ]
-            td [] [ encodedText ch.city; rawText ", "; encodedText ch.st ]
-            td [ _class "pt-right-text" ] [ rawText (stats.[chId].smallGroups.ToString "N0") ]
-            td [ _class "pt-right-text" ] [ rawText (stats.[chId].prayerRequests.ToString "N0") ]
-            td [ _class "pt-right-text" ] [ rawText (stats.[chId].users.ToString "N0") ]
-            td [ _class "pt-center-text" ] [ encLocText s.[match ch.hasInterface with true -> "Yes" | false -> "No"] ]
-            ])
-      |> tbody []
-      ]
+    chTbl
     form [ _id "DeleteForm"; _action ""; _method "post" ] [ csrfToken ctx ]
     ]
   |> Layout.Content.wide
