@@ -31,7 +31,7 @@ let private generateRequestList ctx date =
     match date with
     | Some d -> d
     | None -> grp.localDateNow clock
-  let reqs = ctx.dbContext().AllRequestsForSmallGroup grp clock (Some listDate) true
+  let reqs = ctx.dbContext().AllRequestsForSmallGroup grp clock (Some listDate) true 0
   { requests   = reqs |> List.ofSeq
     date       = listDate
     listGroup  = grp
@@ -155,7 +155,7 @@ let list groupId : HttpHandler =
       match grp with
       | Some g when g.preferences.isPublic ->
           let clock = ctx.GetService<IClock> ()
-          let reqs  = db.AllRequestsForSmallGroup g clock None true
+          let reqs  = db.AllRequestsForSmallGroup g clock None true 0
           return!
             viewInfo ctx startTicks
             |> Views.PrayerRequest.list
@@ -199,13 +199,27 @@ let maintain onlyActive : HttpHandler =
     let db         = ctx.dbContext ()
     let grp        = currentGroup ctx
     task {
-      let reqs = 
+      let pageNbr =
+        match ctx.GetQueryStringValue "page" with
+        | Ok pg -> match Int32.TryParse pg with true, p -> p | false, _ -> 1
+        | Error _ -> 1
+      let m = 
         match ctx.GetQueryStringValue "search" with
-        | Ok srch -> db.SearchRequestsForSmallGroup grp srch 1
-        | Error _ -> db.AllRequestsForSmallGroup grp (ctx.GetService<IClock> ()) None onlyActive
+        | Ok srch ->
+            { MaintainRequests.empty with
+                requests   = db.SearchRequestsForSmallGroup grp srch pageNbr
+                searchTerm = Some srch
+                pageNbr    = Some pageNbr
+              }
+        | Error _ ->
+            { MaintainRequests.empty with
+                requests   = db.AllRequestsForSmallGroup grp (ctx.GetService<IClock> ()) None onlyActive pageNbr
+                onlyActive = Some onlyActive
+                pageNbr    = match onlyActive with true -> None | false -> Some pageNbr
+              }
       return!
         { viewInfo ctx startTicks with helpLink = Some Help.maintainRequests }
-        |> Views.PrayerRequest.maintain reqs grp onlyActive ctx
+        |> Views.PrayerRequest.maintain { m with smallGroup = grp } ctx
         |> renderHtml next ctx
       }
 

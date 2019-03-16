@@ -439,6 +439,19 @@ let groupLogOnTests =
     ]
 
 [<Tests>]
+let maintainRequestsTests =
+  testList "MaintainRequests" [
+    test "empty is as expected" {
+      let mt = MaintainRequests.empty
+      Expect.isEmpty mt.requests "The requests for the model should have been empty"
+      Expect.equal mt.smallGroup.smallGroupId Guid.Empty "The small group should have been an empty one"
+      Expect.isNone mt.onlyActive "The only active flag should have been None"
+      Expect.isNone mt.searchTerm "The search term should have been None"
+      Expect.isNone mt.pageNbr "The page number should have been None"
+      }
+    ]
+
+[<Tests>]
 let requestListTests =
   testList "RequestList" [
     let withRequestList f () =

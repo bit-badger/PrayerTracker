@@ -1,10 +1,9 @@
 ﻿module PrayerTracker.Entities.EntitiesTests
 
 open Expecto
-open System
-open System.Linq
 open NodaTime.Testing
 open NodaTime
+open System
 
 [<Tests>]
 let churchTests =
@@ -45,6 +44,7 @@ let listPreferencesTests =
       Expect.isFalse mt.isPublic "The isPublic flag should not have been set"
       Expect.equal mt.timeZoneId "America/Denver" "The default time zone should have been America/Denver"
       Expect.equal mt.timeZone.timeZoneId "" "The default preferences should have included an empty time zone"
+      Expect.equal mt.pageSize 100 "The default page size should have been 100"
       }
     ]
 

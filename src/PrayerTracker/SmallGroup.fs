@@ -208,7 +208,7 @@ let overview : HttpHandler =
     let db         = ctx.dbContext ()
     let clock      = ctx.GetService<IClock> ()
     task {
-      let  reqs     = db.AllRequestsForSmallGroup  (currentGroup ctx) clock None true |> List.ofSeq
+      let  reqs     = db.AllRequestsForSmallGroup  (currentGroup ctx) clock None true 0 |> List.ofSeq
       let! reqCount = db.CountRequestsBySmallGroup (currentGroup ctx).smallGroupId
       let! mbrCount = db.CountMembersForSmallGroup (currentGroup ctx).smallGroupId
       let m =

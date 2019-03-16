@@ -473,7 +473,32 @@ with
       }
 
 
+/// Items needed to display the request maintenance page
+[<NoComparison; NoEquality>]
+type MaintainRequests =
+  { /// The requests to be displayed
+    requests   : PrayerRequest seq
+    /// The small group to which the requests belong
+    smallGroup : SmallGroup
+    /// Whether only active requests are included
+    onlyActive : bool option
+    /// The search term for the requests
+    searchTerm : string option
+    /// The page number of the results
+    pageNbr    : int option
+    }
+with
+  static member empty =
+    { requests   = Seq.empty
+      smallGroup = SmallGroup.empty 
+      onlyActive = None
+      searchTerm = None
+      pageNbr    = None
+      }
+
+
 /// Items needed to display the small group overview page
+[<NoComparison; NoEquality>]
 type Overview =
   { /// The total number of active requests
     totalActiveReqs : int

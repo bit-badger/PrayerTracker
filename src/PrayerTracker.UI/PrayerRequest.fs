@@ -160,39 +160,50 @@ let lists (grps : SmallGroup list) vi =
 
 
 /// View for the prayer request maintenance page
-let maintain (reqs : PrayerRequest seq) (grp : SmallGroup) onlyActive (ctx : HttpContext) vi =
+let maintain m (ctx : HttpContext) vi =
   let s    = I18N.localizer.Force ()
-  let now  = grp.localDateNow (ctx.GetService<IClock> ())
+  let l    = I18N.forView "Requests/Maintain"
+  use sw   = new StringWriter ()
+  let raw  = rawLocText sw
+  let now  = m.smallGroup.localDateNow (ctx.GetService<IClock> ())
   let typs = ReferenceList.requestTypeList s |> Map.ofList
   let updReq (req : PrayerRequest) =
-    match req.updateRequired now grp.preferences.daysToExpire grp.preferences.longTermUpdateWeeks with
+    match req.updateRequired now m.smallGroup.preferences.daysToExpire m.smallGroup.preferences.longTermUpdateWeeks with
     | true -> "pt-request-update"
     | false -> ""
     |> _class 
   let reqExp (req : PrayerRequest) =
-    _class (match req.isExpired now grp.preferences.daysToExpire with true -> "pt-request-expired" | false -> "")
+    _class (match req.isExpired now m.smallGroup.preferences.daysToExpire with true -> "pt-request-expired" | false -> "")
   /// Iterate the sequence once, before we render, so we can get the count of it at the top of the table
   let requests =
-    reqs
+    m.requests
     |> Seq.map (fun req ->
         let reqId     = flatGuid req.prayerRequestId
         let reqText   = Utils.htmlToPlainText req.text
         let delAction = sprintf "/prayer-request/%s/delete" reqId
-        let delPrompt = s.["Are you want to delete this prayer request?  This action cannot be undone.\\n(If the prayer request has been answered, or an event has passed, consider inactivating it instead.)"].Value
+        let delPrompt =
+          [ s.["Are you sure you want to delete this {0}?  This action cannot be undone.",
+                s.["Prayer Request"].Value.ToLower() ]
+              .Value
+            "\\n"
+            l.["(If the prayer request has been answered, or an event has passed, consider inactivating it instead.)"]
+              .Value
+            ]
+          |> String.concat ""
         tr [] [
           td [] [
-            yield a [ _href (sprintf "/prayer-request/%s/edit" reqId); _title s.["Edit This Prayer Request"].Value ]
+            yield a [ _href (sprintf "/prayer-request/%s/edit" reqId); _title l.["Edit This Prayer Request"].Value ]
               [ icon "edit" ]
-            match req.isExpired now grp.preferences.daysToExpire with
+            match req.isExpired now m.smallGroup.preferences.daysToExpire with
             | true ->
                 yield a [ _href (sprintf "/prayer-request/%s/restore" reqId)
-                          _title s.["Restore This Inactive Request"].Value ]
+                          _title l.["Restore This Inactive Request"].Value ]
                   [ icon "visibility" ]
             | false ->
                 yield a [ _href (sprintf "/prayer-request/%s/expire" reqId)
-                          _title s.["Expire This Request Immediately"].Value ]
+                          _title l.["Expire This Request Immediately"].Value ]
                   [ icon "visibility_off" ]
-            yield a [ _href delAction; _title s.["Delete This Request"].Value;
+            yield a [ _href delAction; _title l.["Delete This Request"].Value;
                       _onclick (sprintf "return PT.confirmDelete('%s','%s')" delAction delPrompt) ]
               [ icon "delete_forever" ]
             ]
@@ -210,15 +221,25 @@ let maintain (reqs : PrayerRequest seq) (grp : SmallGroup) onlyActive (ctx : Htt
           ])
     |> List.ofSeq
   [ yield div [ _class "pt-center-text" ] [
-      br []
-      a [ _href (sprintf "/prayer-request/%s/edit" emptyGuid); _title s.["Add a New Request"].Value ]
+      yield br []
+      yield a [ _href (sprintf "/prayer-request/%s/edit" emptyGuid); _title s.["Add a New Request"].Value ]
         [ icon "add_circle"; rawText " &nbsp;"; locStr s.["Add a New Request"] ]
-      rawText " &nbsp; &nbsp; &nbsp; "
-      a [ _href "/prayer-requests/view"; _title s.["View Prayer Request List"].Value ]
+      yield rawText " &nbsp; &nbsp; &nbsp; "
+      yield a [ _href "/prayer-requests/view"; _title s.["View Prayer Request List"].Value ]
         [ icon "list"; rawText " &nbsp;"; locStr s.["View Prayer Request List"] ]
+      match m.searchTerm with
+      | Some _ ->
+          yield rawText " &nbsp; &nbsp; &nbsp; "
+          yield a [ _href "/prayer-requests"; _title l.["Clear Search Criteria"].Value ]
+            [ icon "highlight_off"; rawText " &nbsp;"; raw l.["Clear Search Criteria"] ]
+      | None -> ()
       ]
     yield form [ _action "/prayer-requests"; _method "get"; _class "pt-center-text pt-search-form" ] [
-      input [ _type "text"; _name "search"; _placeholder s.["Search requests..."].Value ]
+      input [ _type "text"
+              _name "search"
+              _placeholder l.["Search requests..."].Value
+              _value (defaultArg m.searchTerm "")
+              ]
       space
       submit [] "search" s.["Search"]
       ]
@@ -241,20 +262,41 @@ let maintain (reqs : PrayerRequest seq) (grp : SmallGroup) onlyActive (ctx : Htt
           ]
     yield div [ _class "pt-center-text" ] [
       yield br []
-      match onlyActive with
-      | true ->
-          yield locStr s.["Inactive requests are currently not shown"]
+      match m.onlyActive with
+      | Some true ->
+          yield raw l.["Inactive requests are currently not shown"]
           yield br []
-          yield a [ _href "/prayer-requests/inactive" ] [ locStr s.["Show Inactive Requests"] ]
-      | false ->
-          yield locStr s.["Inactive requests are currently shown"]
-          yield br []
-          yield a [ _href "/prayer-requests" ] [ locStr s.["Do Not Show Inactive Requests"] ]
+          yield a [ _href "/prayer-requests/inactive" ] [ raw l.["Show Inactive Requests"] ]
+      | _ ->
+          match Option.isSome m.onlyActive with
+          | true ->
+              yield raw l.["Inactive requests are currently shown"]
+              yield br []
+              yield a [ _href "/prayer-requests" ] [ raw l.["Do Not Show Inactive Requests"] ]
+              yield br []
+              yield br []
+          | false -> ()
+          let srch = [ match m.searchTerm with Some s -> yield "search", s | None -> () ]
+          let url  = match m.onlyActive with Some true | None -> "" | _ -> "/inactive" |> sprintf "/prayer-requests%s"
+          let pg   = defaultArg m.pageNbr 1
+          match pg with
+          | 1 -> ()
+          | _ ->
+              // button (_type "submit" :: attrs) [ icon ico; rawText " &nbsp;"; locStr text ]
+              let withPage = match pg with 2 -> srch | _ -> ("page", string (pg - 1)) :: srch
+              yield a [ _href (makeUrl url withPage) ]
+                [ icon "keyboard_arrow_left"; space; raw l.["Previous Page"] ]
+          yield rawText " &nbsp; &nbsp; "
+          match requests.Length = m.smallGroup.preferences.pageSize with
+          | true ->
+              yield a [ _href (makeUrl url (("page", string (pg + 1)) :: srch)) ]
+                [ raw l.["Next Page"]; space; icon "keyboard_arrow_right" ]
+          | false -> ()
       ]
     yield form [ _id "DeleteForm"; _action ""; _method "post" ] [ csrfToken ctx ]
     ]
   |> Layout.Content.wide
-  |> Layout.standard vi "Maintain Requests"
+  |> Layout.standard vi (match m.searchTerm with Some _ -> "Search Results" | None -> "Maintain Requests")
 
 
 /// View for the printable prayer request list

@@ -90,7 +90,7 @@ type AppDbContext with
       }
 
   /// Get all (or active) requests for a small group as of now or the specified date
-  member this.AllRequestsForSmallGroup (grp : SmallGroup) clock listDate activeOnly : PrayerRequest seq =
+  member this.AllRequestsForSmallGroup (grp : SmallGroup) clock listDate activeOnly pageNbr : PrayerRequest seq =
     let theDate = match listDate with Some dt -> dt | _ -> grp.localDateNow clock
     upcast (
       this.PrayerRequests.AsNoTracking().Where(fun pr -> pr.smallGroupId = grp.smallGroupId)
@@ -104,8 +104,13 @@ type AppDbContext with
                   || RequestType.Expecting = pr.requestType)
               && not pr.isManuallyExpired)
       | query -> query
-      |> reqSort grp.preferences.requestSort)
-
+      |> reqSort grp.preferences.requestSort
+      |> function
+      | query ->
+          match activeOnly with
+          | true -> query.Skip 0
+          | false -> query.Skip((pageNbr - 1) * grp.preferences.pageSize).Take grp.preferences.pageSize)
+      
   /// Count prayer requests for the given small group Id
   member this.CountRequestsBySmallGroup gId =
     this.PrayerRequests.CountAsync (fun pr -> pr.smallGroupId = gId)

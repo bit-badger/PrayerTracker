@@ -55,6 +55,9 @@
     <EmbeddedResource Update="Resources\Views\Requests\Lists.es.resx">
       <Generator>ResXFileCodeGenerator</Generator>
     </EmbeddedResource>
+    <EmbeddedResource Update="Resources\Views\Requests\Maintain.es.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
     <EmbeddedResource Update="Resources\Views\SmallGroup\Preferences.es.resx">
       <Generator>ResXFileCodeGenerator</Generator>
     </EmbeddedResource>

@@ -192,7 +192,7 @@ let maintain (grps : SmallGroup list) ctx vi =
           |> List.map (fun g ->
               let grpId     = flatGuid g.smallGroupId
               let delAction = sprintf "/small-group/%s/delete" grpId
-              let delPrompt = s.["Are you want to delete this {0}?  This action cannot be undone.",
+              let delPrompt = s.["Are you sure you want to delete this {0}?  This action cannot be undone.",
                                    sprintf "%s (%s)" (s.["Small Group"].Value.ToLower ()) g.name].Value
               tr [] [
                 td [] [
@@ -246,8 +246,10 @@ let members (mbrs : Member list) (emailTyps : Map<string, LocalizedString>) ctx 
           |> List.map (fun mbr ->
               let mbrId     = flatGuid mbr.memberId
               let delAction = sprintf "/small-group/member/%s/delete" mbrId
-              let delPrompt = s.["Are you want to delete this {0} ({1})?  This action cannot be undone.",
-                                  s.["group member"], mbr.memberName].Value
+              let delPrompt =
+                s.["Are you sure you want to delete this {0}?  This action cannot be undone.", s.["group member"]]
+                  .Value
+                  .Replace("?", sprintf " (%s)?" mbr.memberName)
               tr [] [
                 td [] [
                   a [ _href (sprintf "/small-group/member/%s/edit" mbrId); _title s.["Edit This Group Member"].Value ]
