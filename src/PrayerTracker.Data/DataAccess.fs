@@ -118,7 +118,11 @@ type AppDbContext with
   member this.SearchRequestsForSmallGroup (grp : SmallGroup) (searchTerm : string) pageNbr : PrayerRequest seq =
     let pgSz = grp.preferences.pageSize
     let skip = (pageNbr - 1) * pgSz
-    let sql  = RawSqlString """SELECT * FROM pt."PrayerRequest" WHERE "SmallGroupId" = {0} AND "Text" ILIKE {1}"""
+    let sql  =
+      """ SELECT * FROM pt."PrayerRequest" WHERE "SmallGroupId" = {0} AND "Text" ILIKE {1}
+        UNION
+          SELECT * FROM pt."PrayerRequest" WHERE "SmallGroupId" = {0} AND COALESCE("Requestor", '') ILIKE {1}"""
+      |> RawSqlString
     let like = sprintf "%%%s%%"
     upcast (
       this.PrayerRequests.FromSql(sql, grp.smallGroupId, like searchTerm).AsNoTracking ()

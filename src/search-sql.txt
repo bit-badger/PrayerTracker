@@ -1,3 +1,5 @@
 create extension pg_trgm;
+set search_path=pt,public;
+create index "IX_PrayerRequest_Requestor_TRGM" on "PrayerRequest" using GIN (COALESCE("Requestor", '') gin_trgm_ops);
 create index "IX_PrayerRequest_Text_TRGM" on "PrayerRequest" using GIN ("Text" gin_trgm_ops);
 alter table "ListPreference" add column "PageSize" int not null default 100;
