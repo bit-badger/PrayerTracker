@@ -215,7 +215,7 @@ let maintain (reqs : PrayerRequest seq) (grp : SmallGroup) onlyActive (ctx : Htt
         [ icon "add_circle"; rawText " &nbsp;"; locStr s.["Add a New Request"] ]
       rawText " &nbsp; &nbsp; &nbsp; "
       a [ _href "/prayer-requests/view"; _title s.["View Prayer Request List"].Value ]
-        [ icon "list"; rawText " &nbsp;"; encLocText s.["View Prayer Request List"] ]
+        [ icon "list"; rawText " &nbsp;"; locStr s.["View Prayer Request List"] ]
       ]
     yield form [ _action "/prayer-requests"; _method "get"; _class "pt-center-text pt-search-form" ] [
       input [ _type "text"; _name "search"; _placeholder s.["Search requests..."].Value ]
