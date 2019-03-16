@@ -819,4 +819,10 @@
   <data name="Click for Help on This Page" xml:space="preserve">
     <value>Haga Clic para Obtener Ayuda en Esta Página</value>
   </data>
+  <data name="Search" xml:space="preserve">
+    <value>Buscar</value>
+  </data>
+  <data name="Search requests..." xml:space="preserve">
+    <value>Busca las peticiones...</value>
+  </data>
 </root>

@@ -201,8 +201,7 @@ let maintain onlyActive : HttpHandler =
     task {
       let reqs = 
         match ctx.GetQueryStringValue "search" with
-        | Ok srch ->
-            Seq.empty
+        | Ok srch -> db.SearchRequestsForSmallGroup grp srch 1
         | Error _ -> db.AllRequestsForSmallGroup grp (ctx.GetService<IClock> ()) None onlyActive
       return!
         { viewInfo ctx startTicks with helpLink = Some Help.maintainRequests }

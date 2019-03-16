@@ -8,6 +8,22 @@ open PrayerTracker.Entities
 open System.Collections.Generic
 open System.Linq
 
+[<AutoOpen>]
+module private Helpers =
+  
+  /// Central place to append sort criteria for prayer request queries
+  let reqSort sort (query : IQueryable<PrayerRequest>) =
+    match sort with
+    | "D" ->
+        query.OrderByDescending(fun pr -> pr.updatedDate)
+          .ThenByDescending(fun pr -> pr.enteredDate)
+          .ThenBy(fun pr -> pr.requestor)
+    | _ ->
+        query.OrderBy(fun pr -> pr.requestor)
+          .ThenByDescending(fun pr -> pr.updatedDate)
+          .ThenByDescending(fun pr -> pr.enteredDate)
+
+
 type AppDbContext with
   
   (*-- DISCONNECTED DATA EXTENSIONS --*)
@@ -79,7 +95,6 @@ type AppDbContext with
     upcast (
       this.PrayerRequests.AsNoTracking().Where(fun pr -> pr.smallGroupId = grp.smallGroupId)
       |> function
-      // Filter
       | query when activeOnly ->
           let asOf = theDate.AddDays(-(float grp.preferences.daysToExpire)).Date
           query.Where(fun pr ->
@@ -89,16 +104,7 @@ type AppDbContext with
                   || RequestType.Expecting = pr.requestType)
               && not pr.isManuallyExpired)
       | query -> query
-      |> function
-      // Sort
-      | query when grp.preferences.requestSort = "D" ->
-          query.OrderByDescending(fun pr -> pr.updatedDate)
-              .ThenByDescending(fun pr -> pr.enteredDate)
-              .ThenBy(fun pr -> pr.requestor)
-      | query ->
-          query.OrderBy(fun pr -> pr.requestor)
-              .ThenByDescending(fun pr -> pr.updatedDate)
-              .ThenByDescending(fun pr -> pr.enteredDate))
+      |> reqSort grp.preferences.requestSort)
 
   /// Count prayer requests for the given small group Id
   member this.CountRequestsBySmallGroup gId =
@@ -110,24 +116,14 @@ type AppDbContext with
 
   /// Get all (or active) requests for a small group as of now or the specified date
   member this.SearchRequestsForSmallGroup (grp : SmallGroup) (searchTerm : string) pageNbr : PrayerRequest seq =
-    let skip = (pageNbr - 1) * 100
+    let pgSz = grp.preferences.pageSize
+    let skip = (pageNbr - 1) * pgSz
+    let sql  = RawSqlString """SELECT * FROM pt."PrayerRequest" WHERE "SmallGroupId" = {0} AND "Text" ILIKE {1}"""
+    let like = sprintf "%%%s%%"
     upcast (
-      this.PrayerRequests
-        .AsNoTracking()
-        .Where(fun pr -> pr.smallGroupId = grp.smallGroupId && pr.text.Contains(searchTerm.ToLowerInvariant()))
-      |> function
-      // Sort
-      | query when grp.preferences.requestSort = "D" ->
-          query.OrderByDescending(fun pr -> pr.updatedDate)
-              .ThenByDescending(fun pr -> pr.enteredDate)
-              .ThenBy(fun pr -> pr.requestor)
-      | query ->
-          query.OrderBy(fun pr -> pr.requestor)
-              .ThenByDescending(fun pr -> pr.updatedDate)
-              .ThenByDescending(fun pr -> pr.enteredDate)
-      |> function
-      // Pagination
-      | query -> query.Skip(skip).Take(100))
+      this.PrayerRequests.FromSql(sql, grp.smallGroupId, like searchTerm).AsNoTracking ()
+      |> reqSort grp.preferences.requestSort
+      |> function query -> (query.Skip skip).Take pgSz)
 
   (*-- SMALL GROUP EXTENSIONS --*)
 
