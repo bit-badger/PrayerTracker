@@ -61,6 +61,11 @@ let htmlToPlainTextTests =
     test "does not fail when passed an empty string" {
       Expect.equal (htmlToPlainText "") "" "Should return an empty string when given an empty string"
       }
+    test "preserves blank lines for two consecutive line breaks" {
+      let expected = "Paragraph 1\n\nParagraph 2\n\n...and paragraph 3"
+      Expect.equal (htmlToPlainText "Paragraph 1<br><br>Paragraph 2<br><br>...and <strong>paragraph</strong> <i>3</i>")
+        expected "Blank lines not preserved for consecutive line breaks"
+      }
     ]
 
 [<Tests>]
