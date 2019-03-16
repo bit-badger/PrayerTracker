@@ -24,30 +24,30 @@ module Navigation =
       | Some u ->
           yield li [ _class "dropdown" ] [
             a [ _class "dropbtn"; _role "button"; _aria "label" s.["Requests"].Value; _title s.["Requests"].Value ]
-              [ icon "question_answer"; space; encLocText s.["Requests"]; space; icon "keyboard_arrow_down" ]
+              [ icon "question_answer"; space; locStr s.["Requests"]; space; icon "keyboard_arrow_down" ]
             div [ _class "dropdown-content"; _role "menu" ] [
-              a [ _href "/prayer-requests" ]      [ icon "compare_arrows"; menuSpacer; encLocText s.["Maintain"] ]
-              a [ _href "/prayer-requests/view" ] [ icon "list";           menuSpacer; encLocText s.["View List"] ]
+              a [ _href "/prayer-requests" ]      [ icon "compare_arrows"; menuSpacer; locStr s.["Maintain"] ]
+              a [ _href "/prayer-requests/view" ] [ icon "list";           menuSpacer; locStr s.["View List"] ]
               ]
             ]
           yield li [ _class "dropdown" ] [
             a [ _class "dropbtn"; _role "button"; _aria "label" s.["Group"].Value; _title s.["Group"].Value ]
-              [ icon "group"; space; encLocText s.["Group"]; space; icon "keyboard_arrow_down" ]
+              [ icon "group"; space; locStr s.["Group"]; space; icon "keyboard_arrow_down" ]
             div [ _class "dropdown-content"; _role "menu" ] [
-              a [ _href "/small-group/members" ]      [ icon "email"; menuSpacer; encLocText s.["Maintain Group Members"] ]
-              a [ _href "/small-group/announcement" ] [ icon "send";  menuSpacer; encLocText s.["Send Announcement"] ]
-              a [ _href "/small-group/preferences" ]  [ icon "build"; menuSpacer; encLocText s.["Change Preferences"] ]
+              a [ _href "/small-group/members" ]      [ icon "email"; menuSpacer; locStr s.["Maintain Group Members"] ]
+              a [ _href "/small-group/announcement" ] [ icon "send";  menuSpacer; locStr s.["Send Announcement"] ]
+              a [ _href "/small-group/preferences" ]  [ icon "build"; menuSpacer; locStr s.["Change Preferences"] ]
               ]
             ]
           match u.isAdmin with
           | true ->
               yield li [ _class "dropdown" ] [
                 a [ _class "dropbtn"; _role "button"; _aria "label" s.["Administration"].Value; _title s.["Administration"].Value ]
-                  [ icon "settings"; space; encLocText s.["Administration"]; space; icon "keyboard_arrow_down" ]
+                  [ icon "settings"; space; locStr s.["Administration"]; space; icon "keyboard_arrow_down" ]
                 div [ _class "dropdown-content"; _role "menu" ] [
-                  a [ _href "/churches" ]     [ icon "home";  menuSpacer; encLocText s.["Churches"] ]
-                  a [ _href "/small-groups" ] [ icon "send";  menuSpacer; encLocText s.["Groups"] ]
-                  a [ _href "/users" ]        [ icon "build"; menuSpacer; encLocText s.["Users"] ]
+                  a [ _href "/churches" ]     [ icon "home";  menuSpacer; locStr s.["Churches"] ]
+                  a [ _href "/small-groups" ] [ icon "send";  menuSpacer; locStr s.["Groups"] ]
+                  a [ _href "/users" ]        [ icon "build"; menuSpacer; locStr s.["Users"] ]
                   ]
                 ]
           | false -> ()
@@ -58,22 +58,22 @@ module Navigation =
                 a [ _href "/prayer-requests/view"
                     _aria "label" s.["View Request List"].Value
                     _title s.["View Request List"].Value ]
-                  [ icon "list"; space; encLocText s.["View Request List"] ]
+                  [ icon "list"; space; locStr s.["View Request List"] ]
                 ]
           | None ->
               yield li [ _class "dropdown" ] [
                 a [ _class "dropbtn"; _role "button"; _aria "label" s.["Log On"].Value; _title s.["Log On"].Value ]
-                  [ icon "security"; space; encLocText s.["Log On"]; space; icon "keyboard_arrow_down" ]
+                  [ icon "security"; space; locStr s.["Log On"]; space; icon "keyboard_arrow_down" ]
                 div [ _class "dropdown-content"; _role "menu" ] [
-                  a [ _href "/user/log-on" ] [ icon "person"; menuSpacer; encLocText s.["User"] ]
-                  a [ _href "/small-group/log-on" ] [ icon "group"; menuSpacer; encLocText s.["Group"] ]
+                  a [ _href "/user/log-on" ]        [ icon "person"; menuSpacer; locStr s.["User"] ]
+                  a [ _href "/small-group/log-on" ] [ icon "group";  menuSpacer; locStr s.["Group"] ]
                   ]
                 ]
               yield li [] [
                 a [ _href "/prayer-requests/lists"
                     _aria "label" s.["View Request List"].Value
                     _title s.["View Request List"].Value ]
-                  [ icon "list"; space; encLocText s.["View Request List"] ]
+                  [ icon "list"; space; locStr s.["View Request List"] ]
                 ]
       yield li [] [
         a [ _href   (sprintf "https://docs.prayer.bitbadger.solutions/%s" <| langCode ())
@@ -81,7 +81,7 @@ module Navigation =
             _title  s.["View Help"].Value
             _target "_blank"
             ]
-          [ icon "help"; space; encLocText s.["Help"] ]
+          [ icon "help"; space; locStr s.["Help"] ]
         ]
       ]
     let rightLinks =
@@ -93,19 +93,19 @@ module Navigation =
                   a [ _href "/user/password"
                       _aria "label" s.["Change Your Password"].Value
                       _title s.["Change Your Password"].Value ]
-                    [ icon "lock"; space; encLocText s.["Change Your Password"] ]
+                    [ icon "lock"; space; locStr s.["Change Your Password"] ]
                   ]
             | None -> ()
             yield li [] [
               a [ _href "/log-off"; _aria "label" s.["Log Off"].Value; _title s.["Log Off"].Value ]
-                [ icon "power_settings_new"; space; encLocText s.["Log Off"] ]
+                [ icon "power_settings_new"; space; locStr s.["Log Off"] ]
               ]
             ]
       | None -> List.empty
     header [ _class "pt-title-bar" ] [
       section [ _class "pt-title-bar-left" ] [
         span [ _class "pt-title-bar-home" ] [
-          a [ _href "/"; _title s.["Home"].Value ] [ encLocText s.["PrayerTracker"] ]
+          a [ _href "/"; _title s.["Home"].Value ] [ locStr s.["PrayerTracker"] ]
           ]
         ul [] leftLinks
         ]
@@ -120,34 +120,34 @@ module Navigation =
     let s = I18N.localizer.Force ()
     header [ _id "pt-language" ] [
       div [] [
-        yield span [ _class "u" ] [ encLocText s.["Language"]; rawText ": " ]
+        yield span [ _class "u" ] [ locStr s.["Language"]; rawText ": " ]
         match langCode () with
         | "es" -> 
-            yield encLocText s.["Spanish"]
+            yield locStr s.["Spanish"]
             yield rawText " &nbsp; &bull; &nbsp; "
-            yield a [ _href "/language/en" ] [ encLocText s.["Change to English"] ]
+            yield a [ _href "/language/en" ] [ locStr s.["Change to English"] ]
         | _ ->
-            yield encLocText s.["English"]
+            yield locStr s.["English"]
             yield rawText " &nbsp; &bull; &nbsp; "
-            yield a [ _href "/language/es" ] [ encLocText s.["Cambie a Español"] ]
+            yield a [ _href "/language/es" ] [ locStr s.["Cambie a Español"] ]
         ]
       match m.group with
       | Some g ->
           [ match m.user with
             | Some u ->
-                yield span [ _class "u" ] [ encLocText s.["Currently Logged On"] ]
+                yield span [ _class "u" ] [ locStr s.["Currently Logged On"] ]
                 yield rawText "&nbsp; &nbsp;"
                 yield icon "person"
-                yield strong [] [ encodedText u.fullName ]
+                yield strong [] [ str u.fullName ]
                 yield rawText "&nbsp; &nbsp; "
             | None ->
-                yield encLocText s.["Logged On as a Member of"]
+                yield locStr s.["Logged On as a Member of"]
                 yield rawText "&nbsp; "
             yield icon "group"
             yield space
             match m.user with
-            | Some _ -> yield  a [ _href "/small-group" ] [ strong [] [ encodedText g.name ] ]
-            | None -> yield strong [] [ encodedText g.name ]
+            | Some _ -> yield  a [ _href "/small-group" ] [ strong [] [ str g.name ] ]
+            | None -> yield strong [] [ str g.name ]
             yield rawText " &nbsp;"
             ]
       | None -> []
@@ -180,7 +180,7 @@ let private htmlHead m pageTitle =
   let s = I18N.localizer.Force ()
   head [] [
     yield meta [ _charset "UTF-8" ]
-    yield title [] [ encLocText pageTitle; titleSep; encLocText s.["PrayerTracker"] ]
+    yield title [] [ locStr pageTitle; titleSep; locStr s.["PrayerTracker"] ]
     yield! commonHead
     for cssFile in m.style do
       yield link [ _rel "stylesheet"; _href (sprintf "/css/%s.css" cssFile); _type "text/css" ]
@@ -205,7 +205,7 @@ let private renderPageTitle m pageTitle =
     match m.helpLink with
     | Some link -> yield  Help.fullLink (langCode ()) link |> helpLink
     | None -> ()
-    yield encLocText pageTitle
+    yield locStr pageTitle
     ]
 
 /// Render the messages that may need to be displayed to the user
@@ -219,7 +219,7 @@ let private messages m =
             match msg.level with
             | "Info" -> ()
             | lvl ->
-                yield strong [] [ encLocText s.[lvl] ]
+                yield strong [] [ locStr s.[lvl] ]
                 yield rawText " &#xbb; "
             yield rawText msg.text.Value
             match msg.description with
@@ -238,25 +238,25 @@ let private htmlFooter m =
   let resultTime = TimeSpan(DateTime.Now.Ticks - m.requestStart).TotalSeconds
   footer [] [
     div [ _id "pt-legal" ] [
-      a [ _href "/legal/privacy-policy" ] [ encLocText s.["Privacy Policy"] ]
+      a [ _href "/legal/privacy-policy" ] [ locStr s.["Privacy Policy"] ]
       rawText " &bull; "
-      a [ _href "/legal/terms-of-service" ] [ encLocText s.["Terms of Service"] ]
+      a [ _href "/legal/terms-of-service" ] [ locStr s.["Terms of Service"] ]
       rawText " &bull; "
       a [ _href "https://github.com/bit-badger/PrayerTracker"
           _title s.["View source code and get technical support"].Value
           _target "_blank"
           _rel "noopener" ] [
-        encLocText s.["Source & Support"]
+        locStr s.["Source & Support"]
         ]
       ]
     div [ _id "pt-footer" ] [
       a [ _href "/"; _style "line-height:28px;" ] [
         img [ _src (sprintf "/img/%O.png" s.["footer_en"]); _alt imgText; _title imgText ]
         ]
-      encodedText m.version
+      str m.version
       space
       i [ _title s.["This page loaded in {0:N3} seconds", resultTime].Value; _class "material-icons md-18" ] [
-        encodedText "schedule"
+        str "schedule"
         ]
       ]
     ]
@@ -286,7 +286,7 @@ let bare pageTitle content =
   html [ _lang "" ] [
     head [] [
       meta [ _charset "UTF-8" ]
-      title [] [ encLocText ttl; titleSep; encLocText s.["PrayerTracker"] ]
+      title [] [ locStr ttl; titleSep; locStr s.["PrayerTracker"] ]
       ]
     body [] [
       content

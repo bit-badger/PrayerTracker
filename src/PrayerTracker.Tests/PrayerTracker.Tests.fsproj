@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Expecto" Version="8.8.0" />
+    <PackageReference Include="Expecto" Version="8.9.1" />
     <PackageReference Include="Expecto.VisualStudio.TestAdapter" Version="10.0.2" />
     <PackageReference Include="NodaTime.Testing" Version="2.4.4" />
   </ItemGroup>

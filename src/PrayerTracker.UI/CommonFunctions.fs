@@ -12,7 +12,7 @@ open System.IO
 open System.Text.Encodings.Web
 
 /// Encoded text for a localized string
-let encLocText (text : LocalizedString) = encodedText text.Value
+let locStr (text : LocalizedString) = str text.Value
 
 /// Raw text for a localized HTML string
 let rawLocText (writer : StringWriter) (text : LocalizedHtmlString) =
@@ -44,7 +44,7 @@ let tableSummary itemCount (s : IStringLocalizer) =
       | 0 -> s.["No Entries to Display"]
       | 1 -> s.["Displaying {0} Entry", itemCount]
       | _ -> s.["Displaying {0} Entries", itemCount]
-      |> encLocText
+      |> locStr
       ]
     ]
      
@@ -100,7 +100,7 @@ let selectList name selected attrs items =
 let selectDefault text = sprintf "— %s —" text
 
 /// Generate a standard submit button with icon and text
-let submit attrs ico text = button (_type "submit" :: attrs) [ icon ico; rawText " &nbsp;"; encLocText text ]
+let submit attrs ico text = button (_type "submit" :: attrs) [ icon ico; rawText " &nbsp;"; locStr text ]
 
 /// Format a GUID with no dashes (used for URLs and forms)
 let flatGuid (x : Guid) = x.ToString "N"

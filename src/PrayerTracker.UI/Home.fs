@@ -39,7 +39,7 @@ let error code vi =
             _alt (sprintf "%A %A" s.["PrayerTracker"] s.["from Bit Badger Solutions"])
             _title (sprintf "%A %A" s.["PrayerTracker"] s.["from Bit Badger Solutions"])
             _style "vertical-align:text-bottom;" ]
-      encodedText vi.version
+      str vi.version
       ]
     ]
   |> div []
@@ -203,17 +203,17 @@ let termsOfService vi =
   use sw     = new StringWriter ()
   let raw    = rawLocText sw
   let ppLink =
-    a [ _href "/legal/privacy-policy" ] [ encodedText (s.["Privacy Policy"].Value.ToLower ()) ]
+    a [ _href "/legal/privacy-policy" ] [ str (s.["Privacy Policy"].Value.ToLower ()) ]
     |> (renderHtmlNode >> HtmlString)
 
   [ p [ _class "pt-right-text" ] [ small [] [ em [] [ raw l.["(as of May 24, 2018)"] ] ] ]
-    h3 [] [ encodedText "1. "; raw l.["Acceptance of Terms"] ]
+    h3 [] [ str "1. "; raw l.["Acceptance of Terms"] ]
     p [] [
       raw l.["By accessing this web site, you are agreeing to be bound by these Terms and Conditions, and that you are responsible to ensure that your use of this site complies with all applicable laws."]
       space
       raw l.["Your continued use of this site implies your acceptance of these terms."]
       ]
-    h3 [] [ encodedText "2. "; raw l.["Description of Service and Registration"] ]
+    h3 [] [ str "2. "; raw l.["Description of Service and Registration"] ]
     p [] [
       raw l.["{0} is a service that allows individuals to enter and amend prayer requests on behalf of organizations.",
               s.["PrayerTracker"]]
@@ -222,13 +222,13 @@ let termsOfService vi =
       space
       raw l.["See our {0} for details on the personal (user) information we maintain.", ppLink]
       ]
-    h3 [] [ encodedText "3. "; raw l.["Liability"] ]
+    h3 [] [ str "3. "; raw l.["Liability"] ]
     p [] [
       raw l.["This service is provided “as is”, and no warranty (express or implied) exists."]
       space
       raw l.["The service and its developers may not be held liable for any damages that may arise through the use of this service."]
       ]
-    h3 [] [ encodedText "4. "; raw l.["Updates to Terms"] ]
+    h3 [] [ str "4. "; raw l.["Updates to Terms"] ]
     p [] [
       raw l.["These terms and conditions may be updated at any time."]
       space

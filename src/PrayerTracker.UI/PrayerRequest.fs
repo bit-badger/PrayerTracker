@@ -20,14 +20,14 @@ let edit (m : EditRequest) today ctx vi =
       input [ _type "hidden"; _name "requestId"; _value (flatGuid m.requestId) ]
       div [ _class "pt-field-row" ] [
         yield div [ _class "pt-field" ] [
-          label [ _for "requestType" ] [ encLocText s.["Request Type"] ]
+          label [ _for "requestType" ] [ locStr s.["Request Type"] ]
           ReferenceList.requestTypeList s
           |> Seq.ofList
           |> Seq.map (fun item -> fst item, (snd item).Value)
           |> selectList "requestType" m.requestType [ _required; _autofocus ]
           ]
         yield div [ _class "pt-field" ] [
-          label [ _for "requestor" ] [ encLocText s.["Requestor / Subject"] ]
+          label [ _for "requestor" ] [ locStr s.["Requestor / Subject"] ]
           input [ _type "text"
                   _name "requestor"
                   _id "requestor"
@@ -36,7 +36,7 @@ let edit (m : EditRequest) today ctx vi =
         match m.isNew () with
         | true ->
             yield div [ _class "pt-field" ] [
-              label [ _for "enteredDate" ] [ encLocText s.["Date"] ]
+              label [ _for "enteredDate" ] [ locStr s.["Date"] ]
               input [ _type "date"; _name "enteredDate"; _id "enteredDate"; _placeholder today ]
               ]
         | false ->
@@ -44,21 +44,21 @@ let edit (m : EditRequest) today ctx vi =
               div [ _class "pt-checkbox-field" ] [
                 br []
                 input [ _type "checkbox"; _name "skipDateUpdate"; _id "skipDateUpdate"; _value "True" ]
-                label [ _for "skipDateUpdate" ] [ encLocText s.["Check to not update the date"] ]
+                label [ _for "skipDateUpdate" ] [ locStr s.["Check to not update the date"] ]
                 br []
-                small [] [ em [] [ encodedText (s.["Typo Corrections"].Value.ToLower ()); rawText ", etc." ] ]
+                small [] [ em [] [ str (s.["Typo Corrections"].Value.ToLower ()); rawText ", etc." ] ]
                 ]
               ]
         ]
       div [ _class "pt-field-row" ] [
         div [ _class "pt-field" ] [
-          label [] [ encLocText s.["Expiration"] ]
+          label [] [ locStr s.["Expiration"] ]
           ReferenceList.expirationList s ((m.isNew >> not) ())
           |> List.map (fun exp ->
               let radioId = sprintf "expiration_%s" (fst exp)
               span [ _class "text-nowrap" ] [
                 radio "expiration" radioId (fst exp) m.expiration
-                label [ _for radioId ] [ encLocText (snd exp) ]
+                label [ _for radioId ] [ locStr (snd exp) ]
                 rawText " &nbsp; &nbsp; "
                 ])
           |> div [ _class "pt-center-text" ]
@@ -66,8 +66,8 @@ let edit (m : EditRequest) today ctx vi =
         ]
       div [ _class "pt-field-row" ] [
         div [ _class "pt-field pt-editor" ] [
-          label [ _for "text" ] [ encLocText s.["Request"] ]
-          textarea [ _name "text"; _id "text" ] [ encodedText m.text ]
+          label [ _for "text" ] [ locStr s.["Request"] ]
+          textarea [ _name "text"; _id "text" ] [ str m.text ]
           ]
         ]
       div [ _class "pt-field-row" ] [ submit [] "save" s.["Save Request"] ]
@@ -87,17 +87,17 @@ let email m vi =
     |> List.fold (fun (acc : StringBuilder) mbr -> acc.AppendFormat(", {0} <{1}>", mbr.memberName, mbr.email))
                  (StringBuilder ())
   [ p [ _style (sprintf "font-family:%s;font-size:%ipt;" prefs.listFonts prefs.textFontSize) ] [
-      encLocText s.["The request list was sent to the following people, via individual e-mails"]
+      locStr s.["The request list was sent to the following people, via individual e-mails"]
       rawText ":"
       br []
-      small [] [ encodedText (addresses.Remove(0, 2).ToString ()) ]
+      small [] [ str (addresses.Remove(0, 2).ToString ()) ]
       ]
-    span [ _class "pt-email-heading" ] [ encLocText s.["HTML Format"]; rawText ":" ]
+    span [ _class "pt-email-heading" ] [ locStr s.["HTML Format"]; rawText ":" ]
     div [ _class "pt-email-canvas" ] [ rawText (m.asHtml s) ]
     br []
     br []
-    span [ _class "pt-email-heading" ] [ encLocText s.["Plain-Text Format"]; rawText ":" ]
-    div[ _class "pt-email-canvas" ] [ pre [] [ encodedText (m.asText s) ] ]
+    span [ _class "pt-email-heading" ] [ locStr s.["Plain-Text Format"]; rawText ":" ]
+    div[ _class "pt-email-canvas" ] [ pre [] [ str (m.asText s) ] ]
     ]
   |> Layout.Content.standard
   |> Layout.standard vi pageTitle
@@ -132,9 +132,9 @@ let lists (grps : SmallGroup list) vi =
         yield table [ _class "pt-table pt-action-table" ] [
           thead [] [
             tr [] [
-              th [] [ encLocText s.["Actions"] ]
-              th [] [ encLocText s.["Church"] ]
-              th [] [ encLocText s.["Group"] ]
+              th [] [ locStr s.["Actions"] ]
+              th [] [ locStr s.["Church"] ]
+              th [] [ locStr s.["Group"] ]
               ]
             ]
           grps
@@ -149,8 +149,8 @@ let lists (grps : SmallGroup list) vi =
                       [ icon "verified_user" ]
                 |> List.singleton
                 |> td []
-                td [] [ encodedText grp.church.name ]
-                td [] [ encodedText grp.name ]
+                td [] [ str grp.church.name ]
+                td [] [ str grp.name ]
                 ])
           |> tbody []
           ]
@@ -197,11 +197,10 @@ let maintain (reqs : PrayerRequest seq) (grp : SmallGroup) onlyActive (ctx : Htt
               [ icon "delete_forever" ]
             ]
           td [ updReq req ] [
-            encodedText (req.updatedDate.ToString(s.["MMMM d, yyyy"].Value,
-                            System.Globalization.CultureInfo.CurrentUICulture))
+            str (req.updatedDate.ToString(s.["MMMM d, yyyy"].Value, System.Globalization.CultureInfo.CurrentUICulture))
             ]
-          td [] [ encLocText typs.[req.requestType] ]
-          td [ reqExp req ] [ encodedText (match req.requestor with Some r -> r | None -> " ") ]
+          td [] [ locStr typs.[req.requestType] ]
+          td [ reqExp req ] [ str (match req.requestor with Some r -> r | None -> " ") ]
           td [] [
             yield
               match 60 > reqText.Length with
@@ -210,46 +209,49 @@ let maintain (reqs : PrayerRequest seq) (grp : SmallGroup) onlyActive (ctx : Htt
             ]
           ])
     |> List.ofSeq
-  [ div [ _class "pt-center-text" ] [
+  [ yield div [ _class "pt-center-text" ] [
       br []
       a [ _href (sprintf "/prayer-request/%s/edit" emptyGuid); _title s.["Add a New Request"].Value ]
-        [ icon "add_circle"; rawText " &nbsp;"; encLocText s.["Add a New Request"] ]
+        [ icon "add_circle"; rawText " &nbsp;"; locStr s.["Add a New Request"] ]
       rawText " &nbsp; &nbsp; &nbsp; "
       a [ _href "/prayer-requests/view"; _title s.["View Prayer Request List"].Value ]
         [ icon "list"; rawText " &nbsp;"; encLocText s.["View Prayer Request List"] ]
       ]
-    form [ _action "/prayer-requests"; _method "get"; _class "pt-center-text pt-search-form" ] [
+    yield form [ _action "/prayer-requests"; _method "get"; _class "pt-center-text pt-search-form" ] [
       input [ _type "text"; _name "search"; _placeholder s.["Search requests..."].Value ]
       space
       submit [] "search" s.["Search"]
       ]
-    br []
-    tableSummary requests.Length s
-    table [ _class "pt-table pt-action-table" ] [
-      thead [] [
-        tr [] [
-          th [] [ encLocText s.["Actions"] ]
-          th [] [ encLocText s.["Updated Date"] ]
-          th [] [ encLocText s.["Type"] ]
-          th [] [ encLocText s.["Requestor"] ]
-          th [] [ encLocText s.["Request"] ]
+    yield br []
+    yield tableSummary requests.Length s
+    match requests.Length with
+    | 0 -> ()
+    | _ ->
+        yield table [ _class "pt-table pt-action-table" ] [
+          thead [] [
+            tr [] [
+              th [] [ locStr s.["Actions"] ]
+              th [] [ locStr s.["Updated Date"] ]
+              th [] [ locStr s.["Type"] ]
+              th [] [ locStr s.["Requestor"] ]
+              th [] [ locStr s.["Request"] ]
+              ]
+            ]
+          tbody [] requests
           ]
-        ]
-      tbody [] requests
-      ]
-    div [ _class "pt-center-text" ] [
+    yield div [ _class "pt-center-text" ] [
       yield br []
       match onlyActive with
       | true ->
-          yield encLocText s.["Inactive requests are currently not shown"]
+          yield locStr s.["Inactive requests are currently not shown"]
           yield br []
-          yield a [ _href "/prayer-requests/inactive" ] [ encLocText s.["Show Inactive Requests"] ]
+          yield a [ _href "/prayer-requests/inactive" ] [ locStr s.["Show Inactive Requests"] ]
       | false ->
-          yield encLocText s.["Inactive requests are currently shown"]
+          yield locStr s.["Inactive requests are currently shown"]
           yield br []
-          yield a [ _href "/prayer-requests" ] [ encLocText s.["Do Not Show Inactive Requests"] ]
+          yield a [ _href "/prayer-requests" ] [ locStr s.["Do Not Show Inactive Requests"] ]
       ]
-    form [ _id "DeleteForm"; _action ""; _method "post" ] [ csrfToken ctx ]
+    yield form [ _id "DeleteForm"; _action ""; _method "post" ] [ csrfToken ctx ]
     ]
   |> Layout.Content.wide
   |> Layout.standard vi "Maintain Requests"
@@ -270,7 +272,7 @@ let print m version =
             _alt imgAlt
             _title imgAlt ]
       space
-      encodedText version
+      str version
       ]
     ]
   |> Layout.bare pageTitle
@@ -287,7 +289,7 @@ let view m vi =
       yield a [ _class "pt-icon-link"
                 _href (sprintf "/prayer-requests/print/%s" dtString)
                 _title s.["View Printable"].Value ] [
-        icon "print"; rawText " &nbsp;"; encLocText s.["View Printable"]
+        icon "print"; rawText " &nbsp;"; locStr s.["View Printable"]
         ]
       match m.canEmail with
       | true ->
@@ -303,19 +305,19 @@ let view m vi =
               yield a [ _class "pt-icon-link"
                         _href (sprintf "/prayer-requests/view/%s" (sunday.ToString "yyyy-MM-dd"))
                         _title s.["List for Next Sunday"].Value ] [
-                icon "update"; rawText " &nbsp;"; encLocText s.["List for Next Sunday"]
+                icon "update"; rawText " &nbsp;"; locStr s.["List for Next Sunday"]
                 ]
               yield spacer
-          let emailPrompt = s.["This will e-mail the current list to every member of your class, without further prompting.  Are you sure this is what you are ready to do?"].Value
+          let emailPrompt = s.["This will e-mail the current list to every member of your group, without further prompting.  Are you sure this is what you are ready to do?"].Value
           yield a [ _class "pt-icon-link"
                     _href (sprintf "/prayer-requests/email/%s" dtString)
                     _title s.["Send via E-mail"].Value
                     _onclick (sprintf "return PT.requests.view.promptBeforeEmail('%s')" emailPrompt) ] [
-            icon "mail_outline"; rawText " &nbsp;"; encLocText s.["Send via E-mail"]
+            icon "mail_outline"; rawText " &nbsp;"; locStr s.["Send via E-mail"]
             ]
           yield spacer
           yield a [ _class "pt-icon-link"; _href "/prayer-requests"; _title s.["Maintain Prayer Requests"].Value ] [
-            icon "compare_arrows"; rawText " &nbsp;"; encLocText s.["Maintain Prayer Requests"]
+            icon "compare_arrows"; rawText " &nbsp;"; locStr s.["Maintain Prayer Requests"]
             ]
       | false -> ()
       ]

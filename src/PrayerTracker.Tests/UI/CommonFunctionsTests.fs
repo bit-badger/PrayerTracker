@@ -10,15 +10,6 @@ open System.IO
 
 
 [<Tests>]
-let encLocTextTests =
-  testList "encLocText" [
-    test "succeeds" {
-      let enc = encLocText (LocalizedString ("test", "test&")) |> renderHtmlNode
-      Expect.equal enc "test&amp;" "string not encoded correctly"
-      }
-    ]
-
-[<Tests>]
 let iconSizedTests =
   testList "iconSized" [
     test "succeeds" {
@@ -33,6 +24,15 @@ let iconTests =
     test "succeeds" {
       let ico = icon "bob-&-tom" |> renderHtmlNode
       Expect.equal ico "<i class=\"material-icons\">bob-&-tom</i>" "icon HTML not correct"
+      }
+    ]
+
+[<Tests>]
+let locStrTests =
+  testList "locStr" [
+    test "succeeds" {
+      let enc = locStr (LocalizedString ("test", "test&")) |> renderHtmlNode
+      Expect.equal enc "test&amp;" "string not encoded correctly"
       }
     ]
 

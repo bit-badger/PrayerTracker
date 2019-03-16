@@ -16,7 +16,7 @@
 
   <ItemGroup>
     <PackageReference Include="FSharp.EFCore.OptionConverter" Version="1.0.0" />
-    <PackageReference Include="Microsoft.FSharpLu" Version="0.10.29" />
+    <PackageReference Include="Microsoft.FSharpLu" Version="0.10.30" />
     <PackageReference Include="NodaTime" Version="2.4.4" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="2.2.0" />
     <PackageReference Include="TaskBuilder.fs" Version="2.1.0" />
