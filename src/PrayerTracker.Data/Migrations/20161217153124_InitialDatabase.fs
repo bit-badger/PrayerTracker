@@ -37,6 +37,7 @@ type ListPreferencesTable =
     requestSort         : OperationBuilder<AddColumnOperation>
     textFontSize        : OperationBuilder<AddColumnOperation>
     timeZoneId          : OperationBuilder<AddColumnOperation>
+    pageSize            : OperationBuilder<AddColumnOperation>
     }
 
 type MemberTable =
@@ -174,22 +175,23 @@ type InitialDatabase () =
       schema  = "pt",
       columns =
         (fun table ->
-            { smallGroupId        = table.Column<Guid>   (name = "SmallGroupId", nullable = false)
-              daysToExpire        = table.Column<int>    (name = "DaysToExpire", nullable = false, defaultValue = 14)
-              daysToKeepNew       = table.Column<int>    (name = "DaysToKeepNew", nullable = false, defaultValue = 7)
-              defaultEmailType    = table.Column<string> (name = "DefaultEmailType", nullable = false, defaultValue = "Html")
-              emailFromAddress    = table.Column<string> (name = "EmailFromAddress", nullable = false, defaultValue = "prayer@djs-consulting.com")
-              emailFromName       = table.Column<string> (name = "EmailFromName", nullable = false, defaultValue = "PrayerTracker")
-              groupPassword       = table.Column<string> (name = "GroupPassword", nullable = false, defaultValue = "")
-              headingColor        = table.Column<string> (name = "HeadingColor", nullable = false, defaultValue = "maroon")
-              headingFontSize     = table.Column<int>    (name = "HeadingFontSize", nullable = false, defaultValue = 16)
-              isPublic            = table.Column<bool>   (name = "IsPublic", nullable = false, defaultValue = false)
-              lineColor           = table.Column<string> (name = "LineColor", nullable = false, defaultValue = "navy")
-              listFonts           = table.Column<string> (name = "ListFonts", nullable = false, defaultValue = "Century Gothic,Tahoma,Luxi Sans,sans-serif")
+            { smallGroupId        = table.Column<Guid>   (name = "SmallGroupId",        nullable = false)
+              daysToExpire        = table.Column<int>    (name = "DaysToExpire",        nullable = false, defaultValue = 14)
+              daysToKeepNew       = table.Column<int>    (name = "DaysToKeepNew",       nullable = false, defaultValue = 7)
+              defaultEmailType    = table.Column<string> (name = "DefaultEmailType",    nullable = false, defaultValue = "Html")
+              emailFromAddress    = table.Column<string> (name = "EmailFromAddress",    nullable = false, defaultValue = "prayer@djs-consulting.com")
+              emailFromName       = table.Column<string> (name = "EmailFromName",       nullable = false, defaultValue = "PrayerTracker")
+              groupPassword       = table.Column<string> (name = "GroupPassword",       nullable = false, defaultValue = "")
+              headingColor        = table.Column<string> (name = "HeadingColor",        nullable = false, defaultValue = "maroon")
+              headingFontSize     = table.Column<int>    (name = "HeadingFontSize",     nullable = false, defaultValue = 16)
+              isPublic            = table.Column<bool>   (name = "IsPublic",            nullable = false, defaultValue = false)
+              lineColor           = table.Column<string> (name = "LineColor",           nullable = false, defaultValue = "navy")
+              listFonts           = table.Column<string> (name = "ListFonts",           nullable = false, defaultValue = "Century Gothic,Tahoma,Luxi Sans,sans-serif")
               longTermUpdateWeeks = table.Column<int>    (name = "LongTermUpdateWeeks", nullable = false, defaultValue = 4)
-              requestSort         = table.Column<string> (name = "RequestSort", maxLength = Nullable<int> 1, nullable = false, defaultValue = "D")
-              textFontSize        = table.Column<int>    (name = "TextFontSize", nullable = false, defaultValue = 12)
-              timeZoneId          = table.Column<string> (name = "TimeZoneId", nullable = false, defaultValue = "America/Denver")
+              requestSort         = table.Column<string> (name = "RequestSort",         nullable = false, defaultValue = "D", maxLength = Nullable<int> 1)
+              textFontSize        = table.Column<int>    (name = "TextFontSize",        nullable = false, defaultValue = 12)
+              timeZoneId          = table.Column<string> (name = "TimeZoneId",          nullable = false, defaultValue = "America/Denver")
+              pageSize            = table.Column<int>    (name = "PageSize",            nullable = false, defaultValue = 100)
               }),
       constraints =
         fun table ->

@@ -49,6 +49,7 @@ type AppDbContextModelSnapshot () =
           b.Property<string>("requestSort").IsRequired().ValueGeneratedOnAdd().HasDefaultValue("D").HasMaxLength(1)  |> ignore
           b.Property<int>("textFontSize").ValueGeneratedOnAdd().HasDefaultValue(12) |> ignore
           b.Property<string>("timeZoneId").IsRequired().ValueGeneratedOnAdd().HasDefaultValue("America/Denver") |> ignore
+          b.Property<int>("pageSize").IsRequired().ValueGeneratedOnAdd().HasDefaultValue(100) |> ignore
           b.HasKey("smallGroupId") |> ignore
           b.HasIndex("timeZoneId") |> ignore
           b.ToTable("ListPreference") |> ignore)

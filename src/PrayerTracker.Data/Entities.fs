@@ -156,6 +156,8 @@ and [<CLIMutable; NoComparison; NoEquality>] ListPreferences =
     timeZoneId          : TimeZoneId
     /// The time zone information
     timeZone            : TimeZone
+    /// The number of requests displayed per page
+    pageSize            : int
     }
   with
     /// A set of preferences with their default values
@@ -177,6 +179,7 @@ and [<CLIMutable; NoComparison; NoEquality>] ListPreferences =
         isPublic            = false
         timeZoneId          = "America/Denver"
         timeZone            = TimeZone.empty
+        pageSize            = 100
       }
     /// Configure EF for this entity
     static member internal configureEF (mb : ModelBuilder) =
@@ -188,78 +191,83 @@ and [<CLIMutable; NoComparison; NoEquality>] ListPreferences =
           m.Property(fun e -> e.daysToKeepNew)
             .HasColumnName("DaysToKeepNew")
             .IsRequired()
-            .HasDefaultValue(7)
+            .HasDefaultValue 7
           |> ignore
           m.Property(fun e -> e.daysToExpire)
             .HasColumnName("DaysToExpire")
             .IsRequired()
-            .HasDefaultValue(14)
+            .HasDefaultValue 14
           |> ignore
           m.Property(fun e -> e.longTermUpdateWeeks)
             .HasColumnName("LongTermUpdateWeeks")
             .IsRequired()
-            .HasDefaultValue(4)
+            .HasDefaultValue 4
           |> ignore
           m.Property(fun e -> e.emailFromName)
             .HasColumnName("EmailFromName")
             .IsRequired()
-            .HasDefaultValue("PrayerTracker")
+            .HasDefaultValue "PrayerTracker"
           |> ignore
           m.Property(fun e -> e.emailFromAddress)
             .HasColumnName("EmailFromAddress")
             .IsRequired()
-            .HasDefaultValue("prayer@djs-consulting.com")
+            .HasDefaultValue "prayer@djs-consulting.com"
           |> ignore
           m.Property(fun e -> e.listFonts)
             .HasColumnName("ListFonts")
             .IsRequired()
-            .HasDefaultValue("Century Gothic,Tahoma,Luxi Sans,sans-serif")
+            .HasDefaultValue "Century Gothic,Tahoma,Luxi Sans,sans-serif"
           |> ignore
           m.Property(fun e -> e.headingColor)
             .HasColumnName("HeadingColor")
             .IsRequired()
-            .HasDefaultValue("maroon")
+            .HasDefaultValue "maroon"
           |> ignore
           m.Property(fun e -> e.lineColor)
             .HasColumnName("LineColor")
             .IsRequired()
-            .HasDefaultValue("navy")
+            .HasDefaultValue "navy"
           |> ignore
           m.Property(fun e -> e.headingFontSize)
             .HasColumnName("HeadingFontSize")
             .IsRequired()
-            .HasDefaultValue(16)
+            .HasDefaultValue 16
           |> ignore
           m.Property(fun e -> e.textFontSize)
             .HasColumnName("TextFontSize")
             .IsRequired()
-            .HasDefaultValue(12)
+            .HasDefaultValue 12
           |> ignore
           m.Property(fun e -> e.requestSort)
             .HasColumnName("RequestSort")
             .IsRequired()
             .HasMaxLength(1)
-            .HasDefaultValue("D")
+            .HasDefaultValue "D"
           |> ignore
           m.Property(fun e -> e.groupPassword)
             .HasColumnName("GroupPassword")
             .IsRequired()
-            .HasDefaultValue("")
+            .HasDefaultValue ""
           |> ignore
           m.Property(fun e -> e.defaultEmailType)
             .HasColumnName("DefaultEmailType")
             .IsRequired()
-            .HasDefaultValue(EmailType.Html)
+            .HasDefaultValue EmailType.Html
           |> ignore
           m.Property(fun e -> e.isPublic)
             .HasColumnName("IsPublic")
             .IsRequired()
-            .HasDefaultValue(false)
+            .HasDefaultValue false
           |> ignore
           m.Property(fun e -> e.timeZoneId)
             .HasColumnName("TimeZoneId")
             .IsRequired()
-            .HasDefaultValue("America/Denver")
+            .HasDefaultValue "America/Denver"
+          |> ignore
+          m.Property(fun e -> e.pageSize)
+            .HasColumnName("PageSize")
+            .IsRequired()
+            .HasDefaultValue 100
           |> ignore)
       |> ignore
 

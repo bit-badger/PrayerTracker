@@ -64,7 +64,7 @@ type AppDbContext with
   member this.CountMembersForSmallGroup gId =
     this.Members.CountAsync (fun m -> m.smallGroupId = gId)
 
-  (*-- PRAYER REQUEST EXTENSIONS *)
+  (*-- PRAYER REQUEST EXTENSIONS --*)
 
   /// Get a prayer request by its Id
   member this.TryRequestById reqId =
@@ -107,6 +107,27 @@ type AppDbContext with
   /// Count prayer requests for the given church Id
   member this.CountRequestsByChurch cId =
     this.PrayerRequests.CountAsync (fun pr -> pr.smallGroup.churchId = cId)
+
+  /// Get all (or active) requests for a small group as of now or the specified date
+  member this.SearchRequestsForSmallGroup (grp : SmallGroup) (searchTerm : string) pageNbr : PrayerRequest seq =
+    let skip = (pageNbr - 1) * 100
+    upcast (
+      this.PrayerRequests
+        .AsNoTracking()
+        .Where(fun pr -> pr.smallGroupId = grp.smallGroupId && pr.text.Contains(searchTerm.ToLowerInvariant()))
+      |> function
+      // Sort
+      | query when grp.preferences.requestSort = "D" ->
+          query.OrderByDescending(fun pr -> pr.updatedDate)
+              .ThenByDescending(fun pr -> pr.enteredDate)
+              .ThenBy(fun pr -> pr.requestor)
+      | query ->
+          query.OrderBy(fun pr -> pr.requestor)
+              .ThenByDescending(fun pr -> pr.updatedDate)
+              .ThenByDescending(fun pr -> pr.enteredDate)
+      |> function
+      // Pagination
+      | query -> query.Skip(skip).Take(100))
 
   (*-- SMALL GROUP EXTENSIONS --*)
 
