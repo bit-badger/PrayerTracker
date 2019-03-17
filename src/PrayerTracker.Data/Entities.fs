@@ -61,7 +61,6 @@ with
     | LongDate -> "L"
 
 
-[<AutoOpen>]
 module Converters =
   open Microsoft.EntityFrameworkCore.Storage.ValueConversion
   open Microsoft.FSharp.Linq.RuntimeHelpers
@@ -325,7 +324,7 @@ and [<CLIMutable; NoComparison; NoEquality>] ListPreferences =
           |> ignore)
       |> ignore
       mb.Model.FindEntityType(typeof<ListPreferences>).FindProperty("asOfDateDisplay")
-        .SetValueConverter(AsOfDateDisplayConverter ())
+        .SetValueConverter(Converters.AsOfDateDisplayConverter ())
 
 
 /// A member of a small group

@@ -798,10 +798,25 @@
   <data name="Search" xml:space="preserve">
     <value>Buscar</value>
   </data>
+  <data name="Display a full “as of” date" xml:space="preserve">
+    <value>Mostrar una fecha “como de” completa</value>
+  </data>
+  <data name="Display a short “as of” date" xml:space="preserve">
+    <value>Mostrar una fecha “como de” corta</value>
+  </data>
+  <data name="Do not display the “as of” date" xml:space="preserve">
+    <value>No se muestran la fecha “como de”</value>
+  </data>
+  <data name="Page Size" xml:space="preserve">
+    <value>Tamaño de Página</value>
+  </data>
   <data name="Prayer Request" xml:space="preserve">
     <value>Petición de Oración</value>
   </data>
   <data name="Search Results" xml:space="preserve">
     <value>Resultados de la Búsqueda</value>
+  </data>
+  <data name="“As of” Date Display" xml:space="preserve">
+    <value>Visualización de la Fecha “Como de”</value>
   </data>
 </root>

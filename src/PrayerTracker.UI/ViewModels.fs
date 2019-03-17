@@ -10,6 +10,13 @@ open System
 /// Helper module to return localized reference lists
 module ReferenceList =
 
+  /// A localized list of the AsOfDateDisplay DU cases
+  let asOfDateList (s : IStringLocalizer) =
+    [ NoDisplay.toCode (), s.["Do not display the “as of” date"]
+      ShortDate.toCode (), s.["Display a short “as of” date"]
+      LongDate.toCode  (), s.["Display a full “as of” date"]
+      ]
+
   /// A list of e-mail type options
   let emailTypeList def (s : IStringLocalizer) =
     // Localize the default type
@@ -27,12 +34,10 @@ module ReferenceList =
 
   /// A list of expiration options
   let expirationList (s : IStringLocalizer) includeExpireNow =
-    seq {
-      yield "N", s.["Expire Normally"]
+    [ yield "N", s.["Expire Normally"]
       yield "Y", s.["Request Never Expires"]
       match includeExpireNow with true -> yield "X", s.["Expire Immediately"] | false -> ()
-      }
-    |> List.ofSeq
+      ]
 
   /// A list of request types
   let requestTypeList (s : IStringLocalizer) =
@@ -273,6 +278,10 @@ type EditPreferences =
     listVisibility      : int
     /// The small group password
     groupPassword       : string option
+    /// The page size for search / inactive requests
+    pageSize            : int
+    /// How the as-of date should be displayed
+    asOfDate            : string
     }
 with
   static member fromPreferences (prefs : ListPreferences) =
@@ -293,6 +302,8 @@ with
       listFontSize        = prefs.textFontSize
       timeZone            = prefs.timeZoneId
       groupPassword       = Some prefs.groupPassword
+      pageSize            = prefs.pageSize
+      asOfDate            = prefs.asOfDateDisplay.toCode ()
       listVisibility      =
         match true with 
         | _ when prefs.isPublic -> RequestVisibility.``public``
@@ -323,6 +334,8 @@ with
         timeZoneId          = this.timeZone
         isPublic            = isPublic
         groupPassword       = grpPw
+        pageSize            = this.pageSize
+        asOfDateDisplay     = AsOfDateDisplay.fromCode this.asOfDate
       }
 
 
