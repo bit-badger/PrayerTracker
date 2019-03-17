@@ -37,6 +37,51 @@ module RequestType =
 
 (*-- SUPPORT TYPES --*)
 
+/// How as-of dates should (or should not) be displayed with requests
+type AsOfDateDisplay =
+  /// No as-of date should be displayed
+  | NoDisplay
+  /// The as-of date should be displayed in the culture's short date format
+  | ShortDate
+  /// The as-of date should be displayed in the culture's long date format
+  | LongDate
+with
+  /// Convert to a DU case from a single-character string
+  static member fromCode code =
+    match code with
+    | "N" -> NoDisplay
+    | "S" -> ShortDate
+    | "L" -> LongDate
+    | _ -> invalidArg "code" (sprintf "Unknown code %s" code)
+  /// Convert this DU case to a single-character string
+  member this.toCode () =
+    match this with
+    | NoDisplay -> "N"
+    | ShortDate -> "S"
+    | LongDate -> "L"
+
+
+[<AutoOpen>]
+module Converters =
+  open Microsoft.EntityFrameworkCore.Storage.ValueConversion
+  open Microsoft.FSharp.Linq.RuntimeHelpers
+  open System.Linq.Expressions
+
+  let private fromDU =
+    <@ Func<AsOfDateDisplay, string>(fun (x : AsOfDateDisplay) -> x.toCode ()) @>
+    |> LeafExpressionConverter.QuotationToExpression
+    |> unbox<Expression<Func<AsOfDateDisplay, string>>>
+
+  let private toDU =
+    <@ Func<string, AsOfDateDisplay>(AsOfDateDisplay.fromCode) @>
+    |> LeafExpressionConverter.QuotationToExpression
+    |> unbox<Expression<Func<string, AsOfDateDisplay>>>
+  
+  /// Conversion between a string and an AsOfDateDisplay DU value
+  type AsOfDateDisplayConverter () =
+    inherit ValueConverter<AsOfDateDisplay, string> (fromDU, toDU)
+
+
 /// Statistics for churches
 [<NoComparison; NoEquality>]
 type ChurchStats =
@@ -158,6 +203,8 @@ and [<CLIMutable; NoComparison; NoEquality>] ListPreferences =
     timeZone            : TimeZone
     /// The number of requests displayed per page
     pageSize            : int
+    /// How the as-of date should be automatically displayed
+    asOfDateDisplay     : AsOfDateDisplay
     }
   with
     /// A set of preferences with their default values
@@ -180,6 +227,7 @@ and [<CLIMutable; NoComparison; NoEquality>] ListPreferences =
         timeZoneId          = "America/Denver"
         timeZone            = TimeZone.empty
         pageSize            = 100
+        asOfDateDisplay     = NoDisplay
       }
     /// Configure EF for this entity
     static member internal configureEF (mb : ModelBuilder) =
@@ -268,8 +316,16 @@ and [<CLIMutable; NoComparison; NoEquality>] ListPreferences =
             .HasColumnName("PageSize")
             .IsRequired()
             .HasDefaultValue 100
+          |> ignore
+          m.Property(fun e -> e.asOfDateDisplay)
+            .HasColumnName("AsOfDateDisplay")
+            .IsRequired()
+            .HasMaxLength(1)
+            .HasDefaultValue NoDisplay
           |> ignore)
       |> ignore
+      mb.Model.FindEntityType(typeof<ListPreferences>).FindProperty("asOfDateDisplay")
+        .SetValueConverter(AsOfDateDisplayConverter ())
 
 
 /// A member of a small group

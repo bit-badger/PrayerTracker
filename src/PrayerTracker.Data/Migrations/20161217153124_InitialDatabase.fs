@@ -38,6 +38,7 @@ type ListPreferencesTable =
     textFontSize        : OperationBuilder<AddColumnOperation>
     timeZoneId          : OperationBuilder<AddColumnOperation>
     pageSize            : OperationBuilder<AddColumnOperation>
+    asOfDateDisplay     : OperationBuilder<AddColumnOperation>
     }
 
 type MemberTable =
@@ -192,6 +193,7 @@ type InitialDatabase () =
               textFontSize        = table.Column<int>    (name = "TextFontSize",        nullable = false, defaultValue = 12)
               timeZoneId          = table.Column<string> (name = "TimeZoneId",          nullable = false, defaultValue = "America/Denver")
               pageSize            = table.Column<int>    (name = "PageSize",            nullable = false, defaultValue = 100)
+              asOfDateDisplay     = table.Column<string> (name = "AsOfDateDisplay",     nullable = false, defaultValue = "N", maxLength = Nullable<int> 1)
               }),
       constraints =
         fun table ->
@@ -359,9 +361,11 @@ type InitialDatabase () =
           b.Property<string>("lineColor").IsRequired().ValueGeneratedOnAdd().HasDefaultValue("navy") |> ignore
           b.Property<string>("listFonts").IsRequired().ValueGeneratedOnAdd().HasDefaultValue("Century Gothic,Tahoma,Luxi Sans,sans-serif") |> ignore
           b.Property<int>("longTermUpdateWeeks").ValueGeneratedOnAdd().HasDefaultValue(4) |> ignore
-          b.Property<string>("requestSort").IsRequired().ValueGeneratedOnAdd().HasDefaultValue("D").HasMaxLength(1)  |> ignore
+          b.Property<string>("requestSort").IsRequired().ValueGeneratedOnAdd().HasDefaultValue("D").HasMaxLength(1) |> ignore
           b.Property<int>("textFontSize").ValueGeneratedOnAdd().HasDefaultValue(12) |> ignore
           b.Property<string>("timeZoneId").IsRequired().ValueGeneratedOnAdd().HasDefaultValue("America/Denver") |> ignore
+          b.Property<int>("pageSize").IsRequired().ValueGeneratedOnAdd().HasDefaultValue(100) |> ignore
+          b.Property<string>("asOfDateDisplay").IsRequired().ValueGeneratedOnAdd().HasDefaultValue("N").HasMaxLength(1) |> ignore
           b.HasKey("smallGroupId") |> ignore
           b.HasIndex("timeZoneId") |> ignore
           b.ToTable("ListPreference") |> ignore)

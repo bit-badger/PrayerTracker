@@ -45,6 +45,7 @@ let listPreferencesTests =
       Expect.equal mt.timeZoneId "America/Denver" "The default time zone should have been America/Denver"
       Expect.equal mt.timeZone.timeZoneId "" "The default preferences should have included an empty time zone"
       Expect.equal mt.pageSize 100 "The default page size should have been 100"
+      Expect.equal mt.asOfDateDisplay NoDisplay "The as-of date display should have been No Display"
       }
     ]
 
