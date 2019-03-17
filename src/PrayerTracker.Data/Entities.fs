@@ -54,11 +54,31 @@ with
     | "L" -> LongDate
     | _ -> invalidArg "code" (sprintf "Unknown code %s" code)
   /// Convert this DU case to a single-character string
-  member this.toCode () =
+  member this.code =
     match this with
     | NoDisplay -> "N"
     | ShortDate -> "S"
     | LongDate -> "L"
+
+
+/// How requests should be sorted
+type RequestSort =
+  /// Sort by date, then by requestor/subject
+  | SortByDate
+  /// Sort by requestor/subject, then by date
+  | SortByRequestor
+with
+  /// Convert to a DU case from a single-character string
+  static member fromCode code =
+    match code with
+    | "D" -> SortByDate
+    | "R" -> SortByRequestor
+    | _ -> invalidArg "code" (sprintf "Unknown code %s" code)
+  /// Convert this DU case to a single-character string
+  member this.code =
+    match this with
+    | SortByDate -> "D"
+    | SortByRequestor -> "R"
 
 
 module Converters =
@@ -66,19 +86,33 @@ module Converters =
   open Microsoft.FSharp.Linq.RuntimeHelpers
   open System.Linq.Expressions
 
-  let private fromDU =
-    <@ Func<AsOfDateDisplay, string>(fun (x : AsOfDateDisplay) -> x.toCode ()) @>
+  let private asOfFromDU =
+    <@ Func<AsOfDateDisplay, string>(fun (x : AsOfDateDisplay) -> x.code) @>
     |> LeafExpressionConverter.QuotationToExpression
     |> unbox<Expression<Func<AsOfDateDisplay, string>>>
 
-  let private toDU =
+  let private asOfToDU =
     <@ Func<string, AsOfDateDisplay>(AsOfDateDisplay.fromCode) @>
     |> LeafExpressionConverter.QuotationToExpression
     |> unbox<Expression<Func<string, AsOfDateDisplay>>>
   
+  let private sortFromDU =
+    <@ Func<RequestSort, string>(fun (x : RequestSort) -> x.code) @>
+    |> LeafExpressionConverter.QuotationToExpression
+    |> unbox<Expression<Func<RequestSort, string>>>
+
+  let private sortToDU =
+    <@ Func<string, RequestSort>(RequestSort.fromCode) @>
+    |> LeafExpressionConverter.QuotationToExpression
+    |> unbox<Expression<Func<string, RequestSort>>>
+  
   /// Conversion between a string and an AsOfDateDisplay DU value
   type AsOfDateDisplayConverter () =
-    inherit ValueConverter<AsOfDateDisplay, string> (fromDU, toDU)
+    inherit ValueConverter<AsOfDateDisplay, string> (asOfFromDU, asOfToDU)
+
+  /// Conversion between a string and a RequestSort DU value
+  type RequestSortConverter () =
+    inherit ValueConverter<RequestSort, string> (sortFromDU, sortToDU)
 
 
 /// Statistics for churches
@@ -189,7 +223,7 @@ and [<CLIMutable; NoComparison; NoEquality>] ListPreferences =
     /// The font size for the text on the prayer request list
     textFontSize        : int
     /// The order in which the prayer requests are sorted
-    requestSort         : string
+    requestSort         : RequestSort
     /// The password used for "small group login" (view-only request list)
     groupPassword       : string
     /// The default e-mail type for this class
@@ -219,7 +253,7 @@ and [<CLIMutable; NoComparison; NoEquality>] ListPreferences =
         lineColor           = "navy"
         headingFontSize     = 16
         textFontSize        = 12
-        requestSort         = "D"
+        requestSort         = SortByDate
         groupPassword       = ""
         defaultEmailType    = EmailType.Html
         isPublic            = false
@@ -289,7 +323,7 @@ and [<CLIMutable; NoComparison; NoEquality>] ListPreferences =
             .HasColumnName("RequestSort")
             .IsRequired()
             .HasMaxLength(1)
-            .HasDefaultValue "D"
+            .HasDefaultValue SortByDate
           |> ignore
           m.Property(fun e -> e.groupPassword)
             .HasColumnName("GroupPassword")
@@ -323,6 +357,8 @@ and [<CLIMutable; NoComparison; NoEquality>] ListPreferences =
             .HasDefaultValue NoDisplay
           |> ignore)
       |> ignore
+      mb.Model.FindEntityType(typeof<ListPreferences>).FindProperty("requestSort")
+        .SetValueConverter(Converters.RequestSortConverter ())
       mb.Model.FindEntityType(typeof<ListPreferences>).FindProperty("asOfDateDisplay")
         .SetValueConverter(Converters.AsOfDateDisplayConverter ())
 

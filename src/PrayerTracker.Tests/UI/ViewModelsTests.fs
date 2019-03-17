@@ -16,6 +16,18 @@ let countAll _ = true
 module ReferenceListTests =
   
   [<Tests>]
+  let asOfDateListTests =
+    testList "ReferenceList.asOfDateList" [
+      test "has all three options listed" {
+        let asOf = ReferenceList.asOfDateList _s
+        Expect.hasCountOf asOf 3u countAll "There should have been 3 as-of choices returned"
+        Expect.exists asOf (fun (x, _) -> x = NoDisplay.code) "The option for no display was not found"
+        Expect.exists asOf (fun (x, _) -> x = ShortDate.code) "The option for a short date was not found"
+        Expect.exists asOf (fun (x, _) -> x = LongDate.code)  "The option for a full date was not found"
+        }
+      ]
+
+  [<Tests>]
   let emailTypeListTests =
     testList "ReferenceList.emailTypeList" [
       test "includes default type" {
@@ -248,7 +260,7 @@ let editPreferencesTests =
       Expect.equal edit.expireDays prefs.daysToExpire "The expiration days were not filled correctly"
       Expect.equal edit.daysToKeepNew prefs.daysToKeepNew "The days to keep new were not filled correctly"
       Expect.equal edit.longTermUpdateWeeks prefs.longTermUpdateWeeks "The weeks for update were not filled correctly"
-      Expect.equal edit.requestSort prefs.requestSort "The request sort was not filled correctly"
+      Expect.equal edit.requestSort prefs.requestSort.code "The request sort was not filled correctly"
       Expect.equal edit.emailFromName prefs.emailFromName "The e-mail from name was not filled correctly"
       Expect.equal edit.emailFromAddress prefs.emailFromAddress "The e-mail from address was not filled correctly"
       Expect.equal edit.defaultEmailType prefs.defaultEmailType "The default e-mail type was not filled correctly"
@@ -572,7 +584,9 @@ let requestListTests =
           let newList =
             { reqList with
                 listGroup =
-                  { reqList.listGroup with preferences = { reqList.listGroup.preferences with requestSort = "R" } }
+                  { reqList.listGroup with
+                      preferences = { reqList.listGroup.preferences with requestSort = SortByRequestor }
+                    }
               }
           let reqs = newList.requestsInCategory RequestType.Current
           Expect.hasCountOf reqs 2u countAll "There should have been two requests"

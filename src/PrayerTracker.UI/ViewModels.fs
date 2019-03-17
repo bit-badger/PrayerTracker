@@ -12,9 +12,9 @@ module ReferenceList =
 
   /// A localized list of the AsOfDateDisplay DU cases
   let asOfDateList (s : IStringLocalizer) =
-    [ NoDisplay.toCode (), s.["Do not display the “as of” date"]
-      ShortDate.toCode (), s.["Display a short “as of” date"]
-      LongDate.toCode  (), s.["Display a full “as of” date"]
+    [ NoDisplay.code, s.["Do not display the “as of” date"]
+      ShortDate.code, s.["Display a short “as of” date"]
+      LongDate.code,  s.["Display a full “as of” date"]
       ]
 
   /// A list of e-mail type options
@@ -289,7 +289,7 @@ with
     { expireDays          = prefs.daysToExpire
       daysToKeepNew       = prefs.daysToKeepNew
       longTermUpdateWeeks = prefs.longTermUpdateWeeks
-      requestSort         = prefs.requestSort
+      requestSort         = prefs.requestSort.code
       emailFromName       = prefs.emailFromName
       emailFromAddress    = prefs.emailFromAddress
       defaultEmailType    = prefs.defaultEmailType
@@ -303,7 +303,7 @@ with
       timeZone            = prefs.timeZoneId
       groupPassword       = Some prefs.groupPassword
       pageSize            = prefs.pageSize
-      asOfDate            = prefs.asOfDateDisplay.toCode ()
+      asOfDate            = prefs.asOfDateDisplay.code
       listVisibility      =
         match true with 
         | _ when prefs.isPublic -> RequestVisibility.``public``
@@ -322,7 +322,7 @@ with
         daysToExpire        = this.expireDays
         daysToKeepNew       = this.daysToKeepNew
         longTermUpdateWeeks = this.longTermUpdateWeeks
-        requestSort         = this.requestSort
+        requestSort         = RequestSort.fromCode this.requestSort
         emailFromName       = this.emailFromName
         emailFromAddress    = this.emailFromAddress
         defaultEmailType    = this.defaultEmailType
@@ -573,8 +573,8 @@ with
       |> Seq.ofList
       |> Seq.filter (fun req -> req.requestType = cat)
     match this.listGroup.preferences.requestSort with
-    | "D" -> reqs |> Seq.sortByDescending (fun req -> req.updatedDate)
-    | _ -> reqs |> Seq.sortBy (fun req -> req.requestor)
+    | SortByDate -> reqs |> Seq.sortByDescending (fun req -> req.updatedDate)
+    | SortByRequestor -> reqs |> Seq.sortBy (fun req -> req.requestor)
     |> List.ofSeq
   /// Is this request new?
   member this.isNew (req : PrayerRequest) =

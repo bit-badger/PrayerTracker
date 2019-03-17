@@ -14,11 +14,11 @@ module private Helpers =
   /// Central place to append sort criteria for prayer request queries
   let reqSort sort (query : IQueryable<PrayerRequest>) =
     match sort with
-    | "D" ->
+    | SortByDate ->
         query.OrderByDescending(fun pr -> pr.updatedDate)
           .ThenByDescending(fun pr -> pr.enteredDate)
           .ThenBy(fun pr -> pr.requestor)
-    | _ ->
+    | SortByRequestor ->
         query.OrderBy(fun pr -> pr.requestor)
           .ThenByDescending(fun pr -> pr.updatedDate)
           .ThenByDescending(fun pr -> pr.enteredDate)

@@ -6,6 +6,33 @@ open NodaTime
 open System
 
 [<Tests>]
+let asOfDateDisplayTests =
+  testList "AsOfDateDisplay" [
+    test "NoDisplay code is correct" {
+      Expect.equal NoDisplay.code "N" "The code for NoDisplay should have been \"N\""
+      }
+    test "ShortDate code is correct" {
+      Expect.equal ShortDate.code "S" "The code for ShortDate should have been \"S\""
+      }
+    test "LongDate code is correct" {
+      Expect.equal LongDate.code "L" "The code for LongDate should have been \"N\""
+      }
+    test "fromCode N should return NoDisplay" {
+      Expect.equal (AsOfDateDisplay.fromCode "N") NoDisplay "\"N\" should have been converted to NoDisplay"
+      }
+    test "fromCode S should return ShortDate" {
+      Expect.equal (AsOfDateDisplay.fromCode "S") ShortDate "\"S\" should have been converted to ShortDate"
+      }
+    test "fromCode L should return LongDate" {
+      Expect.equal (AsOfDateDisplay.fromCode "L") LongDate "\"L\" should have been converted to LongDate"
+      }
+    test "fromCode X should raise" {
+      Expect.throws (fun () -> AsOfDateDisplay.fromCode "X" |> ignore)
+        "An unknown code should have raised an exception"
+      }
+    ]
+
+[<Tests>]
 let churchTests =
   testList "Church" [
     test "empty is as expected" {
@@ -38,7 +65,7 @@ let listPreferencesTests =
       Expect.equal mt.lineColor "navy" "The default heding line color should have been navy"
       Expect.equal mt.headingFontSize 16 "The default heading font size should have been 16"
       Expect.equal mt.textFontSize 12 "The default text font size should have been 12"
-      Expect.equal mt.requestSort "D" "The default request sort should have been D (date)"
+      Expect.equal mt.requestSort SortByDate "The default request sort should have been by date"
       Expect.equal mt.groupPassword "" "The default group password should have been blank"
       Expect.equal mt.defaultEmailType EmailType.Html "The default e-mail type should have been HTML"
       Expect.isFalse mt.isPublic "The isPublic flag should not have been set"
@@ -127,6 +154,26 @@ let prayerRequestTests =
           }
       Expect.isTrue (req.updateRequired DateTime.Now 7 4)
         "An active request updated 34 days ago should require an update (past 28 days)"
+      }
+    ]
+
+[<Tests>]
+let requestSortTests =
+  testList "RequestSort" [
+    test "SortByDate code is correct" {
+      Expect.equal SortByDate.code "D" "The code for SortByDate should have been \"D\""
+      }
+    test "SortByRequestor code is correct" {
+      Expect.equal SortByRequestor.code "R" "The code for SortByRequestor should have been \"R\""
+      }
+    test "fromCode D should return SortByDate" {
+      Expect.equal (RequestSort.fromCode "D") SortByDate "\"D\" should have been converted to SortByDate"
+      }
+    test "fromCode R should return SortByRequestor" {
+      Expect.equal (RequestSort.fromCode "R") SortByRequestor "\"R\" should have been converted to SortByRequestor"
+      }
+    test "fromCode Q should raise" {
+      Expect.throws (fun () -> RequestSort.fromCode "Q" |> ignore) "An unknown code should have raised an exception"
       }
     ]
 
