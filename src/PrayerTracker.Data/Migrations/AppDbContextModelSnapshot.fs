@@ -36,7 +36,7 @@ type AppDbContextModelSnapshot () =
           b.Property<Guid>("smallGroupId") |> ignore
           b.Property<int>("daysToExpire").ValueGeneratedOnAdd().HasDefaultValue(14) |> ignore
           b.Property<int>("daysToKeepNew").ValueGeneratedOnAdd().HasDefaultValue(7) |> ignore
-          b.Property<string>("defaultEmailType").IsRequired().ValueGeneratedOnAdd().HasDefaultValue("Html") |> ignore
+          b.Property<string>("defaultEmailType").IsRequired().ValueGeneratedOnAdd().HasDefaultValue("H").HasMaxLength(1) |> ignore
           b.Property<string>("emailFromAddress").IsRequired().ValueGeneratedOnAdd().HasDefaultValue("prayer@djs-consulting.com") |> ignore
           b.Property<string>("emailFromName").IsRequired().ValueGeneratedOnAdd().HasDefaultValue("PrayerTracker") |> ignore
           b.Property<string>("groupPassword").IsRequired().ValueGeneratedOnAdd().HasDefaultValue("") |> ignore
@@ -73,11 +73,10 @@ type AppDbContextModelSnapshot () =
       typeof<PrayerRequest>,
       fun b ->
           b.Property<Guid>("prayerRequestId").ValueGeneratedOnAdd() |> ignore
-          b.Property<bool>("doNotExpire") |> ignore
           b.Property<DateTime>("enteredDate") |> ignore
-          b.Property<bool>("isManuallyExpired") |> ignore
+          b.Property<string>("expiration").IsRequired().HasMaxLength(1) |> ignore
           b.Property<bool>("notifyChaplain") |> ignore
-          b.Property<string>("requestType").IsRequired() |> ignore
+          b.Property<string>("requestType").IsRequired().HasMaxLength(1) |> ignore
           b.Property<string>("requestor") |> ignore
           b.Property<Guid>("smallGroupId") |> ignore
           b.Property<string>("text").IsRequired() |> ignore

@@ -22,30 +22,28 @@ module ReferenceList =
     // Localize the default type
     let defaultType =
       match def with
-      | EmailType.Html -> s.["HTML Format"].Value
-      | EmailType.PlainText -> s.["Plain-Text Format"].Value
-      | EmailType.AttachedPdf -> s.["Attached PDF"].Value
-      | _ -> ""
+      | HtmlFormat -> s.["HTML Format"].Value
+      | PlainTextFormat -> s.["Plain-Text Format"].Value
     seq {
       yield "", LocalizedString ("", sprintf "%s (%s)" s.["Group Default"].Value defaultType)
-      yield EmailType.Html, s.["HTML Format"]
-      yield EmailType.PlainText, s.["Plain-Text Format"]
+      yield HtmlFormat.code, s.["HTML Format"]
+      yield PlainTextFormat.code, s.["Plain-Text Format"]
       }
 
   /// A list of expiration options
   let expirationList (s : IStringLocalizer) includeExpireNow =
-    [ yield "N", s.["Expire Normally"]
-      yield "Y", s.["Request Never Expires"]
-      match includeExpireNow with true -> yield "X", s.["Expire Immediately"] | false -> ()
+    [ yield Automatic.code, s.["Expire Normally"]
+      yield Manual.code, s.["Request Never Expires"]
+      match includeExpireNow with true -> yield Forced.code, s.["Expire Immediately"] | false -> ()
       ]
 
   /// A list of request types
   let requestTypeList (s : IStringLocalizer) =
-    [ RequestType.Current,      s.["Current Requests"]
-      RequestType.Recurring,    s.["Long-Term Requests"]
-      RequestType.Praise,       s.["Praise Reports"]
-      RequestType.Expecting,    s.["Expecting"]
-      RequestType.Announcement, s.["Announcements"]
+    [ CurrentRequest,  s.["Current Requests"]
+      LongTermRequest, s.["Long-Term Requests"]
+      PraiseReport,    s.["Praise Reports"]
+      Expecting,       s.["Expecting"]
+      Announcement,    s.["Announcements"]
       ]
     
 
@@ -292,7 +290,7 @@ with
       requestSort         = prefs.requestSort.code
       emailFromName       = prefs.emailFromName
       emailFromAddress    = prefs.emailFromAddress
-      defaultEmailType    = prefs.defaultEmailType
+      defaultEmailType    = prefs.defaultEmailType.code
       headingLineType     = setType prefs.lineColor
       headingLineColor    = prefs.lineColor
       headingTextType     = setType prefs.headingColor
@@ -325,7 +323,7 @@ with
         requestSort         = RequestSort.fromCode this.requestSort
         emailFromName       = this.emailFromName
         emailFromAddress    = this.emailFromAddress
-        defaultEmailType    = this.defaultEmailType
+        defaultEmailType    = EmailFormat.fromCode this.defaultEmailType
         lineColor           = this.headingLineColor
         headingColor        = this.headingTextColor
         listFonts           = this.listFonts
@@ -362,20 +360,20 @@ with
   /// An empty instance to use for new requests
   static member empty =
     { requestId      = Guid.Empty
-      requestType    = ""
+      requestType    = CurrentRequest.code
       enteredDate    = None
       skipDateUpdate = None
       requestor      = None
-      expiration     = "N"
+      expiration     = Automatic.code
       text           = ""
       }
   /// Create an instance from an existing request
   static member fromRequest req =
     { EditRequest.empty with
         requestId   = req.prayerRequestId
-        requestType = req.requestType
+        requestType = req.requestType.code
         requestor   = req.requestor
-        expiration  = match req.doNotExpire with true -> "Y" | false -> "N"
+        expiration  = req.expiration.code
         text        = req.text
       }
   /// Is this a new request?
@@ -516,7 +514,7 @@ type Overview =
   { /// The total number of active requests
     totalActiveReqs : int
     /// The numbers of active requests by category
-    activeReqsByCat : Map<string, int>
+    activeReqsByCat : Map<PrayerRequestType, int>
     /// A count of all requests
     allReqs         : int
     /// A count of all members

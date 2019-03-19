@@ -31,15 +31,15 @@ module ReferenceListTests =
   let emailTypeListTests =
     testList "ReferenceList.emailTypeList" [
       test "includes default type" {
-        let typs = ReferenceList.emailTypeList EmailType.Html _s
+        let typs = ReferenceList.emailTypeList HtmlFormat _s
         Expect.hasCountOf typs 3u countAll "There should have been 3 e-mail type options returned"
         let top = Seq.head typs
         Expect.equal (fst top) "" "The default option should have been blank"
         Expect.equal (snd top).Value "Group Default (HTML Format)" "The default option label was incorrect"
         let nxt = typs |> Seq.skip 1 |> Seq.head
-        Expect.equal (fst nxt) EmailType.Html "The 2nd option should have been HTML"
+        Expect.equal (fst nxt) HtmlFormat.code "The 2nd option should have been HTML"
         let lst = typs |> Seq.last
-        Expect.equal (fst lst) EmailType.PlainText "The 3rd option should have been plain text"
+        Expect.equal (fst lst) PlainTextFormat.code "The 3rd option should have been plain text"
         }
       ]
   
@@ -49,15 +49,15 @@ module ReferenceListTests =
       test "excludes immediate expiration if not required" {
         let exps = ReferenceList.expirationList _s false
         Expect.hasCountOf exps 2u countAll "There should have been 2 expiration types returned"
-        Expect.exists exps (fun exp -> fst exp = "N") "The option for normal expiration was not found"
-        Expect.exists exps (fun exp -> fst exp = "Y") "The option for \"never expire\" was not found"
+        Expect.exists exps (fun (exp, _) -> exp = Automatic.code) "The option for automatic expiration was not found"
+        Expect.exists exps (fun (exp, _) -> exp = Manual.code) "The option for manual expiration was not found"
         }
       test "includes immediate expiration if required" {
         let exps = ReferenceList.expirationList _s true
         Expect.hasCountOf exps 3u countAll "There should have been 3 expiration types returned"
-        Expect.exists exps (fun exp -> fst exp = "N") "The option for normal expiration was not found"
-        Expect.exists exps (fun exp -> fst exp = "Y") "The option for \"never expire\" was not found"
-        Expect.exists exps (fun exp -> fst exp = "X") "The option for \"expire immediately\" was not found"
+        Expect.exists exps (fun (exp, _) -> exp = Automatic.code) "The option for automatic expiration was not found"
+        Expect.exists exps (fun (exp, _) -> exp = Manual.code) "The option for manual expiration was not found"
+        Expect.exists exps (fun (exp, _) -> exp = Forced.code) "The option for immediate expiration was not found"
         }
       ]
   
@@ -69,14 +69,12 @@ module ReferenceListTests =
       yield! testFixture withList [
         yield "returns 5 types",
           fun typs -> Expect.hasCountOf typs 5u countAll "There should have been 5 request types returned"
-        yield! [ RequestType.Current; RequestType.Recurring; RequestType.Praise; RequestType.Expecting;
-                 RequestType.Announcement
-          ]
-        |> List.map (fun typ ->
-            sprintf "contains \"%s\"" typ,
-              fun typs ->
-                  Expect.isSome (typs |> List.tryFind (fun x -> fst x = typ))
-                    (sprintf "The \"%s\" option was not found" typ))
+        yield! [ CurrentRequest; LongTermRequest; PraiseReport; Expecting; Announcement ]
+          |> List.map (fun typ ->
+              sprintf "contains \"%O\"" typ,
+                fun typs ->
+                    Expect.isSome (typs |> List.tryFind (fun x -> fst x = typ))
+                      (sprintf "The \"%O\" option was not found" typ))
         ]
       ]
 
@@ -232,8 +230,8 @@ let editMemberTests =
       Expect.equal edit.emailType "" "The e-mail type should have been blank for group default"
       }
     test "fromMember populates with specific format" {
-      let edit = EditMember.fromMember { Member.empty with format = Some EmailType.Html }
-      Expect.equal edit.emailType EmailType.Html "The e-mail type was not filled correctly"
+      let edit = EditMember.fromMember { Member.empty with format = Some HtmlFormat.code }
+      Expect.equal edit.emailType HtmlFormat.code "The e-mail type was not filled correctly"
       }
     test "empty is as expected" {
       let edit = EditMember.empty
@@ -263,7 +261,7 @@ let editPreferencesTests =
       Expect.equal edit.requestSort prefs.requestSort.code "The request sort was not filled correctly"
       Expect.equal edit.emailFromName prefs.emailFromName "The e-mail from name was not filled correctly"
       Expect.equal edit.emailFromAddress prefs.emailFromAddress "The e-mail from address was not filled correctly"
-      Expect.equal edit.defaultEmailType prefs.defaultEmailType "The default e-mail type was not filled correctly"
+      Expect.equal edit.defaultEmailType prefs.defaultEmailType.code "The default e-mail type was not filled correctly"
       Expect.equal edit.headingLineType "Name" "The heading line color type was not derived correctly"
       Expect.equal edit.headingLineColor prefs.lineColor "The heading line color was not filled correctly"
       Expect.equal edit.headingTextType "Name" "The heading text color type was not derived correctly"
@@ -303,38 +301,28 @@ let editRequestTests =
     test "empty is as expected" {
       let mt = EditRequest.empty
       Expect.equal mt.requestId Guid.Empty "The request ID should be an empty GUID"
-      Expect.equal mt.requestType "" "The request type should have been blank"
+      Expect.equal mt.requestType CurrentRequest.code "The request type should have been \"Current\""
       Expect.isNone mt.enteredDate "The entered date should have been None"
       Expect.isNone mt.skipDateUpdate "The \"skip date update\" flag should have been None"
       Expect.isNone mt.requestor "The requestor should have been None"
-      Expect.equal mt.expiration "N" "The expiration should have been \"N\""
+      Expect.equal mt.expiration Automatic.code "The expiration should have been \"A\" (Automatic)"
       Expect.equal mt.text "" "The text should have been blank"
       }
-    test "fromRequest succeeds when a request has the do-not-expire flag set" {
+    test "fromRequest succeeds" {
       let req =
         { PrayerRequest.empty with
             prayerRequestId = Guid.NewGuid ()
-            requestType     = RequestType.Current
+            requestType     = CurrentRequest
             requestor       = Some "Me"
-            doNotExpire     = true
+            expiration      = Manual
             text            = "the text"
           }
       let edit = EditRequest.fromRequest req
       Expect.equal edit.requestId req.prayerRequestId "The request ID was not filled correctly"
-      Expect.equal edit.requestType req.requestType "The request type was not filled correctly"
+      Expect.equal edit.requestType req.requestType.code "The request type was not filled correctly"
       Expect.equal edit.requestor req.requestor "The requestor was not filled correctly"
-      Expect.equal edit.expiration "Y" "The expiration should have been \"Y\" since the do-not-expire flag was set"
+      Expect.equal edit.expiration Manual.code "The expiration was not filled correctly"
       Expect.equal edit.text req.text "The text was not filled correctly"
-      }
-    test "fromRequest succeeds when a request has the do-not-expire flag unset" {
-      let req =
-        { PrayerRequest.empty with
-            requestor       = None
-            doNotExpire     = false
-          }
-      let edit = EditRequest.fromRequest req
-      Expect.equal edit.requestor req.requestor "The requestor was not filled correctly"
-      Expect.equal edit.expiration "N" "The expiration should have been \"N\" since the do-not-expire flag was not set"
       }
     test "isNew works for a new request" {
       Expect.isTrue (EditRequest.empty.isNew ()) "An empty GUID should be flagged as a new request"
@@ -469,19 +457,19 @@ let requestListTests =
     let withRequestList f () =
       { requests   = [
           { PrayerRequest.empty with
-              requestType = RequestType.Current
+              requestType = CurrentRequest
               requestor   = Some "Zeb"
               text        = "zyx"
               updatedDate = DateTime.Today
             }
           { PrayerRequest.empty with
-              requestType = RequestType.Current
+              requestType = CurrentRequest
               requestor   = Some "Aaron"
               text        = "abc"
               updatedDate = DateTime.Today - TimeSpan.FromDays 9.
             }
           { PrayerRequest.empty with
-              requestType = RequestType.Praise
+              requestType = PraiseReport
               text        = "nmo"
               updatedDate = DateTime.Today
             }
@@ -566,19 +554,19 @@ let requestListTests =
           Expect.stringContains text "  + nmo\n \n" "Last request not found"
       "isNew succeeds for both old and new requests",
       fun reqList ->
-          let reqs = reqList.requestsInCategory RequestType.Current
+          let reqs = reqList.requestsInCategory CurrentRequest
           Expect.hasCountOf reqs 2u countAll "There should have been two requests"
           Expect.isTrue (reqList.isNew (List.head reqs)) "The first request should have been new"
           Expect.isFalse (reqList.isNew (List.last reqs)) "The second request should not have been new"
       "requestsInCategory succeeds when requests exist",
       fun reqList ->
-          let reqs = reqList.requestsInCategory RequestType.Current
+          let reqs = reqList.requestsInCategory CurrentRequest
           Expect.hasCountOf reqs 2u countAll "There should have been two requests"
           let first = List.head reqs
           Expect.equal first.text "zyx" "The requests should be sorted by updated date descending"
       "requestsInCategory succeeds when requests do not exist",
       fun reqList ->
-          Expect.isEmpty (reqList.requestsInCategory "ABC") "There should have been no category \"ABC\" requests"
+          Expect.isEmpty (reqList.requestsInCategory Announcement) "There should have been no \"Announcement\" requests"
       "requestsInCategory succeeds and sorts by requestor",
       fun reqList ->
           let newList =
@@ -588,7 +576,7 @@ let requestListTests =
                       preferences = { reqList.listGroup.preferences with requestSort = SortByRequestor }
                     }
               }
-          let reqs = newList.requestsInCategory RequestType.Current
+          let reqs = newList.requestsInCategory CurrentRequest
           Expect.hasCountOf reqs 2u countAll "There should have been two requests"
           let first = List.head reqs
           Expect.equal first.text "abc" "The requests should be sorted by requestor"

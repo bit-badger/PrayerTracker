@@ -23,7 +23,7 @@ let edit (m : EditRequest) today ctx vi =
           label [ _for "requestType" ] [ locStr s.["Request Type"] ]
           ReferenceList.requestTypeList s
           |> Seq.ofList
-          |> Seq.map (fun item -> fst item, (snd item).Value)
+          |> Seq.map (fun (typ, desc) -> typ.code, desc.Value)
           |> selectList "requestType" m.requestType [ _required; _autofocus ]
           ]
         yield div [ _class "pt-field" ] [

@@ -45,7 +45,7 @@ let announcement isAdmin ctx vi =
           label [ _for "requestType" ] [ locStr s.["Request Type"] ]
           reqTypes
           |> Seq.ofList
-          |> Seq.map (fun item -> fst item, (snd item).Value)
+          |> Seq.map (fun (typ, desc) -> typ.code, desc.Value)
           |> selectList "requestType" "Announcement" []
           ]
         ]
@@ -407,7 +407,9 @@ let preferences (m : EditPreferences) (tzs : TimeZone list) ctx vi =
             label [ _for "defaultEmailType" ] [ locStr s.["E-mail Format"] ]
             seq {
               yield "", selectDefault s.["Select"].Value
-              yield! ReferenceList.emailTypeList "" s |> Seq.skip 1 |> Seq.map (fun typ -> fst typ, (snd typ).Value)
+              yield! ReferenceList.emailTypeList HtmlFormat s
+                |> Seq.skip 1
+                |> Seq.map (fun typ -> fst typ, (snd typ).Value)
               }
             |> selectList "defaultEmailType" m.defaultEmailType [ _required ]
             ]

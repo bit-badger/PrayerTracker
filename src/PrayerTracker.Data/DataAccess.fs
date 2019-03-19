@@ -98,11 +98,11 @@ type AppDbContext with
       | query when activeOnly ->
           let asOf = theDate.AddDays(-(float grp.preferences.daysToExpire)).Date
           query.Where(fun pr ->
-              (pr.updatedDate > asOf
-                  || pr.doNotExpire
-                  || RequestType.Recurring = pr.requestType
-                  || RequestType.Expecting = pr.requestType)
-              && not pr.isManuallyExpired)
+              (    pr.updatedDate > asOf
+                || pr.expiration  = Manual
+                || pr.requestType = LongTermRequest
+                || pr.requestType = Expecting)
+              && pr.expiration <> Forced)
       | query -> query
       |> reqSort grp.preferences.requestSort
       |> function

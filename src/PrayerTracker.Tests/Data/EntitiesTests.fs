@@ -49,6 +49,52 @@ let churchTests =
     ]
 
 [<Tests>]
+let emailFormatTests =
+  testList "EmailFormat" [
+    test "HtmlFormat code is correct" {
+      Expect.equal HtmlFormat.code "H" "The code for HtmlFormat should have been \"H\""
+      }
+    test "PlainTextFormat code is correct" {
+      Expect.equal PlainTextFormat.code "P" "The code for PlainTextFormat should have been \"P\""
+      }
+    test "fromCode H should return HtmlFormat" {
+      Expect.equal (EmailFormat.fromCode "H") HtmlFormat "\"H\" should have been converted to HtmlFormat"
+      }
+    test "fromCode P should return ShortDate" {
+      Expect.equal (EmailFormat.fromCode "P") PlainTextFormat "\"P\" should have been converted to PlainTextFormat"
+      }
+    test "fromCode Z should raise" {
+      Expect.throws (fun () -> EmailFormat.fromCode "Z" |> ignore) "An unknown code should have raised an exception"
+      }
+    ]
+
+[<Tests>]
+let expirationTests =
+  testList "Expiration" [
+    test "Automatic code is correct" {
+      Expect.equal Automatic.code "A" "The code for Automatic should have been \"A\""
+      }
+    test "Manual code is correct" {
+      Expect.equal Manual.code "M" "The code for Manual should have been \"M\""
+      }
+    test "Forced code is correct" {
+      Expect.equal Forced.code "F" "The code for Forced should have been \"F\""
+      }
+    test "fromCode A should return Automatic" {
+      Expect.equal (Expiration.fromCode "A") Automatic "\"A\" should have been converted to Automatic"
+      }
+    test "fromCode M should return Manual" {
+      Expect.equal (Expiration.fromCode "M") Manual "\"M\" should have been converted to Manual"
+      }
+    test "fromCode F should return Forced" {
+      Expect.equal (Expiration.fromCode "F") Forced "\"F\" should have been converted to Forced"
+      }
+    test "fromCode V should raise" {
+      Expect.throws (fun () -> Expiration.fromCode "V" |> ignore) "An unknown code should have raised an exception"
+      }
+    ]
+
+[<Tests>]
 let listPreferencesTests =
   testList "ListPreferences" [
     test "empty is as expected" {
@@ -67,7 +113,7 @@ let listPreferencesTests =
       Expect.equal mt.textFontSize 12 "The default text font size should have been 12"
       Expect.equal mt.requestSort SortByDate "The default request sort should have been by date"
       Expect.equal mt.groupPassword "" "The default group password should have been blank"
-      Expect.equal mt.defaultEmailType EmailType.Html "The default e-mail type should have been HTML"
+      Expect.equal mt.defaultEmailType HtmlFormat "The default e-mail type should have been HTML"
       Expect.isFalse mt.isPublic "The isPublic flag should not have been set"
       Expect.equal mt.timeZoneId "America/Denver" "The default time zone should have been America/Denver"
       Expect.equal mt.timeZone.timeZoneId "" "The default preferences should have included an empty time zone"
@@ -96,34 +142,33 @@ let prayerRequestTests =
     test "empty is as expected" {
       let mt = PrayerRequest.empty
       Expect.equal mt.prayerRequestId Guid.Empty "The request ID should have been an empty GUID"
-      Expect.equal mt.requestType RequestType.Current "The request type should have been Current"
+      Expect.equal mt.requestType CurrentRequest "The request type should have been Current"
       Expect.equal mt.userId Guid.Empty "The user ID should have been an empty GUID"
       Expect.equal mt.smallGroupId Guid.Empty "The small group ID should have been an empty GUID"
       Expect.equal mt.enteredDate DateTime.MinValue "The entered date should have been the minimum"
       Expect.equal mt.updatedDate DateTime.MinValue "The updated date should have been the minimum"
       Expect.isNone mt.requestor "The requestor should not exist"
       Expect.equal mt.text "" "The request text should have been blank"
-      Expect.isFalse mt.doNotExpire "The do not expire flag should not have been set"
       Expect.isFalse mt.notifyChaplain "The notify chaplain flag should not have been set"
-      Expect.isFalse mt.isManuallyExpired "The is manually expired flag should not have been set"
+      Expect.equal mt.expiration Automatic "The expiration should have been Automatic"
       Expect.equal mt.user.userId Guid.Empty "The user should have been an empty one"
       Expect.equal mt.smallGroup.smallGroupId Guid.Empty "The small group should have been an empty one"
       }
     test "isExpired always returns false for expecting requests" {
-      let req = { PrayerRequest.empty with requestType = RequestType.Expecting }
+      let req = { PrayerRequest.empty with requestType = Expecting }
       Expect.isFalse (req.isExpired DateTime.Now 0) "An expecting request should never be considered expired"
       }
-    test "isExpired always returns false for never-expired requests" {
-      let req = { PrayerRequest.empty with updatedDate = DateTime.Now.AddMonths -1; doNotExpire = true }
+    test "isExpired always returns false for manually-expired requests" {
+      let req = { PrayerRequest.empty with updatedDate = DateTime.Now.AddMonths -1; expiration = Manual }
       Expect.isFalse (req.isExpired DateTime.Now 4) "A never-expired request should never be considered expired"
       }
-    test "isExpired always returns false for recurring requests" {
-      let req = { PrayerRequest.empty with requestType = RequestType.Recurring }
+    test "isExpired always returns false for long term/recurring requests" {
+      let req = { PrayerRequest.empty with requestType = LongTermRequest }
       Expect.isFalse (req.isExpired DateTime.Now 0) "A recurring/long-term request should never be considered expired"
       }
-    test "isExpired always returns true for manually expired requests" {
-      let req = { PrayerRequest.empty with updatedDate = DateTime.Now; isManuallyExpired = true }
-      Expect.isTrue (req.isExpired DateTime.Now 5) "A manually expired request should always be considered expired"
+    test "isExpired always returns true for force-expired requests" {
+      let req = { PrayerRequest.empty with updatedDate = DateTime.Now; expiration = Forced }
+      Expect.isTrue (req.isExpired DateTime.Now 5) "A force-expired request should always be considered expired"
       }
     test "isExpired returns false for non-expired requests" {
       let req = { PrayerRequest.empty with updatedDate = DateTime.Now.AddDays -5. }
@@ -134,13 +179,13 @@ let prayerRequestTests =
       Expect.isTrue (req.isExpired DateTime.Now 7) "A request updated 8 days ago should be considered expired"
       }
     test "updateRequired returns false for expired requests" {
-      let req = { PrayerRequest.empty with isManuallyExpired = true }
+      let req = { PrayerRequest.empty with expiration = Forced }
       Expect.isFalse (req.updateRequired DateTime.Now 7 4) "An expired request should not require an update"
       }
     test "updateRequired returns false when an update is not required for an active request" {
       let req =
         { PrayerRequest.empty with
-            requestType = RequestType.Recurring
+            requestType = LongTermRequest
             updatedDate = DateTime.Now.AddDays -14.
           }
       Expect.isFalse (req.updateRequired DateTime.Now 7 4)
@@ -149,11 +194,52 @@ let prayerRequestTests =
     test "updateRequired returns true when an update is required for an active request" {
       let req =
         { PrayerRequest.empty with
-            requestType = RequestType.Recurring
+            requestType = LongTermRequest
             updatedDate = DateTime.Now.AddDays -34.
           }
       Expect.isTrue (req.updateRequired DateTime.Now 7 4)
         "An active request updated 34 days ago should require an update (past 28 days)"
+      }
+    ]
+
+[<Tests>]
+let prayerRequestTypeTests =
+  testList "PrayerRequestType" [
+    test "CurrentRequest code is correct" {
+      Expect.equal CurrentRequest.code "C" "The code for CurrentRequest should have been \"C\""
+      }
+    test "LongTermRequest code is correct" {
+      Expect.equal LongTermRequest.code "L" "The code for LongTermRequest should have been \"L\""
+      }
+    test "PraiseReport code is correct" {
+      Expect.equal PraiseReport.code "P" "The code for PraiseReport should have been \"P\""
+      }
+    test "Expecting code is correct" {
+      Expect.equal Expecting.code "E" "The code for Expecting should have been \"E\""
+      }
+    test "Announcement code is correct" {
+      Expect.equal Announcement.code "A" "The code for Announcement should have been \"A\""
+      }
+    test "fromCode C should return CurrentRequest" {
+      Expect.equal (PrayerRequestType.fromCode "C") CurrentRequest
+        "\"C\" should have been converted to CurrentRequest"
+      }
+    test "fromCode L should return LongTermRequest" {
+      Expect.equal (PrayerRequestType.fromCode "L") LongTermRequest
+        "\"L\" should have been converted to LongTermRequest"
+      }
+    test "fromCode P should return PraiseReport" {
+      Expect.equal (PrayerRequestType.fromCode "P") PraiseReport "\"P\" should have been converted to PraiseReport"
+      }
+    test "fromCode E should return Expecting" {
+      Expect.equal (PrayerRequestType.fromCode "E") Expecting "\"E\" should have been converted to Expecting"
+      }
+    test "fromCode A should return Announcement" {
+      Expect.equal (PrayerRequestType.fromCode "A") Announcement "\"A\" should have been converted to Announcement"
+      }
+    test "fromCode R should raise" {
+      Expect.throws (fun () -> PrayerRequestType.fromCode "R" |> ignore)
+        "An unknown code should have raised an exception"
       }
     ]
 

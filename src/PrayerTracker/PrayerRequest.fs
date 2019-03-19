@@ -136,7 +136,7 @@ let expire reqId : HttpHandler =
       | Ok r ->
           let db = ctx.dbContext ()
           let s  = Views.I18N.localizer.Force ()
-          db.UpdateEntry { r with isManuallyExpired = true }
+          db.UpdateEntry { r with expiration = Forced }
           let! _ = db.SaveChangesAsync ()
           addInfo ctx s.["Successfully {0} prayer request", s.["Expired"].Value.ToLower ()]
           return! redirectTo false "/prayer-requests" next ctx
@@ -247,7 +247,7 @@ let restore reqId : HttpHandler =
       | Ok r ->
           let db = ctx.dbContext ()
           let s  = Views.I18N.localizer.Force ()
-          db.UpdateEntry { r with isManuallyExpired = false; updatedDate = DateTime.Now }
+          db.UpdateEntry { r with expiration = Automatic; updatedDate = DateTime.Now }
           let! _ = db.SaveChangesAsync ()
           addInfo ctx s.["Successfully {0} prayer request", s.["Restored"].Value.ToLower ()]
           return! redirectTo false "/prayer-requests" next ctx
@@ -273,11 +273,10 @@ let save : HttpHandler =
           | Some pr ->
               let upd8 =
                 { pr with
-                    requestType       = m.requestType
-                    requestor         = m.requestor
-                    text              = ckEditorToText m.text
-                    doNotExpire       = m.expiration = "Y"
-                    isManuallyExpired = m.expiration = "X"
+                    requestType = PrayerRequestType.fromCode m.requestType
+                    requestor   = m.requestor
+                    text        = ckEditorToText m.text
+                    expiration  = Expiration.fromCode m.expiration
                   }
               let grp = currentGroup ctx
               let now = grp.localDateNow (ctx.GetService<IClock> ())
