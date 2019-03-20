@@ -579,7 +579,8 @@ with
     (this.date - req.updatedDate).Days <= this.listGroup.preferences.daysToKeepNew
   /// Generate this list as HTML
   member this.asHtml (s : IStringLocalizer) =
-    let prefs = this.listGroup.preferences
+    let prefs    = this.listGroup.preferences
+    let asOfSize = Math.Round (float prefs.textFontSize * 0.8, 2)
     [ match this.showHeader with
       | true ->
           yield div [ _style (sprintf "text-align:center;font-family:%s" prefs.listFonts) ] [
@@ -626,6 +627,18 @@ with
                 | Some _ -> ()
                 | None -> ()
                 yield rawText req.text
+                match prefs.asOfDateDisplay with
+                | NoDisplay -> ()
+                | ShortDate
+                | LongDate ->
+                    let dt =
+                      match prefs.asOfDateDisplay with
+                      | ShortDate -> req.updatedDate.ToShortDateString ()
+                      | LongDate -> req.updatedDate.ToLongDateString ()
+                      | _ -> ""
+                    yield i [ _style (sprintf "font-size:%fpt" asOfSize) ] [
+                      rawText "&nbsp; ("; str s.["as of "].Value; str dt; rawText ")"
+                      ]
                 ])
           |> ul []
         yield br []

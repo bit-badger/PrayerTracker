@@ -819,4 +819,7 @@
   <data name="“As of” Date Display" xml:space="preserve">
     <value>Visualización de la Fecha “Como de”</value>
   </data>
+  <data name="as of" xml:space="preserve">
+    <value>como de</value>
+  </data>
 </root>
