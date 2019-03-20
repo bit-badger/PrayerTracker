@@ -636,7 +636,7 @@ with
                       | ShortDate -> req.updatedDate.ToShortDateString ()
                       | LongDate -> req.updatedDate.ToLongDateString ()
                       | _ -> ""
-                    yield i [ _style (sprintf "font-size:%fpt" asOfSize) ] [
+                    yield i [ _style (sprintf "font-size:%.2fpt" asOfSize) ] [
                       rawText "&nbsp; ("; str s.["as of"].Value; str " "; str dt; rawText ")"
                       ]
                 ])

@@ -482,7 +482,7 @@ let requestListTests =
         }
       |> f
     yield! testFixture withRequestList [
-      "asHtml succeeds without header",
+      "asHtml succeeds without header or as-of date",
       fun reqList ->
           let htmlList = { reqList with listGroup = { reqList.listGroup with name = "Test HTML Group" } }
           let html = htmlList.asHtml _s
@@ -538,7 +538,37 @@ let requestListTests =
           Expect.stringContains html lstHeading "Expected HTML for the list heading not found"
           // spot check; without header test tests this exhaustively
           Expect.stringContains html "<strong>Zeb</strong> &mdash; zyx</li>" "Expected requests not found"
-      "asText succeeds",
+      "asHtml succeeds with short as-of date",
+      fun reqList ->
+          let htmlList =
+            { reqList with
+                listGroup =
+                  { reqList.listGroup with
+                      preferences = { reqList.listGroup.preferences with asOfDateDisplay = ShortDate }
+                    }
+              }
+          let html     = htmlList.asHtml _s
+          let expected =
+            htmlList.requests.[0].updatedDate.ToShortDateString ()
+            |> sprintf "<strong>Zeb</strong> &mdash; zyx<i style=\"font-size:9.60pt\">&nbsp; (as of %s)</i>"
+          // spot check; if one request has it, they all should
+          Expect.stringContains html expected "Expected short as-of date not found"    
+      "asHtml succeeds with long as-of date",
+      fun reqList ->
+          let htmlList =
+            { reqList with
+                listGroup =
+                  { reqList.listGroup with
+                      preferences = { reqList.listGroup.preferences with asOfDateDisplay = LongDate }
+                    }
+              }
+          let html     = htmlList.asHtml _s
+          let expected =
+            htmlList.requests.[0].updatedDate.ToLongDateString ()
+            |> sprintf "<strong>Zeb</strong> &mdash; zyx<i style=\"font-size:9.60pt\">&nbsp; (as of %s)</i>"
+          // spot check; if one request has it, they all should
+          Expect.stringContains html expected "Expected long as-of date not found"    
+      "asText succeeds with no as-of date",
       fun reqList ->
           let textList = { reqList with listGroup = { reqList.listGroup with name = "Test Group" } }
           let text = textList.asText _s
@@ -552,6 +582,36 @@ let requestListTests =
           Expect.stringContains text "------------------\n  PRAISE REPORTS\n------------------\n"
             "Heading for category \"Praise Reports\" not found"
           Expect.stringContains text "  + nmo\n \n" "Last request not found"
+      "asText succeeds with short as-of date",
+      fun reqList ->
+          let textList =
+            { reqList with
+                listGroup =
+                  { reqList.listGroup with
+                      preferences = { reqList.listGroup.preferences with asOfDateDisplay = ShortDate }
+                    }
+              }
+          let text     = textList.asText _s
+          let expected =
+            textList.requests.[0].updatedDate.ToShortDateString ()
+            |> sprintf " + Zeb - zyx  (as of %s)"
+          // spot check; if one request has it, they all should
+          Expect.stringContains text expected "Expected short as-of date not found"    
+      "asText succeeds with long as-of date",
+      fun reqList ->
+          let textList =
+            { reqList with
+                listGroup =
+                  { reqList.listGroup with
+                      preferences = { reqList.listGroup.preferences with asOfDateDisplay = LongDate }
+                    }
+              }
+          let text     = textList.asText _s
+          let expected =
+            textList.requests.[0].updatedDate.ToLongDateString ()
+            |> sprintf " + Zeb - zyx  (as of %s)"
+          // spot check; if one request has it, they all should
+          Expect.stringContains text expected "Expected long as-of date not found"    
       "isNew succeeds for both old and new requests",
       fun reqList ->
           let reqs = reqList.requestsInCategory CurrentRequest
