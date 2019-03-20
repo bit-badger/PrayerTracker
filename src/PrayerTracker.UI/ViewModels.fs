@@ -637,7 +637,7 @@ with
                       | LongDate -> req.updatedDate.ToLongDateString ()
                       | _ -> ""
                     yield i [ _style (sprintf "font-size:%fpt" asOfSize) ] [
-                      rawText "&nbsp; ("; str s.["as of "].Value; str dt; rawText ")"
+                      rawText "&nbsp; ("; str s.["as of"].Value; str " "; str dt; rawText ")"
                       ]
                 ])
           |> ul []
@@ -667,7 +667,17 @@ with
         for req in reqs do
           let bullet = match this.isNew req with true -> "+" | false -> "-"
           let requestor = match req.requestor with Some r -> sprintf "%s - " r | None -> ""
-          yield sprintf "  %s %s%s" bullet requestor (htmlToPlainText req.text)
+          yield
+            match this.listGroup.preferences.asOfDateDisplay with
+            | NoDisplay -> ""
+            | _ ->
+                let dt =
+                  match this.listGroup.preferences.asOfDateDisplay with
+                  | ShortDate -> req.updatedDate.ToShortDateString ()
+                  | LongDate -> req.updatedDate.ToLongDateString ()
+                  | _ -> ""
+                sprintf "  (%s %s)" s.["as of"].Value dt
+            |> sprintf "  %s %s%s%s" bullet requestor (htmlToPlainText req.text)
         yield " "
       }
     |> String.concat "\n"

@@ -60,3 +60,11 @@ Esta es la zona horaria que desea utilizar para su clase. Si no puede ver la zon
 ## La Visibilidad del la Lista de las Peticiones
 
 La lista de peticiones del grupo puede ser pública, privada o protegida por contraseña. Las listas públicas están disponibles sin iniciar sesión, y listas privadas sólo están disponibles en línea a los administradores (aunque la lista todavía puede ser enviado por correo electrónico por el administrador). Protegidos con contraseña listas permiten miembros del grupo iniciar sesión y ver la lista de peticiones actual en el sito, utilizando el "Iniciar Sesión como Grupo" enlace y proporcionar la contraseña. Como se trata de una contraseña compartida, se almacena en texto plano, así que usted puede ver fácilmente lo que es. Si selecciona "Protegido por Contraseña" pero no introduce una contraseña, la lista sigue siendo privado, que también es el valor predeterminado. (Cambiar esta contraseña obligará a todos los miembros del grupo que se iniciar sesión en el "Acuérdate de Mí" caja marcada para proporcionar la nueva contraseña.)
+
+## Tamaño de Página
+
+A medida que los grupos pequeños utilizan SeguidorOración, acumulan muchas solicitudes caducadas. Cuando las listas de solicitudes que incluyen solicitudes caducadas, los resultados se dividirán en páginas. El valor predeterminado es de 100 solicitudes por página, pero se puede establecer tan bajo como 10 o tan alto como 255.
+
+## Visualización de la Fecha “Como de”
+
+SeguidorOración puede mostrar la última fecha en que se actualizó una solicitud, al final del texto de solicitud. Por defecto, no lo hace. Si selecciona una fecha corta, se mostrará "(como de 11/10/2015)" (para el 11 de octubre de 2015); si selecciona una fecha larga, se mostrará "(como de domingo, 11 de octubre de 2015)".

@@ -8,6 +8,10 @@ From this page, you can add, edit, and delete your current requests. You can als
 
 To add a request, click the icon or text in the center of the page, below the title and above the list of requests for your group.
 
+## Search Requests
+
+If you are looking for a particular requests, enter some text in the search box and click “Search”. PrayerTracker will search the Requestor/Subject and Request Text fields (case-insensitively) of both active and inactive requests. The results will be displayed in the same format as the original Maintain Requests page, so the buttons described below will work the same for those requests as well. They will also be displayed in pages, if there are a lot of results; the number per page is configurable by small group.
+
 ## Edit Request
       
 To edit a request, click the blue pencil icon; it's the first icon under the “Actions” column heading.

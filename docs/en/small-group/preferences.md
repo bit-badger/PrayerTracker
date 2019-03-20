@@ -26,7 +26,7 @@ PrayerTracker must put an name and e-mail address in the “from” position of 
 
 ## E-mail Format
 
-"This is the default e-mail format for your group. The PrayerTracker default is HTML, which sends the list just as you see it online. However, some e-mail clients may not display this properly, so you can choose to default the email to a plain-text format, which does not have colors, italics, or other formatting. The setting on this page is the group default; you can select a format for each recipient on the “Maintain Group Members” page.
+This is the default e-mail format for your group. The PrayerTracker default is HTML, which sends the list just as you see it online. However, some e-mail clients may not display this properly, so you can choose to default the email to a plain-text format, which does not have colors, italics, or other formatting. The setting on this page is the group default; you can select a format for each recipient on the “Maintain Group Members” page.
 
 ## Colors
 
@@ -60,3 +60,11 @@ This is the time zone that you would like to use for your group. If you do not s
 ## Request List Visibility
 
 The group's request list can be either public, private, or password-protected. Public lists are available without logging in, and private lists are only available online to administrators (though the list can still be sent via e-mail by an administrator). Password-protected lists allow group members to log in and view the current request list online, using the “Group Log On” link and providing this password. As this is a shared password, it is stored in plain text, so you can easily see what it is. If you select “Password Protected” but do not enter a password, the list remains private, which is also the default value. (Changing this password will force all members of the group who logged in with the “Remember Me” box checked to provide the new password.)
+
+## Page Size
+
+As small groups use PrayerTracker, they accumulate many expired requests. When lists of requests that include expired requests, the results will be broken up into pages. The default value is 100 requests per page, but may be set as low as 10 or as high as 255.
+
+## "As of" Date Display
+
+PrayerTracker can display the last date a request was updated, at the end of the request text. By default, it does not. If you select a short date, it will show "(as of 10/11/2015)" (for October 11, 2015); if you select a long date, it will show "(as of Sunday, October 11, 2015)".
