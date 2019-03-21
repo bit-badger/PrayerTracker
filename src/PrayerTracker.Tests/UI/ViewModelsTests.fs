@@ -16,18 +16,30 @@ let countAll _ = true
 module ReferenceListTests =
   
   [<Tests>]
+  let asOfDateListTests =
+    testList "ReferenceList.asOfDateList" [
+      test "has all three options listed" {
+        let asOf = ReferenceList.asOfDateList _s
+        Expect.hasCountOf asOf 3u countAll "There should have been 3 as-of choices returned"
+        Expect.exists asOf (fun (x, _) -> x = NoDisplay.code) "The option for no display was not found"
+        Expect.exists asOf (fun (x, _) -> x = ShortDate.code) "The option for a short date was not found"
+        Expect.exists asOf (fun (x, _) -> x = LongDate.code)  "The option for a full date was not found"
+        }
+      ]
+
+  [<Tests>]
   let emailTypeListTests =
     testList "ReferenceList.emailTypeList" [
       test "includes default type" {
-        let typs = ReferenceList.emailTypeList EmailType.Html _s
+        let typs = ReferenceList.emailTypeList HtmlFormat _s
         Expect.hasCountOf typs 3u countAll "There should have been 3 e-mail type options returned"
         let top = Seq.head typs
         Expect.equal (fst top) "" "The default option should have been blank"
         Expect.equal (snd top).Value "Group Default (HTML Format)" "The default option label was incorrect"
         let nxt = typs |> Seq.skip 1 |> Seq.head
-        Expect.equal (fst nxt) EmailType.Html "The 2nd option should have been HTML"
+        Expect.equal (fst nxt) HtmlFormat.code "The 2nd option should have been HTML"
         let lst = typs |> Seq.last
-        Expect.equal (fst lst) EmailType.PlainText "The 3rd option should have been plain text"
+        Expect.equal (fst lst) PlainTextFormat.code "The 3rd option should have been plain text"
         }
       ]
   
@@ -37,15 +49,15 @@ module ReferenceListTests =
       test "excludes immediate expiration if not required" {
         let exps = ReferenceList.expirationList _s false
         Expect.hasCountOf exps 2u countAll "There should have been 2 expiration types returned"
-        Expect.exists exps (fun exp -> fst exp = "N") "The option for normal expiration was not found"
-        Expect.exists exps (fun exp -> fst exp = "Y") "The option for \"never expire\" was not found"
+        Expect.exists exps (fun (exp, _) -> exp = Automatic.code) "The option for automatic expiration was not found"
+        Expect.exists exps (fun (exp, _) -> exp = Manual.code) "The option for manual expiration was not found"
         }
       test "includes immediate expiration if required" {
         let exps = ReferenceList.expirationList _s true
         Expect.hasCountOf exps 3u countAll "There should have been 3 expiration types returned"
-        Expect.exists exps (fun exp -> fst exp = "N") "The option for normal expiration was not found"
-        Expect.exists exps (fun exp -> fst exp = "Y") "The option for \"never expire\" was not found"
-        Expect.exists exps (fun exp -> fst exp = "X") "The option for \"expire immediately\" was not found"
+        Expect.exists exps (fun (exp, _) -> exp = Automatic.code) "The option for automatic expiration was not found"
+        Expect.exists exps (fun (exp, _) -> exp = Manual.code) "The option for manual expiration was not found"
+        Expect.exists exps (fun (exp, _) -> exp = Forced.code) "The option for immediate expiration was not found"
         }
       ]
   
@@ -57,14 +69,12 @@ module ReferenceListTests =
       yield! testFixture withList [
         yield "returns 5 types",
           fun typs -> Expect.hasCountOf typs 5u countAll "There should have been 5 request types returned"
-        yield! [ RequestType.Current; RequestType.Recurring; RequestType.Praise; RequestType.Expecting;
-                 RequestType.Announcement
-          ]
-        |> List.map (fun typ ->
-            sprintf "contains \"%s\"" typ,
-              fun typs ->
-                  Expect.isSome (typs |> List.tryFind (fun x -> fst x = typ))
-                    (sprintf "The \"%s\" option was not found" typ))
+        yield! [ CurrentRequest; LongTermRequest; PraiseReport; Expecting; Announcement ]
+          |> List.map (fun typ ->
+              sprintf "contains \"%O\"" typ,
+                fun typs ->
+                    Expect.isSome (typs |> List.tryFind (fun x -> fst x = typ))
+                      (sprintf "The \"%O\" option was not found" typ))
         ]
       ]
 
@@ -220,8 +230,8 @@ let editMemberTests =
       Expect.equal edit.emailType "" "The e-mail type should have been blank for group default"
       }
     test "fromMember populates with specific format" {
-      let edit = EditMember.fromMember { Member.empty with format = Some EmailType.Html }
-      Expect.equal edit.emailType EmailType.Html "The e-mail type was not filled correctly"
+      let edit = EditMember.fromMember { Member.empty with format = Some HtmlFormat.code }
+      Expect.equal edit.emailType HtmlFormat.code "The e-mail type was not filled correctly"
       }
     test "empty is as expected" {
       let edit = EditMember.empty
@@ -248,10 +258,10 @@ let editPreferencesTests =
       Expect.equal edit.expireDays prefs.daysToExpire "The expiration days were not filled correctly"
       Expect.equal edit.daysToKeepNew prefs.daysToKeepNew "The days to keep new were not filled correctly"
       Expect.equal edit.longTermUpdateWeeks prefs.longTermUpdateWeeks "The weeks for update were not filled correctly"
-      Expect.equal edit.requestSort prefs.requestSort "The request sort was not filled correctly"
+      Expect.equal edit.requestSort prefs.requestSort.code "The request sort was not filled correctly"
       Expect.equal edit.emailFromName prefs.emailFromName "The e-mail from name was not filled correctly"
       Expect.equal edit.emailFromAddress prefs.emailFromAddress "The e-mail from address was not filled correctly"
-      Expect.equal edit.defaultEmailType prefs.defaultEmailType "The default e-mail type was not filled correctly"
+      Expect.equal edit.defaultEmailType prefs.defaultEmailType.code "The default e-mail type was not filled correctly"
       Expect.equal edit.headingLineType "Name" "The heading line color type was not derived correctly"
       Expect.equal edit.headingLineColor prefs.lineColor "The heading line color was not filled correctly"
       Expect.equal edit.headingTextType "Name" "The heading text color type was not derived correctly"
@@ -291,38 +301,28 @@ let editRequestTests =
     test "empty is as expected" {
       let mt = EditRequest.empty
       Expect.equal mt.requestId Guid.Empty "The request ID should be an empty GUID"
-      Expect.equal mt.requestType "" "The request type should have been blank"
+      Expect.equal mt.requestType CurrentRequest.code "The request type should have been \"Current\""
       Expect.isNone mt.enteredDate "The entered date should have been None"
       Expect.isNone mt.skipDateUpdate "The \"skip date update\" flag should have been None"
       Expect.isNone mt.requestor "The requestor should have been None"
-      Expect.equal mt.expiration "N" "The expiration should have been \"N\""
+      Expect.equal mt.expiration Automatic.code "The expiration should have been \"A\" (Automatic)"
       Expect.equal mt.text "" "The text should have been blank"
       }
-    test "fromRequest succeeds when a request has the do-not-expire flag set" {
+    test "fromRequest succeeds" {
       let req =
         { PrayerRequest.empty with
             prayerRequestId = Guid.NewGuid ()
-            requestType     = RequestType.Current
+            requestType     = CurrentRequest
             requestor       = Some "Me"
-            doNotExpire     = true
+            expiration      = Manual
             text            = "the text"
           }
       let edit = EditRequest.fromRequest req
       Expect.equal edit.requestId req.prayerRequestId "The request ID was not filled correctly"
-      Expect.equal edit.requestType req.requestType "The request type was not filled correctly"
+      Expect.equal edit.requestType req.requestType.code "The request type was not filled correctly"
       Expect.equal edit.requestor req.requestor "The requestor was not filled correctly"
-      Expect.equal edit.expiration "Y" "The expiration should have been \"Y\" since the do-not-expire flag was set"
+      Expect.equal edit.expiration Manual.code "The expiration was not filled correctly"
       Expect.equal edit.text req.text "The text was not filled correctly"
-      }
-    test "fromRequest succeeds when a request has the do-not-expire flag unset" {
-      let req =
-        { PrayerRequest.empty with
-            requestor       = None
-            doNotExpire     = false
-          }
-      let edit = EditRequest.fromRequest req
-      Expect.equal edit.requestor req.requestor "The requestor was not filled correctly"
-      Expect.equal edit.expiration "N" "The expiration should have been \"N\" since the do-not-expire flag was not set"
       }
     test "isNew works for a new request" {
       Expect.isTrue (EditRequest.empty.isNew ()) "An empty GUID should be flagged as a new request"
@@ -439,24 +439,37 @@ let groupLogOnTests =
     ]
 
 [<Tests>]
+let maintainRequestsTests =
+  testList "MaintainRequests" [
+    test "empty is as expected" {
+      let mt = MaintainRequests.empty
+      Expect.isEmpty mt.requests "The requests for the model should have been empty"
+      Expect.equal mt.smallGroup.smallGroupId Guid.Empty "The small group should have been an empty one"
+      Expect.isNone mt.onlyActive "The only active flag should have been None"
+      Expect.isNone mt.searchTerm "The search term should have been None"
+      Expect.isNone mt.pageNbr "The page number should have been None"
+      }
+    ]
+
+[<Tests>]
 let requestListTests =
   testList "RequestList" [
     let withRequestList f () =
       { requests   = [
           { PrayerRequest.empty with
-              requestType = RequestType.Current
+              requestType = CurrentRequest
               requestor   = Some "Zeb"
               text        = "zyx"
               updatedDate = DateTime.Today
             }
           { PrayerRequest.empty with
-              requestType = RequestType.Current
+              requestType = CurrentRequest
               requestor   = Some "Aaron"
               text        = "abc"
               updatedDate = DateTime.Today - TimeSpan.FromDays 9.
             }
           { PrayerRequest.empty with
-              requestType = RequestType.Praise
+              requestType = PraiseReport
               text        = "nmo"
               updatedDate = DateTime.Today
             }
@@ -469,7 +482,7 @@ let requestListTests =
         }
       |> f
     yield! testFixture withRequestList [
-      "asHtml succeeds without header",
+      "asHtml succeeds without header or as-of date",
       fun reqList ->
           let htmlList = { reqList with listGroup = { reqList.listGroup with name = "Test HTML Group" } }
           let html = htmlList.asHtml _s
@@ -525,7 +538,37 @@ let requestListTests =
           Expect.stringContains html lstHeading "Expected HTML for the list heading not found"
           // spot check; without header test tests this exhaustively
           Expect.stringContains html "<strong>Zeb</strong> &mdash; zyx</li>" "Expected requests not found"
-      "asText succeeds",
+      "asHtml succeeds with short as-of date",
+      fun reqList ->
+          let htmlList =
+            { reqList with
+                listGroup =
+                  { reqList.listGroup with
+                      preferences = { reqList.listGroup.preferences with asOfDateDisplay = ShortDate }
+                    }
+              }
+          let html     = htmlList.asHtml _s
+          let expected =
+            htmlList.requests.[0].updatedDate.ToShortDateString ()
+            |> sprintf "<strong>Zeb</strong> &mdash; zyx<i style=\"font-size:9.60pt\">&nbsp; (as of %s)</i>"
+          // spot check; if one request has it, they all should
+          Expect.stringContains html expected "Expected short as-of date not found"    
+      "asHtml succeeds with long as-of date",
+      fun reqList ->
+          let htmlList =
+            { reqList with
+                listGroup =
+                  { reqList.listGroup with
+                      preferences = { reqList.listGroup.preferences with asOfDateDisplay = LongDate }
+                    }
+              }
+          let html     = htmlList.asHtml _s
+          let expected =
+            htmlList.requests.[0].updatedDate.ToLongDateString ()
+            |> sprintf "<strong>Zeb</strong> &mdash; zyx<i style=\"font-size:9.60pt\">&nbsp; (as of %s)</i>"
+          // spot check; if one request has it, they all should
+          Expect.stringContains html expected "Expected long as-of date not found"    
+      "asText succeeds with no as-of date",
       fun reqList ->
           let textList = { reqList with listGroup = { reqList.listGroup with name = "Test Group" } }
           let text = textList.asText _s
@@ -539,29 +582,61 @@ let requestListTests =
           Expect.stringContains text "------------------\n  PRAISE REPORTS\n------------------\n"
             "Heading for category \"Praise Reports\" not found"
           Expect.stringContains text "  + nmo\n \n" "Last request not found"
+      "asText succeeds with short as-of date",
+      fun reqList ->
+          let textList =
+            { reqList with
+                listGroup =
+                  { reqList.listGroup with
+                      preferences = { reqList.listGroup.preferences with asOfDateDisplay = ShortDate }
+                    }
+              }
+          let text     = textList.asText _s
+          let expected =
+            textList.requests.[0].updatedDate.ToShortDateString ()
+            |> sprintf " + Zeb - zyx  (as of %s)"
+          // spot check; if one request has it, they all should
+          Expect.stringContains text expected "Expected short as-of date not found"    
+      "asText succeeds with long as-of date",
+      fun reqList ->
+          let textList =
+            { reqList with
+                listGroup =
+                  { reqList.listGroup with
+                      preferences = { reqList.listGroup.preferences with asOfDateDisplay = LongDate }
+                    }
+              }
+          let text     = textList.asText _s
+          let expected =
+            textList.requests.[0].updatedDate.ToLongDateString ()
+            |> sprintf " + Zeb - zyx  (as of %s)"
+          // spot check; if one request has it, they all should
+          Expect.stringContains text expected "Expected long as-of date not found"    
       "isNew succeeds for both old and new requests",
       fun reqList ->
-          let reqs = reqList.requestsInCategory RequestType.Current
+          let reqs = reqList.requestsInCategory CurrentRequest
           Expect.hasCountOf reqs 2u countAll "There should have been two requests"
           Expect.isTrue (reqList.isNew (List.head reqs)) "The first request should have been new"
           Expect.isFalse (reqList.isNew (List.last reqs)) "The second request should not have been new"
       "requestsInCategory succeeds when requests exist",
       fun reqList ->
-          let reqs = reqList.requestsInCategory RequestType.Current
+          let reqs = reqList.requestsInCategory CurrentRequest
           Expect.hasCountOf reqs 2u countAll "There should have been two requests"
           let first = List.head reqs
           Expect.equal first.text "zyx" "The requests should be sorted by updated date descending"
       "requestsInCategory succeeds when requests do not exist",
       fun reqList ->
-          Expect.isEmpty (reqList.requestsInCategory "ABC") "There should have been no category \"ABC\" requests"
+          Expect.isEmpty (reqList.requestsInCategory Announcement) "There should have been no \"Announcement\" requests"
       "requestsInCategory succeeds and sorts by requestor",
       fun reqList ->
           let newList =
             { reqList with
                 listGroup =
-                  { reqList.listGroup with preferences = { reqList.listGroup.preferences with requestSort = "R" } }
+                  { reqList.listGroup with
+                      preferences = { reqList.listGroup.preferences with requestSort = SortByRequestor }
+                    }
               }
-          let reqs = newList.requestsInCategory RequestType.Current
+          let reqs = newList.requestsInCategory CurrentRequest
           Expect.hasCountOf reqs 2u countAll "There should have been two requests"
           let first = List.head reqs
           Expect.equal first.text "abc" "The requests should be sorted by requestor"

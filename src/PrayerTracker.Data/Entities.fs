@@ -6,36 +6,203 @@ open NodaTime
 open System
 open System.Collections.Generic
 
-(*-- CONSTANTS --*)
-
-/// Constants to use for the e-mail type parameter
-[<RequireQualifiedAccess>]
-module EmailType =
-  /// HTML e-mail
-  [<Literal>]
-  let Html        = "Html"
-  /// Plain Text e-mail
-  [<Literal>]
-  let PlainText   = "PlainText"
-  /// E-mail with the list as an attached PDF
-  [<Literal>]
-  let AttachedPdf = "AttachedPdf"
-
-/// These values match those in the RequestType document store
-[<RequireQualifiedAccess>]
-module RequestType =
-  /// Current Requests (follow expiration rules)
-  let Current      = "Current"
-  /// Long-Term / Recurring Requests (do not automatically expire)
-  let Recurring    = "Recurring"
-  /// Praise Reports (follow expiration rules)
-  let Praise       = "Praise"
-  /// Expectant Mothers (do not automatically expire)
-  let Expecting    = "Expecting"
-  /// Announcements (follow expiration rules)
-  let Announcement = "Announcement"
-
 (*-- SUPPORT TYPES --*)
+
+/// How as-of dates should (or should not) be displayed with requests
+type AsOfDateDisplay =
+  /// No as-of date should be displayed
+  | NoDisplay
+  /// The as-of date should be displayed in the culture's short date format
+  | ShortDate
+  /// The as-of date should be displayed in the culture's long date format
+  | LongDate
+with
+  /// Convert to a DU case from a single-character string
+  static member fromCode code =
+    match code with
+    | "N" -> NoDisplay
+    | "S" -> ShortDate
+    | "L" -> LongDate
+    | _ -> invalidArg "code" (sprintf "Unknown code %s" code)
+  /// Convert this DU case to a single-character string
+  member this.code =
+    match this with
+    | NoDisplay -> "N"
+    | ShortDate -> "S"
+    | LongDate -> "L"
+
+
+/// Acceptable e-mail formats
+type EmailFormat =
+  /// HTML e-mail
+  | HtmlFormat
+  /// Plain-text e-mail
+  | PlainTextFormat
+with
+  /// Convert to a DU case from a single-character string
+  static member fromCode code =
+    match code with
+    | "H" -> HtmlFormat
+    | "P" -> PlainTextFormat
+    | _ -> invalidArg "code" (sprintf "Unknown code %s" code)
+  /// Convert this DU case to a single-character string
+  member this.code =
+    match this with
+    | HtmlFormat -> "H"
+    | PlainTextFormat -> "P"
+
+
+/// Expiration for requests
+type Expiration =
+  /// Follow the rules for normal expiration
+  | Automatic
+  /// Do not expire via rules
+  | Manual
+  /// Force immediate expiration
+  | Forced
+with
+  /// Convert to a DU case from a single-character string
+  static member fromCode code =
+    match code with
+    | "A" -> Automatic
+    | "M" -> Manual
+    | "F" -> Forced
+    | _ -> invalidArg "code" (sprintf "Unknown code %s" code)
+  /// Convert this DU case to a single-character string
+  member this.code =
+    match this with
+    | Automatic -> "A"
+    | Manual -> "M"
+    | Forced -> "F"
+
+
+/// Types of prayer requests
+type PrayerRequestType =
+  /// Current requests
+  | CurrentRequest
+  /// Long-term/ongoing request
+  | LongTermRequest
+  /// Expectant couples
+  | Expecting
+  /// Praise reports
+  | PraiseReport
+  /// Announcements
+  | Announcement
+with
+  /// Convert to a DU case from a single-character string
+  static member fromCode code =
+    match code with
+    | "C" -> CurrentRequest
+    | "L" -> LongTermRequest
+    | "E" -> Expecting
+    | "P" -> PraiseReport
+    | "A" -> Announcement
+    | _ -> invalidArg "code" (sprintf "Unknown code %s" code)
+  /// Convert this DU case to a single-character string
+  member this.code =
+    match this with
+    | CurrentRequest -> "C"
+    | LongTermRequest -> "L"
+    | Expecting -> "E"
+    | PraiseReport -> "P"
+    | Announcement -> "A"
+
+
+/// How requests should be sorted
+type RequestSort =
+  /// Sort by date, then by requestor/subject
+  | SortByDate
+  /// Sort by requestor/subject, then by date
+  | SortByRequestor
+with
+  /// Convert to a DU case from a single-character string
+  static member fromCode code =
+    match code with
+    | "D" -> SortByDate
+    | "R" -> SortByRequestor
+    | _ -> invalidArg "code" (sprintf "Unknown code %s" code)
+  /// Convert this DU case to a single-character string
+  member this.code =
+    match this with
+    | SortByDate -> "D"
+    | SortByRequestor -> "R"
+
+
+module Converters =
+  open Microsoft.EntityFrameworkCore.Storage.ValueConversion
+  open Microsoft.FSharp.Linq.RuntimeHelpers
+  open System.Linq.Expressions
+
+  let private asOfFromDU =
+    <@ Func<AsOfDateDisplay, string>(fun (x : AsOfDateDisplay) -> x.code) @>
+    |> LeafExpressionConverter.QuotationToExpression
+    |> unbox<Expression<Func<AsOfDateDisplay, string>>>
+
+  let private asOfToDU =
+    <@ Func<string, AsOfDateDisplay>(AsOfDateDisplay.fromCode) @>
+    |> LeafExpressionConverter.QuotationToExpression
+    |> unbox<Expression<Func<string, AsOfDateDisplay>>>
+  
+  let private emailFromDU =
+    <@ Func<EmailFormat, string>(fun (x : EmailFormat) -> x.code) @>
+    |> LeafExpressionConverter.QuotationToExpression
+    |> unbox<Expression<Func<EmailFormat, string>>>
+
+  let private emailToDU =
+    <@ Func<string, EmailFormat>(EmailFormat.fromCode) @>
+    |> LeafExpressionConverter.QuotationToExpression
+    |> unbox<Expression<Func<string, EmailFormat>>>
+  
+  let private expFromDU =
+    <@ Func<Expiration, string>(fun (x : Expiration) -> x.code) @>
+    |> LeafExpressionConverter.QuotationToExpression
+    |> unbox<Expression<Func<Expiration, string>>>
+
+  let private expToDU =
+    <@ Func<string, Expiration>(Expiration.fromCode) @>
+    |> LeafExpressionConverter.QuotationToExpression
+    |> unbox<Expression<Func<string, Expiration>>>
+  
+  let private sortFromDU =
+    <@ Func<RequestSort, string>(fun (x : RequestSort) -> x.code) @>
+    |> LeafExpressionConverter.QuotationToExpression
+    |> unbox<Expression<Func<RequestSort, string>>>
+
+  let private sortToDU =
+    <@ Func<string, RequestSort>(RequestSort.fromCode) @>
+    |> LeafExpressionConverter.QuotationToExpression
+    |> unbox<Expression<Func<string, RequestSort>>>
+  
+  let private typFromDU =
+    <@ Func<PrayerRequestType, string>(fun (x : PrayerRequestType) -> x.code) @>
+    |> LeafExpressionConverter.QuotationToExpression
+    |> unbox<Expression<Func<PrayerRequestType, string>>>
+
+  let private typToDU =
+    <@ Func<string, PrayerRequestType>(PrayerRequestType.fromCode) @>
+    |> LeafExpressionConverter.QuotationToExpression
+    |> unbox<Expression<Func<string, PrayerRequestType>>>
+  
+  /// Conversion between a string and an AsOfDateDisplay DU value
+  type AsOfDateDisplayConverter () =
+    inherit ValueConverter<AsOfDateDisplay, string> (asOfFromDU, asOfToDU)
+
+  /// Conversion between a string and an EmailFormat DU value
+  type EmailFormatConverter () =
+    inherit ValueConverter<EmailFormat, string> (emailFromDU, emailToDU)
+
+  /// Conversion between a string and an Expiration DU value
+  type ExpirationConverter () =
+    inherit ValueConverter<Expiration, string> (expFromDU, expToDU)
+
+  /// Conversion between a string and an AsOfDateDisplay DU value
+  type PrayerRequestTypeConverter () =
+    inherit ValueConverter<PrayerRequestType, string> (typFromDU, typToDU)
+
+  /// Conversion between a string and a RequestSort DU value
+  type RequestSortConverter () =
+    inherit ValueConverter<RequestSort, string> (sortFromDU, sortToDU)
+
 
 /// Statistics for churches
 [<NoComparison; NoEquality>]
@@ -145,17 +312,21 @@ and [<CLIMutable; NoComparison; NoEquality>] ListPreferences =
     /// The font size for the text on the prayer request list
     textFontSize        : int
     /// The order in which the prayer requests are sorted
-    requestSort         : string
+    requestSort         : RequestSort
     /// The password used for "small group login" (view-only request list)
     groupPassword       : string
     /// The default e-mail type for this class
-    defaultEmailType    : string
+    defaultEmailType    : EmailFormat
     /// Whether this class makes its request list public
     isPublic            : bool
     /// The time zone which this class uses (use tzdata names)
     timeZoneId          : TimeZoneId
     /// The time zone information
     timeZone            : TimeZone
+    /// The number of requests displayed per page
+    pageSize            : int
+    /// How the as-of date should be automatically displayed
+    asOfDateDisplay     : AsOfDateDisplay
     }
   with
     /// A set of preferences with their default values
@@ -171,12 +342,14 @@ and [<CLIMutable; NoComparison; NoEquality>] ListPreferences =
         lineColor           = "navy"
         headingFontSize     = 16
         textFontSize        = 12
-        requestSort         = "D"
+        requestSort         = SortByDate
         groupPassword       = ""
-        defaultEmailType    = EmailType.Html
+        defaultEmailType    = HtmlFormat
         isPublic            = false
         timeZoneId          = "America/Denver"
         timeZone            = TimeZone.empty
+        pageSize            = 100
+        asOfDateDisplay     = NoDisplay
       }
     /// Configure EF for this entity
     static member internal configureEF (mb : ModelBuilder) =
@@ -188,80 +361,97 @@ and [<CLIMutable; NoComparison; NoEquality>] ListPreferences =
           m.Property(fun e -> e.daysToKeepNew)
             .HasColumnName("DaysToKeepNew")
             .IsRequired()
-            .HasDefaultValue(7)
+            .HasDefaultValue 7
           |> ignore
           m.Property(fun e -> e.daysToExpire)
             .HasColumnName("DaysToExpire")
             .IsRequired()
-            .HasDefaultValue(14)
+            .HasDefaultValue 14
           |> ignore
           m.Property(fun e -> e.longTermUpdateWeeks)
             .HasColumnName("LongTermUpdateWeeks")
             .IsRequired()
-            .HasDefaultValue(4)
+            .HasDefaultValue 4
           |> ignore
           m.Property(fun e -> e.emailFromName)
             .HasColumnName("EmailFromName")
             .IsRequired()
-            .HasDefaultValue("PrayerTracker")
+            .HasDefaultValue "PrayerTracker"
           |> ignore
           m.Property(fun e -> e.emailFromAddress)
             .HasColumnName("EmailFromAddress")
             .IsRequired()
-            .HasDefaultValue("prayer@djs-consulting.com")
+            .HasDefaultValue "prayer@djs-consulting.com"
           |> ignore
           m.Property(fun e -> e.listFonts)
             .HasColumnName("ListFonts")
             .IsRequired()
-            .HasDefaultValue("Century Gothic,Tahoma,Luxi Sans,sans-serif")
+            .HasDefaultValue "Century Gothic,Tahoma,Luxi Sans,sans-serif"
           |> ignore
           m.Property(fun e -> e.headingColor)
             .HasColumnName("HeadingColor")
             .IsRequired()
-            .HasDefaultValue("maroon")
+            .HasDefaultValue "maroon"
           |> ignore
           m.Property(fun e -> e.lineColor)
             .HasColumnName("LineColor")
             .IsRequired()
-            .HasDefaultValue("navy")
+            .HasDefaultValue "navy"
           |> ignore
           m.Property(fun e -> e.headingFontSize)
             .HasColumnName("HeadingFontSize")
             .IsRequired()
-            .HasDefaultValue(16)
+            .HasDefaultValue 16
           |> ignore
           m.Property(fun e -> e.textFontSize)
             .HasColumnName("TextFontSize")
             .IsRequired()
-            .HasDefaultValue(12)
+            .HasDefaultValue 12
           |> ignore
           m.Property(fun e -> e.requestSort)
             .HasColumnName("RequestSort")
             .IsRequired()
             .HasMaxLength(1)
-            .HasDefaultValue("D")
+            .HasDefaultValue SortByDate
           |> ignore
           m.Property(fun e -> e.groupPassword)
             .HasColumnName("GroupPassword")
             .IsRequired()
-            .HasDefaultValue("")
+            .HasDefaultValue ""
           |> ignore
           m.Property(fun e -> e.defaultEmailType)
             .HasColumnName("DefaultEmailType")
             .IsRequired()
-            .HasDefaultValue(EmailType.Html)
+            .HasDefaultValue HtmlFormat
           |> ignore
           m.Property(fun e -> e.isPublic)
             .HasColumnName("IsPublic")
             .IsRequired()
-            .HasDefaultValue(false)
+            .HasDefaultValue false
           |> ignore
           m.Property(fun e -> e.timeZoneId)
             .HasColumnName("TimeZoneId")
             .IsRequired()
-            .HasDefaultValue("America/Denver")
+            .HasDefaultValue "America/Denver"
+          |> ignore
+          m.Property(fun e -> e.pageSize)
+            .HasColumnName("PageSize")
+            .IsRequired()
+            .HasDefaultValue 100
+          |> ignore
+          m.Property(fun e -> e.asOfDateDisplay)
+            .HasColumnName("AsOfDateDisplay")
+            .IsRequired()
+            .HasMaxLength(1)
+            .HasDefaultValue NoDisplay
           |> ignore)
       |> ignore
+      mb.Model.FindEntityType(typeof<ListPreferences>).FindProperty("requestSort")
+        .SetValueConverter(Converters.RequestSortConverter ())
+      mb.Model.FindEntityType(typeof<ListPreferences>).FindProperty("defaultEmailType")
+        .SetValueConverter(Converters.EmailFormatConverter ())
+      mb.Model.FindEntityType(typeof<ListPreferences>).FindProperty("asOfDateDisplay")
+        .SetValueConverter(Converters.AsOfDateDisplayConverter ())
 
 
 /// A member of a small group
@@ -275,7 +465,7 @@ and [<CLIMutable; NoComparison; NoEquality>] Member =
     /// The e-mail address for the member
     email        : string
     /// The type of e-mail preferred by this member (see <see cref="EmailTypes"/> constants)
-    format       : string option
+    format       : string option // TODO - do I need a custom formatter for this?
     /// The small group to which this member belongs
     smallGroup   : SmallGroup
     }
@@ -306,64 +496,62 @@ and [<CLIMutable; NoComparison; NoEquality>] Member =
 /// This represents a single prayer request
 and [<CLIMutable; NoComparison; NoEquality>] PrayerRequest =
   { /// The Id of this request
-    prayerRequestId   : PrayerRequestId
+    prayerRequestId : PrayerRequestId
     /// The type of the request
-    requestType       : string
+    requestType     : PrayerRequestType
     /// The user who entered the request
-    userId            : UserId
+    userId          : UserId
     /// The small group to which this request belongs
-    smallGroupId      : SmallGroupId
+    smallGroupId    : SmallGroupId
     /// The date/time on which this request was entered
-    enteredDate       : DateTime
+    enteredDate     : DateTime
     /// The date/time this request was last updated
-    updatedDate       : DateTime
+    updatedDate     : DateTime
     /// The name of the requestor or subject, or title of announcement
-    requestor         : string option
+    requestor       : string option
     /// The text of the request
-    text              : string
-    /// Whether this request is exempt from standard expiration rules
-    doNotExpire       : bool
+    text            : string
     /// Whether the chaplain should be notified for this request
-    notifyChaplain    : bool
-    /// Whether this request has been expired manually
-    isManuallyExpired : bool
+    notifyChaplain  : bool
     /// The user who entered this request
-    user              : User
+    user            : User
     /// The small group to which this request belongs
-    smallGroup        : SmallGroup
+    smallGroup      : SmallGroup
+    /// Is this request expired?
+    expiration      : Expiration
     }
   with
     /// An empty request
     static member empty =
-      { prayerRequestId   = Guid.Empty
-        requestType       = RequestType.Current
-        userId            = Guid.Empty
-        smallGroupId      = Guid.Empty
-        enteredDate       = DateTime.MinValue
-        updatedDate       = DateTime.MinValue
-        requestor         = None
-        text              = "" 
-        doNotExpire       = false
-        notifyChaplain    = false
-        isManuallyExpired = false
-        user              = User.empty
-        smallGroup        = SmallGroup.empty
+      { prayerRequestId = Guid.Empty
+        requestType     = CurrentRequest
+        userId          = Guid.Empty
+        smallGroupId    = Guid.Empty
+        enteredDate     = DateTime.MinValue
+        updatedDate     = DateTime.MinValue
+        requestor       = None
+        text            = "" 
+        notifyChaplain  = false
+        user            = User.empty
+        smallGroup      = SmallGroup.empty
+        expiration      = Automatic
         }
     /// Is this request expired?
     member this.isExpired (curr : DateTime) expDays =
-      match this.isManuallyExpired with
-      | true -> true // Manual expiration
-      | false ->
-          let nonExpiringTypes = [ RequestType.Recurring; RequestType.Expecting ]
-          match this.doNotExpire || List.contains this.requestType nonExpiringTypes with
-          | true -> false // No expiration
-          | false -> curr.AddDays(-(float expDays)) > this.updatedDate // Automatic expiration
+      match this.expiration with
+      | Forced -> true
+      | Manual -> false 
+      | Automatic ->
+          match this.requestType with
+          | LongTermRequest
+          | Expecting -> false
+          | _ -> curr.AddDays(-(float expDays)) > this.updatedDate // Automatic expiration
 
     /// Is an update required for this long-term request?
     member this.updateRequired curr expDays updWeeks =
       match this.isExpired curr expDays with
       | true -> false
-      | _ -> curr.AddDays(-(float (updWeeks * 7))) > this.updatedDate
+      | false -> curr.AddDays(-(float (updWeeks * 7))) > this.updatedDate
 
     /// Configure EF for this entity
     static member internal configureEF (mb : ModelBuilder) =
@@ -378,12 +566,15 @@ and [<CLIMutable; NoComparison; NoEquality>] PrayerRequest =
           m.Property(fun e -> e.updatedDate).HasColumnName "UpdatedDate" |> ignore
           m.Property(fun e -> e.requestor).HasColumnName "Requestor" |> ignore
           m.Property(fun e -> e.text).HasColumnName("Text").IsRequired() |> ignore
-          m.Property(fun e -> e.doNotExpire).HasColumnName "DoNotExpire" |> ignore
           m.Property(fun e -> e.notifyChaplain).HasColumnName "NotifyChaplain" |> ignore
-          m.Property(fun e -> e.isManuallyExpired).HasColumnName "IsManuallyExpired" |> ignore)
+          m.Property(fun e -> e.expiration).HasColumnName "Expiration" |> ignore)
       |> ignore
+      mb.Model.FindEntityType(typeof<PrayerRequest>).FindProperty("requestType")
+        .SetValueConverter(Converters.PrayerRequestTypeConverter ())
       mb.Model.FindEntityType(typeof<PrayerRequest>).FindProperty("requestor")
         .SetValueConverter(OptionConverter<string> ())
+      mb.Model.FindEntityType(typeof<PrayerRequest>).FindProperty("expiration")
+        .SetValueConverter(Converters.ExpirationConverter ())
 
 
 /// This represents a small group (Sunday School class, Bible study group, etc.)

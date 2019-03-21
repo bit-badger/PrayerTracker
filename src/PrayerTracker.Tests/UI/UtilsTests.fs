@@ -69,6 +69,21 @@ let htmlToPlainTextTests =
     ]
 
 [<Tests>]
+let makeUrlTests =
+  testList "makeUrl" [
+    test "returns the URL when there are no parameters" {
+      Expect.equal (makeUrl "/test" []) "/test" "The URL should not have had any query string parameters added"
+      }
+    test "returns the URL with one query string parameter" {
+      Expect.equal (makeUrl "/test" [ "unit", "true" ]) "/test?unit=true" "The URL was not constructed properly"
+      }
+    test "returns the URL with multiple encoded query string parameters" {
+      let url = makeUrl "/test" [ "space", "a space"; "turkey", "=" ]
+      Expect.equal url "/test?space=a+space&turkey=%3D" "The URL was not constructed properly"
+      }
+    ]
+
+[<Tests>]
 let sndAsStringTests =
   testList "sndAsString" [
     test "converts the second item to a string" {

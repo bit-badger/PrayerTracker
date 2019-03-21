@@ -31,7 +31,7 @@ let private generateRequestList ctx date =
     match date with
     | Some d -> d
     | None -> grp.localDateNow clock
-  let reqs = ctx.dbContext().AllRequestsForSmallGroup grp clock (Some listDate) true
+  let reqs = ctx.dbContext().AllRequestsForSmallGroup grp clock (Some listDate) true 0
   { requests   = reqs |> List.ofSeq
     date       = listDate
     listGroup  = grp
@@ -136,7 +136,7 @@ let expire reqId : HttpHandler =
       | Ok r ->
           let db = ctx.dbContext ()
           let s  = Views.I18N.localizer.Force ()
-          db.UpdateEntry { r with isManuallyExpired = true }
+          db.UpdateEntry { r with expiration = Forced }
           let! _ = db.SaveChangesAsync ()
           addInfo ctx s.["Successfully {0} prayer request", s.["Expired"].Value.ToLower ()]
           return! redirectTo false "/prayer-requests" next ctx
@@ -155,7 +155,7 @@ let list groupId : HttpHandler =
       match grp with
       | Some g when g.preferences.isPublic ->
           let clock = ctx.GetService<IClock> ()
-          let reqs  = db.AllRequestsForSmallGroup g clock None true
+          let reqs  = db.AllRequestsForSmallGroup g clock None true 0
           return!
             viewInfo ctx startTicks
             |> Views.PrayerRequest.list
@@ -190,6 +190,8 @@ let lists : HttpHandler =
 
 
 /// GET /prayer-requests[/inactive?]
+///  - OR -
+/// GET /prayer-requests?search=[search-query]
 let maintain onlyActive : HttpHandler =
   requireAccess [ User ]
   >=> fun next ctx ->
@@ -197,10 +199,27 @@ let maintain onlyActive : HttpHandler =
     let db         = ctx.dbContext ()
     let grp        = currentGroup ctx
     task {
-      let reqs = db.AllRequestsForSmallGroup grp (ctx.GetService<IClock> ()) None onlyActive
+      let pageNbr =
+        match ctx.GetQueryStringValue "page" with
+        | Ok pg -> match Int32.TryParse pg with true, p -> p | false, _ -> 1
+        | Error _ -> 1
+      let m = 
+        match ctx.GetQueryStringValue "search" with
+        | Ok srch ->
+            { MaintainRequests.empty with
+                requests   = db.SearchRequestsForSmallGroup grp srch pageNbr
+                searchTerm = Some srch
+                pageNbr    = Some pageNbr
+              }
+        | Error _ ->
+            { MaintainRequests.empty with
+                requests   = db.AllRequestsForSmallGroup grp (ctx.GetService<IClock> ()) None onlyActive pageNbr
+                onlyActive = Some onlyActive
+                pageNbr    = match onlyActive with true -> None | false -> Some pageNbr
+              }
       return!
         { viewInfo ctx startTicks with helpLink = Some Help.maintainRequests }
-        |> Views.PrayerRequest.maintain reqs grp onlyActive ctx
+        |> Views.PrayerRequest.maintain { m with smallGroup = grp } ctx
         |> renderHtml next ctx
       }
 
@@ -228,7 +247,7 @@ let restore reqId : HttpHandler =
       | Ok r ->
           let db = ctx.dbContext ()
           let s  = Views.I18N.localizer.Force ()
-          db.UpdateEntry { r with isManuallyExpired = false; updatedDate = DateTime.Now }
+          db.UpdateEntry { r with expiration = Automatic; updatedDate = DateTime.Now }
           let! _ = db.SaveChangesAsync ()
           addInfo ctx s.["Successfully {0} prayer request", s.["Restored"].Value.ToLower ()]
           return! redirectTo false "/prayer-requests" next ctx
@@ -254,11 +273,10 @@ let save : HttpHandler =
           | Some pr ->
               let upd8 =
                 { pr with
-                    requestType       = m.requestType
-                    requestor         = m.requestor
-                    text              = ckEditorToText m.text
-                    doNotExpire       = m.expiration = "Y"
-                    isManuallyExpired = m.expiration = "X"
+                    requestType = PrayerRequestType.fromCode m.requestType
+                    requestor   = m.requestor
+                    text        = ckEditorToText m.text
+                    expiration  = Expiration.fromCode m.expiration
                   }
               let grp = currentGroup ctx
               let now = grp.localDateNow (ctx.GetService<IClock> ())

@@ -190,7 +190,7 @@ let maintain (users : User list) ctx vi =
           |> List.map (fun user ->
               let userId    = flatGuid user.userId
               let delAction = sprintf "/user/%s/delete" userId
-              let delPrompt = s.["Are you want to delete this {0}?  This action cannot be undone.",
+              let delPrompt = s.["Are you sure you want to delete this {0}?  This action cannot be undone.",
                                   (sprintf "%s (%s)" (s.["User"].Value.ToLower()) user.fullName)].Value
               tr [] [
                 td [] [

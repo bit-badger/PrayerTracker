@@ -127,6 +127,20 @@ let htmlToPlainText html =
 /// Get the second portion of a tuple as a string
 let sndAsString x = (snd >> string) x
 
+
+/// Make a URL with query string parameters
+let makeUrl (url : string) (qs : (string * string) list) =
+  let queryString =
+    qs
+    |> List.fold
+        (fun (acc : StringBuilder) (key, value) ->
+            acc.Append(key).Append("=").Append(WebUtility.UrlEncode value).Append "&")
+        (StringBuilder ())
+  match queryString.Length with
+  | 0 -> url
+  | _ -> queryString.Insert(0, "?").Insert(0, url).Remove(queryString.Length - 1, 1).ToString ()
+
+
 /// "Magic string" repository
 [<RequireQualifiedAccess>]
 module Key =

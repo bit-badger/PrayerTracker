@@ -36,7 +36,7 @@ type AppDbContextModelSnapshot () =
           b.Property<Guid>("smallGroupId") |> ignore
           b.Property<int>("daysToExpire").ValueGeneratedOnAdd().HasDefaultValue(14) |> ignore
           b.Property<int>("daysToKeepNew").ValueGeneratedOnAdd().HasDefaultValue(7) |> ignore
-          b.Property<string>("defaultEmailType").IsRequired().ValueGeneratedOnAdd().HasDefaultValue("Html") |> ignore
+          b.Property<string>("defaultEmailType").IsRequired().ValueGeneratedOnAdd().HasDefaultValue("H").HasMaxLength(1) |> ignore
           b.Property<string>("emailFromAddress").IsRequired().ValueGeneratedOnAdd().HasDefaultValue("prayer@djs-consulting.com") |> ignore
           b.Property<string>("emailFromName").IsRequired().ValueGeneratedOnAdd().HasDefaultValue("PrayerTracker") |> ignore
           b.Property<string>("groupPassword").IsRequired().ValueGeneratedOnAdd().HasDefaultValue("") |> ignore
@@ -46,9 +46,11 @@ type AppDbContextModelSnapshot () =
           b.Property<string>("lineColor").IsRequired().ValueGeneratedOnAdd().HasDefaultValue("navy") |> ignore
           b.Property<string>("listFonts").IsRequired().ValueGeneratedOnAdd().HasDefaultValue("Century Gothic,Tahoma,Luxi Sans,sans-serif") |> ignore
           b.Property<int>("longTermUpdateWeeks").ValueGeneratedOnAdd().HasDefaultValue(4) |> ignore
-          b.Property<string>("requestSort").IsRequired().ValueGeneratedOnAdd().HasDefaultValue("D").HasMaxLength(1)  |> ignore
+          b.Property<string>("requestSort").IsRequired().ValueGeneratedOnAdd().HasDefaultValue("D").HasMaxLength(1) |> ignore
           b.Property<int>("textFontSize").ValueGeneratedOnAdd().HasDefaultValue(12) |> ignore
           b.Property<string>("timeZoneId").IsRequired().ValueGeneratedOnAdd().HasDefaultValue("America/Denver") |> ignore
+          b.Property<int>("pageSize").IsRequired().ValueGeneratedOnAdd().HasDefaultValue(100) |> ignore
+          b.Property<string>("asOfDateDisplay").IsRequired().ValueGeneratedOnAdd().HasDefaultValue("N").HasMaxLength(1) |> ignore
           b.HasKey("smallGroupId") |> ignore
           b.HasIndex("timeZoneId") |> ignore
           b.ToTable("ListPreference") |> ignore)
@@ -71,11 +73,10 @@ type AppDbContextModelSnapshot () =
       typeof<PrayerRequest>,
       fun b ->
           b.Property<Guid>("prayerRequestId").ValueGeneratedOnAdd() |> ignore
-          b.Property<bool>("doNotExpire") |> ignore
           b.Property<DateTime>("enteredDate") |> ignore
-          b.Property<bool>("isManuallyExpired") |> ignore
+          b.Property<string>("expiration").IsRequired().HasMaxLength(1) |> ignore
           b.Property<bool>("notifyChaplain") |> ignore
-          b.Property<string>("requestType").IsRequired() |> ignore
+          b.Property<string>("requestType").IsRequired().HasMaxLength(1) |> ignore
           b.Property<string>("requestor") |> ignore
           b.Property<Guid>("smallGroupId") |> ignore
           b.Property<string>("text").IsRequired() |> ignore

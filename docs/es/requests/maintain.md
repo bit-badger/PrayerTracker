@@ -8,6 +8,10 @@ Desde esta página, usted puede agregar, editar y borrar sus peticiones actuales
 
 Para agregar una petición, haga clic en el icono o el texto en el centro de la página, debajo del título y por encima de la lista de peticiones para su grupo.
 
+## Busca las Peticiones
+
+Si está buscando una solicitud en particular, ingrese un texto en el cuadro de búsqueda y haga clic en “Buscar”. SeguidorOración buscará los campos de Solicitante / Asunto y Texto de solicitud (sin distinción de mayúsculas y minúsculas) de solicitudes activas e inactivas. Los resultados se mostrarán en el mismo formato que la página de solicitudes de mantenimiento original, por lo que los botones que se describen a continuación funcionarán igual para esas solicitudes. También se mostrarán en las páginas, si hay muchos resultados; el número por página es configurable por grupos pequeños.
+
 ## Editar la Petición
 
 Para editar una petición, haga clic en el icono de lápiz azul, el primer icono bajo el título de columna “Acciones”.

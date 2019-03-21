@@ -37,6 +37,8 @@ type ListPreferencesTable =
     requestSort         : OperationBuilder<AddColumnOperation>
     textFontSize        : OperationBuilder<AddColumnOperation>
     timeZoneId          : OperationBuilder<AddColumnOperation>
+    pageSize            : OperationBuilder<AddColumnOperation>
+    asOfDateDisplay     : OperationBuilder<AddColumnOperation>
     }
 
 type MemberTable =
@@ -48,17 +50,16 @@ type MemberTable =
     }
 
 type PrayerRequestTable =
-  { prayerRequestId   : OperationBuilder<AddColumnOperation>
-    doNotExpire       : OperationBuilder<AddColumnOperation>
-    enteredDate       : OperationBuilder<AddColumnOperation>
-    isManuallyExpired : OperationBuilder<AddColumnOperation>
-    notifyChaplain    : OperationBuilder<AddColumnOperation>
-    requestType       : OperationBuilder<AddColumnOperation>
-    requestor         : OperationBuilder<AddColumnOperation>
-    smallGroupId      : OperationBuilder<AddColumnOperation>
-    text              : OperationBuilder<AddColumnOperation>
-    updatedDate       : OperationBuilder<AddColumnOperation>
-    userId            : OperationBuilder<AddColumnOperation>
+  { prayerRequestId : OperationBuilder<AddColumnOperation>
+    enteredDate     : OperationBuilder<AddColumnOperation>
+    expiration      : OperationBuilder<AddColumnOperation>
+    notifyChaplain  : OperationBuilder<AddColumnOperation>
+    requestType     : OperationBuilder<AddColumnOperation>
+    requestor       : OperationBuilder<AddColumnOperation>
+    smallGroupId    : OperationBuilder<AddColumnOperation>
+    text            : OperationBuilder<AddColumnOperation>
+    updatedDate     : OperationBuilder<AddColumnOperation>
+    userId          : OperationBuilder<AddColumnOperation>
     }
 
 type SmallGroupTable =
@@ -102,12 +103,12 @@ type InitialDatabase () =
       schema  = "pt",
       columns =
         (fun table ->
-            { churchId         = table.Column<Guid>   (name = "ChurchId", nullable = false)
-              city             = table.Column<string> (name = "City", nullable = false)
+            { churchId         = table.Column<Guid>   (name = "ChurchId",         nullable = false)
+              city             = table.Column<string> (name = "City",             nullable = false)
               hasInterface     = table.Column<bool>   (name = "HasVirtualPrayerRoomInterface", nullable = false)
               interfaceAddress = table.Column<string> (name = "InterfaceAddress", nullable = true)
-              name             = table.Column<string> (name = "Name", nullable = false)
-              st               = table.Column<string> (name = "ST", maxLength = Nullable<int> 2, nullable = false)
+              name             = table.Column<string> (name = "Name",             nullable = false)
+              st               = table.Column<string> (name = "ST",               nullable = false, maxLength = Nullable<int> 2)
               }),
       constraints =
         fun table ->
@@ -119,10 +120,10 @@ type InitialDatabase () =
       schema  = "pt",
       columns =
         (fun table ->
-            { timeZoneId  = table.Column<string> (name = "TimeZoneId", nullable = false)
+            { timeZoneId  = table.Column<string> (name = "TimeZoneId",  nullable = false)
               description = table.Column<string> (name = "Description", nullable = false)
-              isActive    = table.Column<bool>   (name = "IsActive", nullable = false)
-              sortOrder   = table.Column<int>    (name = "SortOrder", nullable = false)
+              isActive    = table.Column<bool>   (name = "IsActive",    nullable = false)
+              sortOrder   = table.Column<int>    (name = "SortOrder",   nullable = false)
               }),
       constraints =
         fun table ->
@@ -134,13 +135,13 @@ type InitialDatabase () =
       schema  = "pt",
       columns =
         (fun table ->
-            { userId       = table.Column<Guid>   (name = "UserId", nullable = false)
-              emailAddress = table.Column<string> (name = "EmailAddress", nullable = false)
-              firstName    = table.Column<string> (name = "FirstName", nullable = false)
+            { userId       = table.Column<Guid>   (name = "UserId",        nullable = false)
+              emailAddress = table.Column<string> (name = "EmailAddress",  nullable = false)
+              firstName    = table.Column<string> (name = "FirstName",     nullable = false)
               isAdmin      = table.Column<bool>   (name = "IsSystemAdmin", nullable = false)
-              lastName     = table.Column<string> (name = "LastName", nullable = false)
-              passwordHash = table.Column<string> (name = "PasswordHash", nullable = false)
-              salt         = table.Column<Guid>   (name = "Salt", nullable = true)
+              lastName     = table.Column<string> (name = "LastName",      nullable = false)
+              passwordHash = table.Column<string> (name = "PasswordHash",  nullable = false)
+              salt         = table.Column<Guid>   (name = "Salt",          nullable = true)
               }),
       constraints =
         fun table ->
@@ -153,8 +154,8 @@ type InitialDatabase () =
       columns =
         (fun table ->
             { smallGroupId = table.Column<Guid>   (name = "SmallGroupId", nullable = false)
-              churchId     = table.Column<Guid>   (name = "ChurchId", nullable = false)
-              name         = table.Column<string> (name = "Name", nullable = false)
+              churchId     = table.Column<Guid>   (name = "ChurchId",     nullable = false)
+              name         = table.Column<string> (name = "Name",         nullable = false)
               }),
       constraints =
         fun table ->
@@ -174,22 +175,24 @@ type InitialDatabase () =
       schema  = "pt",
       columns =
         (fun table ->
-            { smallGroupId        = table.Column<Guid>   (name = "SmallGroupId", nullable = false)
-              daysToExpire        = table.Column<int>    (name = "DaysToExpire", nullable = false, defaultValue = 14)
-              daysToKeepNew       = table.Column<int>    (name = "DaysToKeepNew", nullable = false, defaultValue = 7)
-              defaultEmailType    = table.Column<string> (name = "DefaultEmailType", nullable = false, defaultValue = "Html")
-              emailFromAddress    = table.Column<string> (name = "EmailFromAddress", nullable = false, defaultValue = "prayer@djs-consulting.com")
-              emailFromName       = table.Column<string> (name = "EmailFromName", nullable = false, defaultValue = "PrayerTracker")
-              groupPassword       = table.Column<string> (name = "GroupPassword", nullable = false, defaultValue = "")
-              headingColor        = table.Column<string> (name = "HeadingColor", nullable = false, defaultValue = "maroon")
-              headingFontSize     = table.Column<int>    (name = "HeadingFontSize", nullable = false, defaultValue = 16)
-              isPublic            = table.Column<bool>   (name = "IsPublic", nullable = false, defaultValue = false)
-              lineColor           = table.Column<string> (name = "LineColor", nullable = false, defaultValue = "navy")
-              listFonts           = table.Column<string> (name = "ListFonts", nullable = false, defaultValue = "Century Gothic,Tahoma,Luxi Sans,sans-serif")
+            { smallGroupId        = table.Column<Guid>   (name = "SmallGroupId",        nullable = false)
+              daysToExpire        = table.Column<int>    (name = "DaysToExpire",        nullable = false, defaultValue = 14)
+              daysToKeepNew       = table.Column<int>    (name = "DaysToKeepNew",       nullable = false, defaultValue = 7)
+              defaultEmailType    = table.Column<string> (name = "DefaultEmailType",    nullable = false, defaultValue = "Html")
+              emailFromAddress    = table.Column<string> (name = "EmailFromAddress",    nullable = false, defaultValue = "prayer@djs-consulting.com")
+              emailFromName       = table.Column<string> (name = "EmailFromName",       nullable = false, defaultValue = "PrayerTracker")
+              groupPassword       = table.Column<string> (name = "GroupPassword",       nullable = false, defaultValue = "")
+              headingColor        = table.Column<string> (name = "HeadingColor",        nullable = false, defaultValue = "maroon")
+              headingFontSize     = table.Column<int>    (name = "HeadingFontSize",     nullable = false, defaultValue = 16)
+              isPublic            = table.Column<bool>   (name = "IsPublic",            nullable = false, defaultValue = false)
+              lineColor           = table.Column<string> (name = "LineColor",           nullable = false, defaultValue = "navy")
+              listFonts           = table.Column<string> (name = "ListFonts",           nullable = false, defaultValue = "Century Gothic,Tahoma,Luxi Sans,sans-serif")
               longTermUpdateWeeks = table.Column<int>    (name = "LongTermUpdateWeeks", nullable = false, defaultValue = 4)
-              requestSort         = table.Column<string> (name = "RequestSort", maxLength = Nullable<int> 1, nullable = false, defaultValue = "D")
-              textFontSize        = table.Column<int>    (name = "TextFontSize", nullable = false, defaultValue = 12)
-              timeZoneId          = table.Column<string> (name = "TimeZoneId", nullable = false, defaultValue = "America/Denver")
+              requestSort         = table.Column<string> (name = "RequestSort",         nullable = false, defaultValue = "D", maxLength = Nullable<int> 1)
+              textFontSize        = table.Column<int>    (name = "TextFontSize",        nullable = false, defaultValue = 12)
+              timeZoneId          = table.Column<string> (name = "TimeZoneId",          nullable = false, defaultValue = "America/Denver")
+              pageSize            = table.Column<int>    (name = "PageSize",            nullable = false, defaultValue = 100)
+              asOfDateDisplay     = table.Column<string> (name = "AsOfDateDisplay",     nullable = false, defaultValue = "N", maxLength = Nullable<int> 1)
               }),
       constraints =
         fun table ->
@@ -217,10 +220,10 @@ type InitialDatabase () =
       schema  = "pt",
       columns =
         (fun table ->
-            { memberId     = table.Column<Guid>   (name = "MemberId", nullable = false)
-              email        = table.Column<string> (name = "Email", nullable = false)
-              format       = table.Column<string> (name = "Format", nullable = true)
-              memberName   = table.Column<string> (name = "MemberName", nullable = false)
+            { memberId     = table.Column<Guid>   (name = "MemberId",     nullable = false)
+              email        = table.Column<string> (name = "Email",        nullable = false)
+              format       = table.Column<string> (name = "Format",       nullable = true)
+              memberName   = table.Column<string> (name = "MemberName",   nullable = false)
               smallGroupId = table.Column<Guid>   (name = "SmallGroupId", nullable = false)
               }),
       constraints =
@@ -242,16 +245,15 @@ type InitialDatabase () =
       columns =
         (fun table ->
             { prayerRequestId   = table.Column<Guid>     (name = "PrayerRequestId", nullable = false)
-              doNotExpire       = table.Column<bool>     (name = "DoNotExpire", nullable = false)
-              enteredDate       = table.Column<DateTime> (name = "EnteredDate", nullable = false)
-              isManuallyExpired = table.Column<bool>     (name = "IsManuallyExpired", nullable = false)
-              notifyChaplain    = table.Column<bool>     (name = "NotifyChaplain", nullable = false)
-              requestType       = table.Column<string>   (name = "RequestType", nullable = false)
-              requestor         = table.Column<string>   (name = "Requestor", nullable = true)
-              smallGroupId      = table.Column<Guid>     (name = "SmallGroupId", nullable = false)
-              text              = table.Column<string>   (name = "Text", nullable = false)
-              updatedDate       = table.Column<DateTime> (name = "UpdatedDate", nullable = false)
-              userId            = table.Column<Guid>     (name = "UserId", nullable = false)
+              expiration        = table.Column<bool>     (name = "Expiration",      nullable = false)
+              enteredDate       = table.Column<DateTime> (name = "EnteredDate",     nullable = false)
+              notifyChaplain    = table.Column<bool>     (name = "NotifyChaplain",  nullable = false)
+              requestType       = table.Column<string>   (name = "RequestType",     nullable = false)
+              requestor         = table.Column<string>   (name = "Requestor",       nullable = true)
+              smallGroupId      = table.Column<Guid>     (name = "SmallGroupId",    nullable = false)
+              text              = table.Column<string>   (name = "Text",            nullable = false)
+              updatedDate       = table.Column<DateTime> (name = "UpdatedDate",     nullable = false)
+              userId            = table.Column<Guid>     (name = "UserId",          nullable = false)
               }),
       constraints =
         fun table ->
@@ -279,7 +281,7 @@ type InitialDatabase () =
       schema  = "pt",
       columns =
         (fun table ->
-            { userId       = table.Column<Guid> (name = "UserId", nullable = false)
+            { userId       = table.Column<Guid> (name = "UserId",       nullable = false)
               smallGroupId = table.Column<Guid> (name = "SmallGroupId", nullable = false)
               }),
       constraints =
@@ -347,7 +349,7 @@ type InitialDatabase () =
           b.Property<Guid>("smallGroupId") |> ignore
           b.Property<int>("daysToExpire").ValueGeneratedOnAdd().HasDefaultValue(14) |> ignore
           b.Property<int>("daysToKeepNew").ValueGeneratedOnAdd().HasDefaultValue(7) |> ignore
-          b.Property<string>("defaultEmailType").IsRequired().ValueGeneratedOnAdd().HasDefaultValue("Html") |> ignore
+          b.Property<string>("defaultEmailType").IsRequired().ValueGeneratedOnAdd().HasDefaultValue("H") |> ignore
           b.Property<string>("emailFromAddress").IsRequired().ValueGeneratedOnAdd().HasDefaultValue("prayer@djs-consulting.com") |> ignore
           b.Property<string>("emailFromName").IsRequired().ValueGeneratedOnAdd().HasDefaultValue("PrayerTracker") |> ignore
           b.Property<string>("groupPassword").IsRequired().ValueGeneratedOnAdd().HasDefaultValue("") |> ignore
@@ -357,9 +359,11 @@ type InitialDatabase () =
           b.Property<string>("lineColor").IsRequired().ValueGeneratedOnAdd().HasDefaultValue("navy") |> ignore
           b.Property<string>("listFonts").IsRequired().ValueGeneratedOnAdd().HasDefaultValue("Century Gothic,Tahoma,Luxi Sans,sans-serif") |> ignore
           b.Property<int>("longTermUpdateWeeks").ValueGeneratedOnAdd().HasDefaultValue(4) |> ignore
-          b.Property<string>("requestSort").IsRequired().ValueGeneratedOnAdd().HasDefaultValue("D").HasMaxLength(1)  |> ignore
+          b.Property<string>("requestSort").IsRequired().ValueGeneratedOnAdd().HasDefaultValue("D").HasMaxLength(1) |> ignore
           b.Property<int>("textFontSize").ValueGeneratedOnAdd().HasDefaultValue(12) |> ignore
           b.Property<string>("timeZoneId").IsRequired().ValueGeneratedOnAdd().HasDefaultValue("America/Denver") |> ignore
+          b.Property<int>("pageSize").IsRequired().ValueGeneratedOnAdd().HasDefaultValue(100) |> ignore
+          b.Property<string>("asOfDateDisplay").IsRequired().ValueGeneratedOnAdd().HasDefaultValue("N").HasMaxLength(1) |> ignore
           b.HasKey("smallGroupId") |> ignore
           b.HasIndex("timeZoneId") |> ignore
           b.ToTable("ListPreference") |> ignore)
@@ -382,11 +386,10 @@ type InitialDatabase () =
       typeof<PrayerRequest>,
       fun b ->
           b.Property<Guid>("prayerRequestId").ValueGeneratedOnAdd() |> ignore
-          b.Property<bool>("doNotExpire") |> ignore
-          b.Property<DateTime>("enteredDate") |> ignore
-          b.Property<bool>("isManuallyExpired") |> ignore
+          b.Property<DateTime>("enteredDate").IsRequired() |> ignore
+          b.Property<string>("expiration").IsRequired().HasMaxLength 1 |> ignore
           b.Property<bool>("notifyChaplain") |> ignore
-          b.Property<string>("requestType").IsRequired() |> ignore
+          b.Property<string>("requestType").IsRequired().HasMaxLength 1 |> ignore
           b.Property<string>("requestor") |> ignore
           b.Property<Guid>("smallGroupId") |> ignore
           b.Property<string>("text").IsRequired() |> ignore

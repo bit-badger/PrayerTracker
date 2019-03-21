@@ -75,7 +75,7 @@ let maintain (churches : Church list) (stats : Map<string, ChurchStats>) ctx vi 
           |> List.map (fun ch ->
               let chId      = flatGuid ch.churchId
               let delAction = sprintf "/church/%s/delete" chId
-              let delPrompt = s.["Are you want to delete this {0}?  This action cannot be undone.",
+              let delPrompt = s.["Are you sure you want to delete this {0}?  This action cannot be undone.",
                                   sprintf "%s (%s)" (s.["Church"].Value.ToLower ()) ch.name]
               tr [] [
                 td [] [

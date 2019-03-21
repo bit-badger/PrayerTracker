@@ -8,6 +8,22 @@ open PrayerTracker.Entities
 open System.Collections.Generic
 open System.Linq
 
+[<AutoOpen>]
+module private Helpers =
+  
+  /// Central place to append sort criteria for prayer request queries
+  let reqSort sort (query : IQueryable<PrayerRequest>) =
+    match sort with
+    | SortByDate ->
+        query.OrderByDescending(fun pr -> pr.updatedDate)
+          .ThenByDescending(fun pr -> pr.enteredDate)
+          .ThenBy(fun pr -> pr.requestor)
+    | SortByRequestor ->
+        query.OrderBy(fun pr -> pr.requestor)
+          .ThenByDescending(fun pr -> pr.updatedDate)
+          .ThenByDescending(fun pr -> pr.enteredDate)
+
+
 type AppDbContext with
   
   (*-- DISCONNECTED DATA EXTENSIONS --*)
@@ -64,7 +80,7 @@ type AppDbContext with
   member this.CountMembersForSmallGroup gId =
     this.Members.CountAsync (fun m -> m.smallGroupId = gId)
 
-  (*-- PRAYER REQUEST EXTENSIONS *)
+  (*-- PRAYER REQUEST EXTENSIONS --*)
 
   /// Get a prayer request by its Id
   member this.TryRequestById reqId =
@@ -74,32 +90,27 @@ type AppDbContext with
       }
 
   /// Get all (or active) requests for a small group as of now or the specified date
-  member this.AllRequestsForSmallGroup (grp : SmallGroup) clock listDate activeOnly : PrayerRequest seq =
+  member this.AllRequestsForSmallGroup (grp : SmallGroup) clock listDate activeOnly pageNbr : PrayerRequest seq =
     let theDate = match listDate with Some dt -> dt | _ -> grp.localDateNow clock
     upcast (
       this.PrayerRequests.AsNoTracking().Where(fun pr -> pr.smallGroupId = grp.smallGroupId)
       |> function
-      // Filter
       | query when activeOnly ->
           let asOf = theDate.AddDays(-(float grp.preferences.daysToExpire)).Date
           query.Where(fun pr ->
-              (pr.updatedDate > asOf
-                  || pr.doNotExpire
-                  || RequestType.Recurring = pr.requestType
-                  || RequestType.Expecting = pr.requestType)
-              && not pr.isManuallyExpired)
+              (    pr.updatedDate > asOf
+                || pr.expiration  = Manual
+                || pr.requestType = LongTermRequest
+                || pr.requestType = Expecting)
+              && pr.expiration <> Forced)
       | query -> query
+      |> reqSort grp.preferences.requestSort
       |> function
-      // Sort
-      | query when grp.preferences.requestSort = "D" ->
-          query.OrderByDescending(fun pr -> pr.updatedDate)
-              .ThenByDescending(fun pr -> pr.enteredDate)
-              .ThenBy(fun pr -> pr.requestor)
       | query ->
-          query.OrderBy(fun pr -> pr.requestor)
-              .ThenByDescending(fun pr -> pr.updatedDate)
-              .ThenByDescending(fun pr -> pr.enteredDate))
-
+          match activeOnly with
+          | true -> query.Skip 0
+          | false -> query.Skip((pageNbr - 1) * grp.preferences.pageSize).Take grp.preferences.pageSize)
+      
   /// Count prayer requests for the given small group Id
   member this.CountRequestsBySmallGroup gId =
     this.PrayerRequests.CountAsync (fun pr -> pr.smallGroupId = gId)
@@ -107,6 +118,21 @@ type AppDbContext with
   /// Count prayer requests for the given church Id
   member this.CountRequestsByChurch cId =
     this.PrayerRequests.CountAsync (fun pr -> pr.smallGroup.churchId = cId)
+
+  /// Get all (or active) requests for a small group as of now or the specified date
+  member this.SearchRequestsForSmallGroup (grp : SmallGroup) (searchTerm : string) pageNbr : PrayerRequest seq =
+    let pgSz = grp.preferences.pageSize
+    let skip = (pageNbr - 1) * pgSz
+    let sql  =
+      """ SELECT * FROM pt."PrayerRequest" WHERE "SmallGroupId" = {0} AND "Text" ILIKE {1}
+        UNION
+          SELECT * FROM pt."PrayerRequest" WHERE "SmallGroupId" = {0} AND COALESCE("Requestor", '') ILIKE {1}"""
+      |> RawSqlString
+    let like = sprintf "%%%s%%"
+    upcast (
+      this.PrayerRequests.FromSql(sql, grp.smallGroupId, like searchTerm).AsNoTracking ()
+      |> reqSort grp.preferences.requestSort
+      |> function query -> (query.Skip skip).Take pgSz)
 
   (*-- SMALL GROUP EXTENSIONS --*)
 

@@ -45,7 +45,7 @@ let announcement isAdmin ctx vi =
           label [ _for "requestType" ] [ locStr s.["Request Type"] ]
           reqTypes
           |> Seq.ofList
-          |> Seq.map (fun item -> fst item, (snd item).Value)
+          |> Seq.map (fun (typ, desc) -> typ.code, desc.Value)
           |> selectList "requestType" "Announcement" []
           ]
         ]
@@ -192,7 +192,7 @@ let maintain (grps : SmallGroup list) ctx vi =
           |> List.map (fun g ->
               let grpId     = flatGuid g.smallGroupId
               let delAction = sprintf "/small-group/%s/delete" grpId
-              let delPrompt = s.["Are you want to delete this {0}?  This action cannot be undone.",
+              let delPrompt = s.["Are you sure you want to delete this {0}?  This action cannot be undone.",
                                    sprintf "%s (%s)" (s.["Small Group"].Value.ToLower ()) g.name].Value
               tr [] [
                 td [] [
@@ -246,8 +246,10 @@ let members (mbrs : Member list) (emailTyps : Map<string, LocalizedString>) ctx 
           |> List.map (fun mbr ->
               let mbrId     = flatGuid mbr.memberId
               let delAction = sprintf "/small-group/member/%s/delete" mbrId
-              let delPrompt = s.["Are you want to delete this {0} ({1})?  This action cannot be undone.",
-                                  s.["group member"], mbr.memberName].Value
+              let delPrompt =
+                s.["Are you sure you want to delete this {0}?  This action cannot be undone.", s.["group member"]]
+                  .Value
+                  .Replace("?", sprintf " (%s)?" mbr.memberName)
               tr [] [
                 td [] [
                   a [ _href (sprintf "/small-group/member/%s/edit" mbrId); _title s.["Edit This Group Member"].Value ]
@@ -282,7 +284,7 @@ let members (mbrs : Member list) (emailTyps : Map<string, LocalizedString>) ctx 
 let overview m vi =
   let s          = I18N.localizer.Force ()
   let linkSpacer = rawText "&nbsp; "
-  let typs       = ReferenceList.requestTypeList s |> Map.ofList
+  let typs       = ReferenceList.requestTypeList s |> dict
   article [ _class "pt-overview" ] [
     section [] [
       header [ _role "heading" ] [
@@ -348,7 +350,7 @@ let preferences (m : EditPreferences) (tzs : TimeZone list) ctx vi =
   use sw  = new StringWriter ()
   let raw = rawLocText sw
   [ form [ _action "/small-group/preferences/save"; _method "post"; _class "pt-center-columns" ] [
-      style [ _scoped ] [ rawText "#expireDays, #daysToKeepNew, #longTermUpdateWeeks, #headingFontSize, #listFontSize { width: 3rem; } #emailFromAddress { width: 20rem; } #listFonts { width: 40rem; } @media screen and (max-width: 40rem) { #listFonts { width: 100%; } }" ]
+      style [ _scoped ] [ rawText "#expireDays, #daysToKeepNew, #longTermUpdateWeeks, #headingFontSize, #listFontSize, #pageSize { width: 3rem; } #emailFromAddress { width: 20rem; } #listFonts { width: 40rem; } @media screen and (max-width: 40rem) { #listFonts { width: 100%; } }" ]
       csrfToken ctx
       fieldset [] [
         legend [] [ strong [] [ icon "date_range"; rawText " &nbsp;"; locStr s.["Dates"] ] ]
@@ -405,7 +407,9 @@ let preferences (m : EditPreferences) (tzs : TimeZone list) ctx vi =
             label [ _for "defaultEmailType" ] [ locStr s.["E-mail Format"] ]
             seq {
               yield "", selectDefault s.["Select"].Value
-              yield! ReferenceList.emailTypeList "" s |> Seq.skip 1 |> Seq.map (fun typ -> fst typ, (snd typ).Value)
+              yield! ReferenceList.emailTypeList HtmlFormat s
+                |> Seq.skip 1
+                |> Seq.map (fun typ -> fst typ, (snd typ).Value)
               }
             |> selectList "defaultEmailType" m.defaultEmailType [ _required ]
             ]
@@ -477,7 +481,7 @@ let preferences (m : EditPreferences) (tzs : TimeZone list) ctx vi =
         legend [] [ strong [] [ icon "settings"; rawText " &nbsp;"; locStr s.["Other Settings"] ] ]
         div [ _class "pt-field-row" ] [
           div [ _class "pt-field" ] [
-            label [ _for "TimeZone" ] [ locStr s.["Time Zone"] ]
+            label [ _for "timeZone" ] [ locStr s.["Time Zone"] ]
             seq {
               yield "", selectDefault s.["Select"].Value
               yield! tzs |> List.map (fun tz -> tz.timeZoneId, (TimeZones.name tz.timeZoneId s).Value)
@@ -507,6 +511,19 @@ let preferences (m : EditPreferences) (tzs : TimeZone list) ctx vi =
             label [ _for "groupPassword" ] [ locStr s.["Group Password (Used to Read Online)"] ]
             input [ _type "text"; _name "groupPassword"; _id "groupPassword";
                     _value (match m.groupPassword with Some x -> x | None -> "") ]
+            ]
+          ]
+        div [ _class "pt-field-row" ] [
+          div [ _class "pt-field" ] [
+            label [ _for "pageSize" ] [ locStr s.["Page Size"] ]
+            input [ _type "number"; _name "pageSize"; _id "pageSize"; _min "10"; _max "255"; _required
+                    _value (string m.pageSize) ]
+            ]
+          div [ _class "pt-field" ] [
+            label [ _for "asOfDate" ] [ locStr s.["“As of” Date Display"] ]
+            ReferenceList.asOfDateList s
+            |> List.map (fun (code, desc) -> code, desc.Value)
+            |> selectList "asOfDate" m.asOfDate [ _required ]
             ]
           ]
         div [ _class "pt-field-row" ] [ submit [] "save" s.["Save Preferences"] ]

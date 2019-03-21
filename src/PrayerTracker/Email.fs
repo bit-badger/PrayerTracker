@@ -67,18 +67,15 @@ let sendEmails (client : SmtpClient) (recipients : Member list) grp subj html te
     let plainTextMsg = createTextMessage grp subj text s
 
     for mbr in recipients do
-      let emailType = match mbr.format with Some f -> f | None -> grp.preferences.defaultEmailType
-      let emailTo = MailboxAddress (mbr.memberName, mbr.email)
+      let emailType = match mbr.format with Some f -> EmailFormat.fromCode f | None -> grp.preferences.defaultEmailType
+      let emailTo   = MailboxAddress (mbr.memberName, mbr.email)
       match emailType with
-      | EmailType.Html ->
+      | HtmlFormat ->
           htmlMsg.To.Add emailTo
           do! client.SendAsync htmlMsg
           htmlMsg.To.Clear ()
-      | EmailType.PlainText ->
+      | PlainTextFormat ->
           plainTextMsg.To.Add emailTo
           do! client.SendAsync plainTextMsg
           plainTextMsg.To.Clear ()
-      | EmailType.AttachedPdf ->
-          raise <| NotImplementedException "Attached PDF format has not been implemented"
-      | _ -> invalidOp <| sprintf "Unknown e-mail type %s passed" emailType
     }
