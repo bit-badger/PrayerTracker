@@ -2,8 +2,9 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <AssemblyVersion>7.3.0.0</AssemblyVersion>
-    <FileVersion>7.3.0.0</FileVersion>
+    <AssemblyVersion>7.3.1.0</AssemblyVersion>
+    <FileVersion>7.3.1.0</FileVersion>
+    <Version>7.3.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,9 +17,9 @@
 
   <ItemGroup>
     <PackageReference Include="FSharp.EFCore.OptionConverter" Version="1.0.0" />
-    <PackageReference Include="Microsoft.FSharpLu" Version="0.10.30" />
-    <PackageReference Include="NodaTime" Version="2.4.4" />
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="2.2.0" />
+    <PackageReference Include="Microsoft.FSharpLu" Version="0.10.31" />
+    <PackageReference Include="NodaTime" Version="2.4.5" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="2.2.4" />
     <PackageReference Include="TaskBuilder.fs" Version="2.1.0" />
   </ItemGroup>
 
