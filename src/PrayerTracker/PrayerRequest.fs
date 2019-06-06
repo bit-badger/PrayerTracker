@@ -261,8 +261,7 @@ let save : HttpHandler =
   >=> validateCSRF
   >=> fun next ctx ->
     task {
-      let! result = ctx.TryBindFormAsync<EditRequest> ()
-      match result with
+      match! ctx.TryBindFormAsync<EditRequest> () with
       | Ok m ->
           let  db  = ctx.dbContext ()
           let! req =
@@ -274,7 +273,7 @@ let save : HttpHandler =
               let upd8 =
                 { pr with
                     requestType = PrayerRequestType.fromCode m.requestType
-                    requestor   = m.requestor
+                    requestor   = match m.requestor with Some x when x.Trim () = "" -> None | x -> x
                     text        = ckEditorToText m.text
                     expiration  = Expiration.fromCode m.expiration
                   }
