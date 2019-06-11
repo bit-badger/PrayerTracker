@@ -203,7 +203,7 @@ let termsOfService vi =
   use sw     = new StringWriter ()
   let raw    = rawLocText sw
   let ppLink =
-    a [ _href "/legal/privacy-policy" ] [ str (s.["Privacy Policy"].Value.ToLower ()) ]
+    a [ _href "/web/legal/privacy-policy" ] [ str (s.["Privacy Policy"].Value.ToLower ()) ]
     |> (renderHtmlNode >> HtmlString)
 
   [ p [ _class "pt-right-text" ] [ small [] [ em [] [ raw l.["(as of May 24, 2018)"] ] ] ]

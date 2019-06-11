@@ -8,7 +8,7 @@ open PrayerTracker.ViewModels
 let assignGroups m groups curGroups ctx vi =
   let s         = I18N.localizer.Force ()
   let pageTitle = sprintf "%s • %A" m.userName s.["Assign Groups"]
-  form [ _action "/user/small-groups/save"; _method "post"; _class "pt-center-columns" ] [
+  form [ _action "/web/user/small-groups/save"; _method "post"; _class "pt-center-columns" ] [
     csrfToken ctx
     input [ _type "hidden"; _name "userId"; _value (flatGuid m.userId) ]
     input [ _type "hidden"; _name "userName"; _value m.userName ]
@@ -47,7 +47,7 @@ let changePassword ctx vi =
   [ p [ _class "pt-center-text" ] [
       locStr s.["To change your password, enter your current password in the specified box below, then enter your new password twice."]
       ]
-    form [ _action "/user/password/change"
+    form [ _action "/web/user/password/change"
            _method "post"
            _onsubmit (sprintf "return PT.compareValidation('newPassword','newPasswordConfirm','%A')" s.["The passwords do not match"]) ] [
       style [ _scoped ] [ rawText "#oldPassword, #newPassword, #newPasswordConfirm { width: 10rem; } "]
@@ -83,7 +83,7 @@ let edit (m : EditUser) ctx vi =
   let s             = I18N.localizer.Force ()
   let pageTitle     = match m.isNew () with true -> "Add a New User" | false -> "Edit User"
   let pwPlaceholder = s.[match m.isNew () with true -> "" | false -> "No change"].Value
-  [ form [ _action "/user/edit/save"; _method "post"; _class "pt-center-columns"
+  [ form [ _action "/web/user/edit/save"; _method "post"; _class "pt-center-columns"
            _onsubmit (sprintf "return PT.compareValidation('password','passwordConfirm','%A')" s.["The passwords do not match"]) ] [
       style [ _scoped ]
         [ rawText "#firstName, #lastName, #password, #passwordConfirm { width: 10rem; } #emailAddress { width: 20rem; } " ]
@@ -132,7 +132,7 @@ let edit (m : EditUser) ctx vi =
 /// View for the user log on page
 let logOn (m : UserLogOn) groups ctx vi =
   let s = I18N.localizer.Force ()
-  form [ _action "/user/log-on"; _method "post"; _class "pt-center-columns" ] [
+  form [ _action "/web/user/log-on"; _method "post"; _class "pt-center-columns" ] [
     style [ _scoped ] [ rawText "#emailAddress { width: 20rem; }" ]
     csrfToken ctx
     input [ _type "hidden"; _name "redirectUrl"; _value (defaultArg m.redirectUrl "") ]
@@ -189,13 +189,13 @@ let maintain (users : User list) ctx vi =
           users
           |> List.map (fun user ->
               let userId    = flatGuid user.userId
-              let delAction = sprintf "/user/%s/delete" userId
+              let delAction = sprintf "/web/user/%s/delete" userId
               let delPrompt = s.["Are you sure you want to delete this {0}?  This action cannot be undone.",
                                   (sprintf "%s (%s)" (s.["User"].Value.ToLower()) user.fullName)].Value
               tr [] [
                 td [] [
-                  a [ _href (sprintf "/user/%s/edit" userId); _title s.["Edit This User"].Value ] [ icon "edit" ]
-                  a [ _href (sprintf "/user/%s/small-groups" userId); _title s.["Assign Groups to This User"].Value ]
+                  a [ _href (sprintf "/web/user/%s/edit" userId); _title s.["Edit This User"].Value ] [ icon "edit" ]
+                  a [ _href (sprintf "/web/user/%s/small-groups" userId); _title s.["Assign Groups to This User"].Value ]
                     [ icon "group" ]
                   a [ _href delAction
                       _title s.["Delete This User"].Value
@@ -213,7 +213,7 @@ let maintain (users : User list) ctx vi =
           ]
   [ div [ _class "pt-center-text" ] [
       br []
-      a [ _href (sprintf "/user/%s/edit" emptyGuid); _title s.["Add a New User"].Value ]
+      a [ _href (sprintf "/web/user/%s/edit" emptyGuid); _title s.["Add a New User"].Value ]
         [ icon "add_circle"; rawText " &nbsp;"; locStr s.["Add a New User"] ]
       br []
       br []

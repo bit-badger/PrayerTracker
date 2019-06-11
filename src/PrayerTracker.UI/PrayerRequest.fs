@@ -15,7 +15,7 @@ open System.Text
 let edit (m : EditRequest) today ctx vi =
   let s         = I18N.localizer.Force ()
   let pageTitle = match m.isNew () with true -> "Add a New Request" | false -> "Edit Request"
-  [ form [ _action "/prayer-request/save"; _method "post"; _class "pt-center-columns" ] [
+  [ form [ _action "/web/prayer-request/save"; _method "post"; _class "pt-center-columns" ] [
       csrfToken ctx
       input [ _type "hidden"; _name "requestId"; _value (flatGuid m.requestId) ]
       div [ _class "pt-field-row" ] [
@@ -143,9 +143,9 @@ let lists (grps : SmallGroup list) vi =
               tr [] [
                 match grp.preferences.isPublic with
                 | true ->
-                    a [ _href (sprintf "/prayer-requests/%s/list" grpId); _title s.["View"].Value ] [ icon "list" ]
+                    a [ _href (sprintf "/web/prayer-requests/%s/list" grpId); _title s.["View"].Value ] [ icon "list" ]
                 | false ->
-                    a [ _href (sprintf "/small-group/log-on/%s" grpId); _title s.["Log On"].Value ]
+                    a [ _href (sprintf "/web/small-group/log-on/%s" grpId); _title s.["Log On"].Value ]
                       [ icon "verified_user" ]
                 |> List.singleton
                 |> td []
@@ -180,7 +180,7 @@ let maintain m (ctx : HttpContext) vi =
     |> Seq.map (fun req ->
         let reqId     = flatGuid req.prayerRequestId
         let reqText   = Utils.htmlToPlainText req.text
-        let delAction = sprintf "/prayer-request/%s/delete" reqId
+        let delAction = sprintf "/web/prayer-request/%s/delete" reqId
         let delPrompt =
           [ s.["Are you sure you want to delete this {0}?  This action cannot be undone.",
                 s.["Prayer Request"].Value.ToLower() ]
@@ -192,15 +192,15 @@ let maintain m (ctx : HttpContext) vi =
           |> String.concat ""
         tr [] [
           td [] [
-            yield a [ _href (sprintf "/prayer-request/%s/edit" reqId); _title l.["Edit This Prayer Request"].Value ]
+            yield a [ _href (sprintf "/web/prayer-request/%s/edit" reqId); _title l.["Edit This Prayer Request"].Value ]
               [ icon "edit" ]
             match req.isExpired now m.smallGroup.preferences.daysToExpire with
             | true ->
-                yield a [ _href (sprintf "/prayer-request/%s/restore" reqId)
+                yield a [ _href (sprintf "/web/prayer-request/%s/restore" reqId)
                           _title l.["Restore This Inactive Request"].Value ]
                   [ icon "visibility" ]
             | false ->
-                yield a [ _href (sprintf "/prayer-request/%s/expire" reqId)
+                yield a [ _href (sprintf "/web/prayer-request/%s/expire" reqId)
                           _title l.["Expire This Request Immediately"].Value ]
                   [ icon "visibility_off" ]
             yield a [ _href delAction; _title l.["Delete This Request"].Value;
@@ -222,19 +222,19 @@ let maintain m (ctx : HttpContext) vi =
     |> List.ofSeq
   [ yield div [ _class "pt-center-text" ] [
       yield br []
-      yield a [ _href (sprintf "/prayer-request/%s/edit" emptyGuid); _title s.["Add a New Request"].Value ]
+      yield a [ _href (sprintf "/web/prayer-request/%s/edit" emptyGuid); _title s.["Add a New Request"].Value ]
         [ icon "add_circle"; rawText " &nbsp;"; locStr s.["Add a New Request"] ]
       yield rawText " &nbsp; &nbsp; &nbsp; "
-      yield a [ _href "/prayer-requests/view"; _title s.["View Prayer Request List"].Value ]
+      yield a [ _href "/web/prayer-requests/view"; _title s.["View Prayer Request List"].Value ]
         [ icon "list"; rawText " &nbsp;"; locStr s.["View Prayer Request List"] ]
       match m.searchTerm with
       | Some _ ->
           yield rawText " &nbsp; &nbsp; &nbsp; "
-          yield a [ _href "/prayer-requests"; _title l.["Clear Search Criteria"].Value ]
+          yield a [ _href "/web/prayer-requests"; _title l.["Clear Search Criteria"].Value ]
             [ icon "highlight_off"; rawText " &nbsp;"; raw l.["Clear Search Criteria"] ]
       | None -> ()
       ]
-    yield form [ _action "/prayer-requests"; _method "get"; _class "pt-center-text pt-search-form" ] [
+    yield form [ _action "/web/prayer-requests"; _method "get"; _class "pt-center-text pt-search-form" ] [
       input [ _type "text"
               _name "search"
               _placeholder l.["Search requests..."].Value
@@ -266,18 +266,18 @@ let maintain m (ctx : HttpContext) vi =
       | Some true ->
           yield raw l.["Inactive requests are currently not shown"]
           yield br []
-          yield a [ _href "/prayer-requests/inactive" ] [ raw l.["Show Inactive Requests"] ]
+          yield a [ _href "/web/prayer-requests/inactive" ] [ raw l.["Show Inactive Requests"] ]
       | _ ->
           match Option.isSome m.onlyActive with
           | true ->
               yield raw l.["Inactive requests are currently shown"]
               yield br []
-              yield a [ _href "/prayer-requests" ] [ raw l.["Do Not Show Inactive Requests"] ]
+              yield a [ _href "/web/prayer-requests" ] [ raw l.["Do Not Show Inactive Requests"] ]
               yield br []
               yield br []
           | false -> ()
           let srch = [ match m.searchTerm with Some s -> yield "search", s | None -> () ]
-          let url  = match m.onlyActive with Some true | None -> "" | _ -> "/inactive" |> sprintf "/prayer-requests%s"
+          let url  = match m.onlyActive with Some true | None -> "" | _ -> "/inactive" |> sprintf "/web/prayer-requests%s"
           let pg   = defaultArg m.pageNbr 1
           match pg with
           | 1 -> ()
@@ -329,7 +329,7 @@ let view m vi =
   [ div [ _class "pt-center-text" ] [
       yield br []
       yield a [ _class "pt-icon-link"
-                _href (sprintf "/prayer-requests/print/%s" dtString)
+                _href (sprintf "/web/prayer-requests/print/%s" dtString)
                 _title s.["View Printable"].Value ] [
         icon "print"; rawText " &nbsp;"; locStr s.["View Printable"]
         ]
@@ -345,20 +345,20 @@ let view m vi =
                 | false -> findSunday (date.AddDays 1.)
               let sunday = findSunday m.date
               yield a [ _class "pt-icon-link"
-                        _href (sprintf "/prayer-requests/view/%s" (sunday.ToString "yyyy-MM-dd"))
+                        _href (sprintf "/web/prayer-requests/view/%s" (sunday.ToString "yyyy-MM-dd"))
                         _title s.["List for Next Sunday"].Value ] [
                 icon "update"; rawText " &nbsp;"; locStr s.["List for Next Sunday"]
                 ]
               yield spacer
           let emailPrompt = s.["This will e-mail the current list to every member of your group, without further prompting.  Are you sure this is what you are ready to do?"].Value
           yield a [ _class "pt-icon-link"
-                    _href (sprintf "/prayer-requests/email/%s" dtString)
+                    _href (sprintf "/web/prayer-requests/email/%s" dtString)
                     _title s.["Send via E-mail"].Value
                     _onclick (sprintf "return PT.requests.view.promptBeforeEmail('%s')" emailPrompt) ] [
             icon "mail_outline"; rawText " &nbsp;"; locStr s.["Send via E-mail"]
             ]
           yield spacer
-          yield a [ _class "pt-icon-link"; _href "/prayer-requests"; _title s.["Maintain Prayer Requests"].Value ] [
+          yield a [ _class "pt-icon-link"; _href "/web/prayer-requests"; _title s.["Maintain Prayer Requests"].Value ] [
             icon "compare_arrows"; rawText " &nbsp;"; locStr s.["Maintain Prayer Requests"]
             ]
       | false -> ()

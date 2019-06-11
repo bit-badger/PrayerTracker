@@ -62,19 +62,19 @@ module Configure =
   let webApp =
     router Handlers.CommonFunctions.fourOhFour [
       GET [
-        subRoute "/church" [
+        subRoute "/web/church" [
           route  "es"       Handlers.Church.maintain
           routef "/%O/edit" Handlers.Church.edit
           ]
-        route  "/class/logon" (redirectTo true "/small-group/log-on")
-        routef "/error/%s"    Handlers.Home.error
-        routef "/language/%s" Handlers.Home.language
-        subRoute "/legal" [
+        route  "/web/class/logon" (redirectTo true "/small-group/log-on")
+        routef "/web/error/%s"    Handlers.Home.error
+        routef "/web/language/%s" Handlers.Home.language
+        subRoute "/web/legal" [
           route "/privacy-policy"   Handlers.Home.privacyPolicy
           route "/terms-of-service" Handlers.Home.tos
           ]
-        route "/log-off" Handlers.Home.logOff
-        subRoute "/prayer-request" [
+        route "/web/log-off" Handlers.Home.logOff
+        subRoute "/web/prayer-request" [
           route  "s"           (Handlers.PrayerRequest.maintain true)
           routef "s/email/%s"  Handlers.PrayerRequest.email
           route  "s/inactive"  (Handlers.PrayerRequest.maintain false)
@@ -88,7 +88,7 @@ module Configure =
           routef "/%O/expire"  Handlers.PrayerRequest.expire
           routef "/%O/restore" Handlers.PrayerRequest.restore
           ]
-        subRoute "/small-group" [
+        subRoute "/web/small-group" [
           route  ""                Handlers.SmallGroup.overview
           route  "s"               Handlers.SmallGroup.maintain
           route  "/announcement"   Handlers.SmallGroup.announcement
@@ -100,8 +100,8 @@ module Configure =
           route  "/members"        Handlers.SmallGroup.members
           route  "/preferences"    Handlers.SmallGroup.preferences
           ]
-        route "/unauthorized" Handlers.Home.unauthorized
-        subRoute "/user" [
+        route "/web/unauthorized" Handlers.Home.unauthorized
+        subRoute "/web/user" [
           route  "s"                Handlers.User.maintain
           routef "/%O/edit"         Handlers.User.edit
           routef "/%O/small-groups" Handlers.User.smallGroups
@@ -109,18 +109,19 @@ module Configure =
           route  "/logon"           (redirectTo true "/user/log-on")
           route  "/password"        Handlers.User.password
           ]
-        route "/" Handlers.Home.homePage
+        route "/web/" Handlers.Home.homePage
+        route "/"     (redirectTo true "/web/")
         ]
       POST [
-        subRoute "/church" [
+        subRoute "/web/church" [
           routef "/%O/delete" Handlers.Church.delete
           route  "/save"      Handlers.Church.save
           ]
-        subRoute "/prayer-request" [
+        subRoute "/web/prayer-request" [
           routef "/%O/delete" Handlers.PrayerRequest.delete
           route  "/save"      Handlers.PrayerRequest.save
           ]
-        subRoute "/small-group" [
+        subRoute "/web/small-group" [
           route  "/announcement/send" Handlers.SmallGroup.sendAnnouncement
           routef "/%O/delete"         Handlers.SmallGroup.delete
           route  "/log-on/submit"     Handlers.SmallGroup.logOnSubmit
@@ -129,7 +130,7 @@ module Configure =
           route  "/preferences/save"  Handlers.SmallGroup.savePreferences
           route  "/save"              Handlers.SmallGroup.save
           ]
-        subRoute "/user" [
+        subRoute "/web/user" [
           routef "/%O/delete"         Handlers.User.delete
           route  "/edit/save"         Handlers.User.save
           route  "/log-on"            Handlers.User.doLogOn
