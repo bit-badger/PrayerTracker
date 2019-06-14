@@ -55,7 +55,7 @@ module Configure =
     CookieCrypto (crypto.["Key"], crypto.["IV"]) |> setCrypto
     svc.AddDbContext<AppDbContext>(
         fun options ->
-          options.UseNpgsql(config.GetConnectionString "PrayerTracker") |> ignore)
+          options.UseNpgsql (config.GetConnectionString "PrayerTracker") |> ignore)
     |> ignore
 
   /// Routes for PrayerTracker

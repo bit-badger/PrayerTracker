@@ -545,13 +545,13 @@ and [<CLIMutable; NoComparison; NoEquality>] PrayerRequest =
           match this.requestType with
           | LongTermRequest
           | Expecting -> false
-          | _ -> curr.AddDays(-(float expDays)) > this.updatedDate // Automatic expiration
+          | _ -> curr.AddDays(-(float expDays)).Date > this.updatedDate.Date // Automatic expiration
 
     /// Is an update required for this long-term request?
     member this.updateRequired curr expDays updWeeks =
       match this.isExpired curr expDays with
       | true -> false
-      | false -> curr.AddDays(-(float (updWeeks * 7))) > this.updatedDate
+      | false -> curr.AddDays(-(float (updWeeks * 7))).Date > this.updatedDate.Date
 
     /// Configure EF for this entity
     static member internal configureEF (mb : ModelBuilder) =
