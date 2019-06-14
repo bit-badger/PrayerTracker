@@ -171,33 +171,42 @@ let prayerRequestTests =
       Expect.isTrue (req.isExpired DateTime.Now 5) "A force-expired request should always be considered expired"
       }
     test "isExpired returns false for non-expired requests" {
-      let req = { PrayerRequest.empty with updatedDate = DateTime.Now.AddDays -5. }
-      Expect.isFalse (req.isExpired DateTime.Now 7) "A request updated 5 days ago should not be considered expired"
+      let now = DateTime.Now
+      let req = { PrayerRequest.empty with updatedDate = now.AddDays -5. }
+      Expect.isFalse (req.isExpired now 7) "A request updated 5 days ago should not be considered expired"
       }
     test "isExpired returns true for expired requests" {
-      let req = { PrayerRequest.empty with updatedDate = DateTime.Now.AddDays -8. }
-      Expect.isTrue (req.isExpired DateTime.Now 7) "A request updated 8 days ago should be considered expired"
+      let now = DateTime.Now
+      let req = { PrayerRequest.empty with updatedDate = now.AddDays -8. }
+      Expect.isTrue (req.isExpired now 7) "A request updated 8 days ago should be considered expired"
+      }
+    test "isExpired returns true for same-day expired requests" {
+      let now = DateTime.Now
+      let req = { PrayerRequest.empty with updatedDate = now.Date.AddDays(-7.).AddSeconds -1. }
+      Expect.isTrue (req.isExpired now 7) "A request entered a second before midnight should be considered expired"
       }
     test "updateRequired returns false for expired requests" {
       let req = { PrayerRequest.empty with expiration = Forced }
       Expect.isFalse (req.updateRequired DateTime.Now 7 4) "An expired request should not require an update"
       }
     test "updateRequired returns false when an update is not required for an active request" {
+      let now = DateTime.Now
       let req =
         { PrayerRequest.empty with
             requestType = LongTermRequest
-            updatedDate = DateTime.Now.AddDays -14.
+            updatedDate = now.AddDays -14.
           }
-      Expect.isFalse (req.updateRequired DateTime.Now 7 4)
+      Expect.isFalse (req.updateRequired now 7 4)
         "An active request updated 14 days ago should not require an update until 28 days"
       }
     test "updateRequired returns true when an update is required for an active request" {
+      let now = DateTime.Now
       let req =
         { PrayerRequest.empty with
             requestType = LongTermRequest
-            updatedDate = DateTime.Now.AddDays -34.
+            updatedDate = now.AddDays -34.
           }
-      Expect.isTrue (req.updateRequired DateTime.Now 7 4)
+      Expect.isTrue (req.updateRequired now 7 4)
         "An active request updated 34 days ago should require an update (past 28 days)"
       }
     ]
