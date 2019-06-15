@@ -84,13 +84,13 @@ let changePassword : HttpHandler =
                   | _ -> ()
                   addInfo ctx s.["Your password was changed successfully"]
               | None -> addError ctx s.["Unable to change password"]
-              return! redirectTo false "/" next ctx
+              return! redirectTo false "/web/" next ctx
           | Some _ ->
               addError ctx s.["The new passwords did not match - your password was NOT changed"]
-              return! redirectTo false "/user/password" next ctx
+              return! redirectTo false "/web/user/password" next ctx
           | None ->
               addError ctx s.["The old password was incorrect - your password was NOT changed"]
-              return! redirectTo false "/user/password" next ctx
+              return! redirectTo false "/web/user/password" next ctx
       | Error e -> return! bindError e next ctx
       }
 
@@ -109,7 +109,7 @@ let delete userId : HttpHandler =
           let! _ = db.SaveChangesAsync ()
           let  s = Views.I18N.localizer.Force ()
           addInfo ctx s.["Successfully deleted user {0}", u.fullName]
-          return! redirectTo false "/users" next ctx
+          return! redirectTo false "/web/users" next ctx
       | _ -> return! fourOhFour next ctx
       }
 
@@ -135,8 +135,8 @@ let doLogOn : HttpHandler =
                 match m.rememberMe with Some x when x -> setUserCookie ctx pwHash | _ -> ()
                 addHtmlInfo ctx s.["Log On Successful • Welcome to {0}", s.["PrayerTracker"]]
                 match m.redirectUrl with
-                | None -> "/small-group"
-                | Some x when x = "" -> "/small-group"
+                | None -> "/web/small-group"
+                | Some x when x = "" -> "/web/small-group"
                 | Some x -> x
             | _ ->
                 let grpName = match grp with Some g -> g.name | _ -> "N/A"
@@ -156,7 +156,7 @@ let doLogOn : HttpHandler =
                       |> (HtmlString >> Some)
                   }
                 |> addUserMessage ctx
-                "/user/log-on"
+                "/web/user/log-on"
           return! redirectTo false nextUrl next ctx
       | Error e -> return! bindError e next ctx
       }
@@ -271,10 +271,10 @@ let save : HttpHandler =
                         |> Some
                     }
                   |> addUserMessage ctx
-                  return! redirectTo false (sprintf "/user/%s/small-groups" (flatGuid u.userId)) next ctx
+                  return! redirectTo false (sprintf "/web/user/%s/small-groups" (flatGuid u.userId)) next ctx
               | false ->
                   addInfo ctx s.["Successfully {0} user", s.["Updated"].Value.ToLower ()]
-                  return! redirectTo false "/users" next ctx
+                  return! redirectTo false "/web/users" next ctx
           | None -> return! fourOhFour next ctx
       | Error e -> return! bindError e next ctx
       }
@@ -293,7 +293,7 @@ let saveGroups : HttpHandler =
           match Seq.length m.smallGroups with
           | 0 ->
               addError ctx s.["You must select at least one group to assign"]
-              return! redirectTo false (sprintf "/user/%s/small-groups" (flatGuid m.userId)) next ctx
+              return! redirectTo false (sprintf "/web/user/%s/small-groups" (flatGuid m.userId)) next ctx
           | _ ->
               let  db   = ctx.dbContext ()
               let! user = db.TryUserByIdWithGroups m.userId
@@ -314,7 +314,7 @@ let saveGroups : HttpHandler =
                   |> List.iter db.AddEntry
                   let! _ = db.SaveChangesAsync ()
                   addInfo ctx s.["Successfully updated group permissions for {0}", m.userName]
-                  return! redirectTo false "/users" next ctx
+                  return! redirectTo false "/web/users" next ctx
                 | _ -> return! fourOhFour next ctx
       | Error e -> return! bindError e next ctx
       }

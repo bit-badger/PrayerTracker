@@ -47,7 +47,7 @@ let delete groupId : HttpHandler =
           addInfo ctx
             s.["The group {0} and its {1} prayer request(s) were deleted successfully; revoked access from {2} user(s)",
                  g.name, reqs, usrs]
-          return! redirectTo false "/small-groups" next ctx
+          return! redirectTo false "/web/small-groups" next ctx
       | None -> return! fourOhFour next ctx
       }
 
@@ -66,7 +66,7 @@ let deleteMember memberId : HttpHandler =
           db.RemoveEntry m
           let! _ = db.SaveChangesAsync ()
           addHtmlInfo ctx s.["The group member &ldquo;{0}&rdquo; was deleted successfully", m.memberName]
-          return! redirectTo false "/small-group/members" next ctx
+          return! redirectTo false "/web/small-group/members" next ctx
       | Some _
       | None -> return! fourOhFour next ctx
       }
@@ -160,10 +160,10 @@ let logOnSubmit : HttpHandler =
             | Some x when x -> (setGroupCookie ctx << Utils.sha1Hash) m.password
             | _ -> ()
             addInfo ctx s.["Log On Successful • Welcome to {0}", s.["PrayerTracker"]]
-            return! redirectTo false "/prayer-requests/view" next ctx
+            return! redirectTo false "/web/prayer-requests/view" next ctx
         | None ->
             addError ctx s.["Password incorrect - login unsuccessful"]
-            return! redirectTo false (sprintf "/small-group/log-on/%s" (flatGuid m.smallGroupId)) next ctx
+            return! redirectTo false (sprintf "/web/small-group/log-on/%s" (flatGuid m.smallGroupId)) next ctx
       | Error e -> return! bindError e next ctx
       }
 
@@ -270,7 +270,7 @@ let save : HttpHandler =
               let! _ = db.SaveChangesAsync ()
               let act = s.[match m.isNew () with true -> "Added" | false -> "Updated"].Value.ToLower ()
               addHtmlInfo ctx s.["Successfully {0} group “{1}”", act, m.name]
-              return! redirectTo false "/small-groups" next ctx
+              return! redirectTo false "/web/small-groups" next ctx
           | None -> return! fourOhFour next ctx
       | Error e -> return! bindError e next ctx
       }
@@ -309,7 +309,7 @@ let saveMember : HttpHandler =
               let s = Views.I18N.localizer.Force ()
               let act = s.[match m.isNew () with true -> "Added" | false -> "Updated"].Value.ToLower ()
               addInfo ctx s.["Successfully {0} group member", act]
-              return! redirectTo false "/small-group/members" next ctx
+              return! redirectTo false "/web/small-group/members" next ctx
           | Some _
           | None -> return! fourOhFour next ctx
       | Error e -> return! bindError e next ctx
@@ -339,7 +339,7 @@ let savePreferences : HttpHandler =
               ctx.Session.SetSmallGroup <| Some { g with preferences = prefs }
               let s = Views.I18N.localizer.Force ()
               addInfo ctx s.["Group preferences updated successfully"]
-              return! redirectTo false "/small-group/preferences" next ctx
+              return! redirectTo false "/web/small-group/preferences" next ctx
           | None -> return! fourOhFour next ctx
       | Error e -> return! bindError e next ctx
       }

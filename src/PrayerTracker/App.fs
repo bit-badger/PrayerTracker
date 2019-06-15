@@ -61,82 +61,87 @@ module Configure =
   /// Routes for PrayerTracker
   let webApp =
     router Handlers.CommonFunctions.fourOhFour [
-      GET [
-        subRoute "/church" [
-          route  "es"       Handlers.Church.maintain
-          routef "/%O/edit" Handlers.Church.edit
+      // Traditional web app routes
+      subRoute"/web" [
+        GET [
+          subRoute "/church" [
+            route  "es"       Handlers.Church.maintain
+            routef "/%O/edit" Handlers.Church.edit
+            ]
+          route  "/class/logon" (redirectTo true "/web/small-group/log-on")
+          routef "/error/%s"    Handlers.Home.error
+          routef "/language/%s" Handlers.Home.language
+          subRoute "/legal" [
+            route "/privacy-policy"   Handlers.Home.privacyPolicy
+            route "/terms-of-service" Handlers.Home.tos
+            ]
+          route "/log-off" Handlers.Home.logOff
+          subRoute "/prayer-request" [
+            route  "s"           (Handlers.PrayerRequest.maintain true)
+            routef "s/email/%s"  Handlers.PrayerRequest.email
+            route  "s/inactive"  (Handlers.PrayerRequest.maintain false)
+            route  "s/lists"     Handlers.PrayerRequest.lists
+            routef "s/%O/list"   Handlers.PrayerRequest.list
+            route  "s/maintain"  (redirectTo true "/web/prayer-requests")
+            routef "s/print/%s"  Handlers.PrayerRequest.print
+            route  "s/view"      (Handlers.PrayerRequest.view None)
+            routef "s/view/%s"   (Some >> Handlers.PrayerRequest.view)
+            routef "/%O/edit"    Handlers.PrayerRequest.edit
+            routef "/%O/expire"  Handlers.PrayerRequest.expire
+            routef "/%O/restore" Handlers.PrayerRequest.restore
+            ]
+          subRoute "/small-group" [
+            route  ""                Handlers.SmallGroup.overview
+            route  "s"               Handlers.SmallGroup.maintain
+            route  "/announcement"   Handlers.SmallGroup.announcement
+            routef "/%O/edit"        Handlers.SmallGroup.edit
+            route  "/log-on"         (Handlers.SmallGroup.logOn None)
+            routef "/log-on/%O"      (Some >> Handlers.SmallGroup.logOn)
+            route  "/logon"          (redirectTo true "/web/small-group/log-on")
+            routef "/member/%O/edit" Handlers.SmallGroup.editMember
+            route  "/members"        Handlers.SmallGroup.members
+            route  "/preferences"    Handlers.SmallGroup.preferences
+            ]
+          route "/unauthorized" Handlers.Home.unauthorized
+          subRoute "/user" [
+            route  "s"                Handlers.User.maintain
+            routef "/%O/edit"         Handlers.User.edit
+            routef "/%O/small-groups" Handlers.User.smallGroups
+            route  "/log-on"          Handlers.User.logOn
+            route  "/logon"           (redirectTo true "/web/user/log-on")
+            route  "/password"        Handlers.User.password
+            ]
+          route "/" Handlers.Home.homePage
           ]
-        route  "/class/logon" (redirectTo true "/small-group/log-on")
-        routef "/error/%s"    Handlers.Home.error
-        routef "/language/%s" Handlers.Home.language
-        subRoute "/legal" [
-          route "/privacy-policy"   Handlers.Home.privacyPolicy
-          route "/terms-of-service" Handlers.Home.tos
+        POST [
+          subRoute "/church" [
+            routef "/%O/delete" Handlers.Church.delete
+            route  "/save"      Handlers.Church.save
+            ]
+          subRoute "/prayer-request" [
+            routef "/%O/delete" Handlers.PrayerRequest.delete
+            route  "/save"      Handlers.PrayerRequest.save
+            ]
+          subRoute "/small-group" [
+            route  "/announcement/send" Handlers.SmallGroup.sendAnnouncement
+            routef "/%O/delete"         Handlers.SmallGroup.delete
+            route  "/log-on/submit"     Handlers.SmallGroup.logOnSubmit
+            routef "/member/%O/delete"  Handlers.SmallGroup.deleteMember
+            route  "/member/save"       Handlers.SmallGroup.saveMember
+            route  "/preferences/save"  Handlers.SmallGroup.savePreferences
+            route  "/save"              Handlers.SmallGroup.save
+            ]
+          subRoute "/user" [
+            routef "/%O/delete"         Handlers.User.delete
+            route  "/edit/save"         Handlers.User.save
+            route  "/log-on"            Handlers.User.doLogOn
+            route  "/password/change"   Handlers.User.changePassword
+            route  "/small-groups/save" Handlers.User.saveGroups
+            ]
           ]
-        route "/log-off" Handlers.Home.logOff
-        subRoute "/prayer-request" [
-          route  "s"           (Handlers.PrayerRequest.maintain true)
-          routef "s/email/%s"  Handlers.PrayerRequest.email
-          route  "s/inactive"  (Handlers.PrayerRequest.maintain false)
-          route  "s/lists"     Handlers.PrayerRequest.lists
-          routef "s/%O/list"   Handlers.PrayerRequest.list
-          route  "s/maintain"  (redirectTo true "/prayer-requests")
-          routef "s/print/%s"  Handlers.PrayerRequest.print
-          route  "s/view"      (Handlers.PrayerRequest.view None)
-          routef "s/view/%s"   (Some >> Handlers.PrayerRequest.view)
-          routef "/%O/edit"    Handlers.PrayerRequest.edit
-          routef "/%O/expire"  Handlers.PrayerRequest.expire
-          routef "/%O/restore" Handlers.PrayerRequest.restore
-          ]
-        subRoute "/small-group" [
-          route  ""                Handlers.SmallGroup.overview
-          route  "s"               Handlers.SmallGroup.maintain
-          route  "/announcement"   Handlers.SmallGroup.announcement
-          routef "/%O/edit"        Handlers.SmallGroup.edit
-          route  "/log-on"         (Handlers.SmallGroup.logOn None)
-          routef "/log-on/%O"      (Some >> Handlers.SmallGroup.logOn)
-          route  "/logon"          (redirectTo true "/small-group/log-on")
-          routef "/member/%O/edit" Handlers.SmallGroup.editMember
-          route  "/members"        Handlers.SmallGroup.members
-          route  "/preferences"    Handlers.SmallGroup.preferences
-          ]
-        route "/unauthorized" Handlers.Home.unauthorized
-        subRoute "/user" [
-          route  "s"                Handlers.User.maintain
-          routef "/%O/edit"         Handlers.User.edit
-          routef "/%O/small-groups" Handlers.User.smallGroups
-          route  "/log-on"          Handlers.User.logOn
-          route  "/logon"           (redirectTo true "/user/log-on")
-          route  "/password"        Handlers.User.password
-          ]
-        route "/" Handlers.Home.homePage
         ]
-      POST [
-        subRoute "/church" [
-          routef "/%O/delete" Handlers.Church.delete
-          route  "/save"      Handlers.Church.save
-          ]
-        subRoute "/prayer-request" [
-          routef "/%O/delete" Handlers.PrayerRequest.delete
-          route  "/save"      Handlers.PrayerRequest.save
-          ]
-        subRoute "/small-group" [
-          route  "/announcement/send" Handlers.SmallGroup.sendAnnouncement
-          routef "/%O/delete"         Handlers.SmallGroup.delete
-          route  "/log-on/submit"     Handlers.SmallGroup.logOnSubmit
-          routef "/member/%O/delete"  Handlers.SmallGroup.deleteMember
-          route  "/member/save"       Handlers.SmallGroup.saveMember
-          route  "/preferences/save"  Handlers.SmallGroup.savePreferences
-          route  "/save"              Handlers.SmallGroup.save
-          ]
-        subRoute "/user" [
-          routef "/%O/delete"         Handlers.User.delete
-          route  "/edit/save"         Handlers.User.save
-          route  "/log-on"            Handlers.User.doLogOn
-          route  "/password/change"   Handlers.User.changePassword
-          route  "/small-groups/save" Handlers.User.saveGroups
-          ]
-        ]
+      // Temp redirect to new URLs
+      route "/" (redirectTo false "/web/")
       ]
         
   let errorHandler (ex : exn) (logger : ILogger) =
