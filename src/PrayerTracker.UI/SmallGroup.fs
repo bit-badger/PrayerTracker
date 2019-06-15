@@ -526,8 +526,8 @@ let preferences (m : EditPreferences) (tzs : TimeZone list) ctx vi =
             |> selectList "asOfDate" m.asOfDate [ _required ]
             ]
           ]
-        div [ _class "pt-field-row" ] [ submit [] "save" s.["Save Preferences"] ]
         ]
+      div [ _class "pt-field-row" ] [ submit [] "save" s.["Save Preferences"] ]
       ]
     p [] [
       rawText "** "
