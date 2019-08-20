@@ -3,7 +3,6 @@ module PrayerTracker.DataAccess
 
 open FSharp.Control.Tasks.ContextInsensitive
 open Microsoft.EntityFrameworkCore
-open Microsoft.FSharpLu
 open PrayerTracker.Entities
 open System.Collections.Generic
 open System.Linq
@@ -11,17 +10,29 @@ open System.Linq
 [<AutoOpen>]
 module private Helpers =
   
+  open Microsoft.FSharpLu
+  open System.Threading.Tasks
+
   /// Central place to append sort criteria for prayer request queries
-  let reqSort sort (query : IQueryable<PrayerRequest>) =
+  let reqSort sort (q : IQueryable<PrayerRequest>) =
     match sort with
     | SortByDate ->
-        query.OrderByDescending(fun pr -> pr.updatedDate)
-          .ThenByDescending(fun pr -> pr.enteredDate)
-          .ThenBy(fun pr -> pr.requestor)
+        query {
+          for req in q do
+            sortByDescending req.updatedDate
+            thenByDescending req.enteredDate
+            thenBy           req.requestor
+          }
     | SortByRequestor ->
-        query.OrderBy(fun pr -> pr.requestor)
-          .ThenByDescending(fun pr -> pr.updatedDate)
-          .ThenByDescending(fun pr -> pr.enteredDate)
+        query {
+          for req in q do
+            sortBy           req.requestor
+            thenByDescending req.updatedDate
+            thenByDescending req.enteredDate
+          }
+
+  /// Convert a possibly-null object to an option, wrapped as a task
+  let toOptionTask<'T> (item : 'T) = (Option.fromObject >> Task.FromResult) item
 
 
 type AppDbContext with
@@ -44,15 +55,22 @@ type AppDbContext with
 
   /// Find a church by its Id
   member this.TryChurchById cId =
-    task {
-      let! church = this.Churches.AsNoTracking().FirstOrDefaultAsync (fun c -> c.churchId = cId)
-      return Option.fromObject church
+    query {
+      for ch in this.Churches.AsNoTracking () do
+        where (ch.churchId = cId)
+        exactlyOneOrDefault
       }
+    |> toOptionTask
       
   /// Find all churches
   member this.AllChurches () =
     task {
-      let! churches = this.Churches.AsNoTracking().OrderBy(fun c -> c.name).ToListAsync ()
+      let q =
+        query {
+          for ch in this.Churches.AsNoTracking () do
+            sortBy ch.name
+          }
+      let! churches = q.ToListAsync ()
       return List.ofSeq churches
       }
 
@@ -60,19 +78,24 @@ type AppDbContext with
 
   /// Get a small group member by its Id
   member this.TryMemberById mId =
-    task {
-      let! mbr = this.Members.AsNoTracking().FirstOrDefaultAsync (fun m -> m.memberId = mId)
-      return Option.fromObject mbr
+    query {
+      for mbr in this.Members.AsNoTracking () do
+        where (mbr.memberId = mId)
+        select mbr
+        exactlyOneOrDefault
       }
+    |> toOptionTask
 
   /// Find all members for a small group
   member this.AllMembersForSmallGroup gId =
     task {
-      let! mbrs =
-        this.Members.AsNoTracking()
-          .Where(fun m -> m.smallGroupId = gId)
-          .OrderBy(fun m -> m.memberName)
-          .ToListAsync ()
+      let q =
+        query {
+          for mbr in this.Members.AsNoTracking () do
+            where (mbr.smallGroupId = gId)
+            sortBy mbr.memberName
+          }
+      let! mbrs = q.ToListAsync ()
       return List.ofSeq mbrs
       }
 
@@ -84,32 +107,44 @@ type AppDbContext with
 
   /// Get a prayer request by its Id
   member this.TryRequestById reqId =
-    task {
-      let! req = this.PrayerRequests.AsNoTracking().FirstOrDefaultAsync (fun pr -> pr.prayerRequestId = reqId)
-      return Option.fromObject req
+    query {
+      for req in this.PrayerRequests.AsNoTracking () do
+        where (req.prayerRequestId = reqId)
+        exactlyOneOrDefault
       }
+    |> toOptionTask
 
   /// Get all (or active) requests for a small group as of now or the specified date
+  // TODO: why not make this an async list like the rest of these methods?
   member this.AllRequestsForSmallGroup (grp : SmallGroup) clock listDate activeOnly pageNbr : PrayerRequest seq =
     let theDate = match listDate with Some dt -> dt | _ -> grp.localDateNow clock
-    upcast (
-      this.PrayerRequests.AsNoTracking().Where(fun pr -> pr.smallGroupId = grp.smallGroupId)
-      |> function
-      | query when activeOnly ->
-          let asOf = theDate.AddDays(-(float grp.preferences.daysToExpire)).Date
-          query.Where(fun pr ->
-              (    pr.updatedDate > asOf
-                || pr.expiration  = Manual
-                || pr.requestType = LongTermRequest
-                || pr.requestType = Expecting)
-              && pr.expiration <> Forced)
-      | query -> query
-      |> reqSort grp.preferences.requestSort
-      |> function
-      | query ->
-          match activeOnly with
-          | true -> query.Skip 0
-          | false -> query.Skip((pageNbr - 1) * grp.preferences.pageSize).Take grp.preferences.pageSize)
+    query {
+      for req in this.PrayerRequests.AsNoTracking () do
+        where (req.smallGroupId = grp.smallGroupId)
+      }
+    |> function
+    | q when activeOnly ->
+        let asOf = theDate.AddDays(-(float grp.preferences.daysToExpire)).Date
+        query {
+          for req in q do
+            where ( (    req.updatedDate > asOf
+                      || req.expiration  = Manual
+                      || req.requestType = LongTermRequest
+                      || req.requestType = Expecting)
+                    && req.expiration <> Forced)
+          }
+    | q -> q
+    |> reqSort grp.preferences.requestSort
+    |> function
+    | q ->
+        match activeOnly with
+        | true -> upcast q
+        | false ->
+            upcast query {
+              for req in q do
+                skip ((pageNbr - 1) * grp.preferences.pageSize)
+                take grp.preferences.pageSize
+                }
       
   /// Count prayer requests for the given small group Id
   member this.CountRequestsBySmallGroup gId =
@@ -120,57 +155,64 @@ type AppDbContext with
     this.PrayerRequests.CountAsync (fun pr -> pr.smallGroup.churchId = cId)
 
   /// Get all (or active) requests for a small group as of now or the specified date
+  // TODO: same as above...
   member this.SearchRequestsForSmallGroup (grp : SmallGroup) (searchTerm : string) pageNbr : PrayerRequest seq =
-    let pgSz = grp.preferences.pageSize
-    let skip = (pageNbr - 1) * pgSz
-    let sql  =
+    let pgSz   = grp.preferences.pageSize
+    let toSkip = (pageNbr - 1) * pgSz
+    let sql    =
       """ SELECT * FROM pt."PrayerRequest" WHERE "SmallGroupId" = {0} AND "Text" ILIKE {1}
         UNION
           SELECT * FROM pt."PrayerRequest" WHERE "SmallGroupId" = {0} AND COALESCE("Requestor", '') ILIKE {1}"""
       |> RawSqlString
     let like = sprintf "%%%s%%"
-    upcast (
-      this.PrayerRequests.FromSql(sql, grp.smallGroupId, like searchTerm).AsNoTracking ()
-      |> reqSort grp.preferences.requestSort
-      |> function query -> (query.Skip skip).Take pgSz)
+    this.PrayerRequests.FromSql(sql, grp.smallGroupId, like searchTerm).AsNoTracking ()
+    |> reqSort grp.preferences.requestSort
+    |> function
+    | q ->
+        upcast query {
+          for req in q do
+            skip toSkip
+            take pgSz
+          }
 
   (*-- SMALL GROUP EXTENSIONS --*)
 
   /// Find a small group by its Id
   member this.TryGroupById gId =
-    task {
-      let! grp =
-        this.SmallGroups.AsNoTracking()
-          .Include(fun sg -> sg.preferences)
-          .FirstOrDefaultAsync (fun sg -> sg.smallGroupId = gId)
-      return Option.fromObject grp
+    query {
+      for grp in this.SmallGroups.AsNoTracking().Include (fun sg -> sg.preferences) do
+        where (grp.smallGroupId = gId)
+        exactlyOneOrDefault
       }
+    |> toOptionTask
 
   /// Get small groups that are public or password protected
   member this.PublicAndProtectedGroups () =
     task {
-      let! grps = 
-        this.SmallGroups.AsNoTracking()
-          .Include(fun sg -> sg.preferences)
-          .Include(fun sg -> sg.church)
-          .Where(fun sg ->
-              sg.preferences.isPublic || (sg.preferences.groupPassword <> null && sg.preferences.groupPassword <> ""))
-          .OrderBy(fun sg -> sg.church.name)
-          .ThenBy(fun sg -> sg.name)
-          .ToListAsync ()
+      let smallGroups = this.SmallGroups.AsNoTracking().Include(fun sg -> sg.preferences).Include (fun sg -> sg.church)
+      let q =
+        query {
+          for grp in smallGroups do
+            where (   grp.preferences.isPublic
+                   || (grp.preferences.groupPassword <> null && grp.preferences.groupPassword <> ""))
+            sortBy grp.church.name
+            thenBy grp.name
+          }
+      let! grps = q.ToListAsync ()
       return List.ofSeq grps
       }
 
   /// Get small groups that are password protected
   member this.ProtectedGroups () =
     task {
-      let! grps =
-        this.SmallGroups.AsNoTracking()
-          .Include(fun sg -> sg.church)
-          .Where(fun sg -> sg.preferences.groupPassword <> null && sg.preferences.groupPassword <> "")
-          .OrderBy(fun sg -> sg.church.name)
-          .ThenBy(fun sg -> sg.name)
-          .ToListAsync ()
+      let q =
+        query {
+          for grp in this.SmallGroups.AsNoTracking().Include (fun sg -> sg.church) do
+            where (grp.preferences.groupPassword <> null && grp.preferences.groupPassword <> "")
+            sortBy grp.church.name
+            thenBy grp.name
+          }
+      let! grps = q.ToListAsync ()
       return List.ofSeq grps
       }
 
@@ -190,12 +232,13 @@ type AppDbContext with
   /// Get a small group list by their Id, with their church prepended to their name
   member this.GroupList () =
     task {
-      let! grps =
-        this.SmallGroups.AsNoTracking()
-          .Include(fun sg -> sg.church)
-          .OrderBy(fun sg -> sg.church.name)
-          .ThenBy(fun sg -> sg.name)
-          .ToListAsync ()
+      let q =
+        query {
+          for grp in this.SmallGroups.AsNoTracking().Include (fun sg -> sg.church) do
+            sortBy grp.church.name
+            thenBy grp.name
+          }
+      let! grps = q.ToListAsync ()
       return grps
         |> Seq.map (fun grp -> grp.smallGroupId.ToString "N", sprintf "%s | %s" grp.church.name grp.name)
         |> List.ofSeq
@@ -204,24 +247,22 @@ type AppDbContext with
   /// Log on a small group
   member this.TryGroupLogOnByPassword gId pw =
     task {
-      let! grp = this.TryGroupById gId
-      match grp with
+      match! this.TryGroupById gId with
       | None -> return None
-      | Some g ->
-          match pw = g.preferences.groupPassword with
-          | true -> return grp
+      | Some grp ->
+          match pw = grp.preferences.groupPassword with
+          | true -> return Some grp
           | _ -> return None
       }
 
   /// Check a cookie log on for a small group
   member this.TryGroupLogOnByCookie gId pwHash (hasher : string -> string) =
     task {
-      let! grp = this.TryGroupById gId
-      match grp with
+      match! this.TryGroupById gId with
       | None -> return None
-      | Some g ->
-          match pwHash = hasher g.preferences.groupPassword with
-          | true -> return grp
+      | Some grp ->
+          match pwHash = hasher grp.preferences.groupPassword with
+          | true -> return Some grp
           | _ -> return None
       }
 
@@ -233,15 +274,22 @@ type AppDbContext with
 
   /// Get a time zone by its Id
   member this.TryTimeZoneById tzId =
-    task {
-      let! tz = this.TimeZones.FirstOrDefaultAsync (fun t -> t.timeZoneId = tzId)
-      return Option.fromObject tz
+    query {
+      for tz in this.TimeZones do
+        where (tz.timeZoneId = tzId)
+        exactlyOneOrDefault
       }
+    |> toOptionTask
 
   /// Get all time zones
   member this.AllTimeZones () =
     task {
-      let! tzs = this.TimeZones.OrderBy(fun t -> t.sortOrder).ToListAsync ()
+      let q =
+        query {
+          for tz in this.TimeZones do
+            sortBy tz.sortOrder
+          }
+      let! tzs = q.ToListAsync ()
       return List.ofSeq tzs
       }
   
@@ -249,67 +297,79 @@ type AppDbContext with
 
   /// Find a user by its Id
   member this.TryUserById uId =
-    task {
-      let! user = this.Users.AsNoTracking().FirstOrDefaultAsync (fun u -> u.userId = uId)
-      return Option.fromObject user
+    query {
+      for usr in this.Users.AsNoTracking () do
+        where (usr.userId = uId)
+        exactlyOneOrDefault
       }
+    |> toOptionTask
 
   /// Find a user by its e-mail address and authorized small group
   member this.TryUserByEmailAndGroup email gId =
-    task {
-      let! user =
-        this.Users.AsNoTracking().FirstOrDefaultAsync (fun u ->
-            u.emailAddress = email
-            && u.smallGroups.Any (fun xref -> xref.smallGroupId = gId))
-      return Option.fromObject user
+    query {
+      for usr in this.Users.AsNoTracking () do
+        where (usr.emailAddress = email && usr.smallGroups.Any (fun xref -> xref.smallGroupId = gId))
+        exactlyOneOrDefault
       }
+    |> toOptionTask
 
   /// Find a user by its Id (tracked entity), eagerly loading the user's groups
   member this.TryUserByIdWithGroups uId =
-    task {
-      let! user = this.Users.Include(fun u -> u.smallGroups).FirstOrDefaultAsync (fun u -> u.userId = uId)
-      return Option.fromObject user
+    query {
+      for usr in this.Users.AsNoTracking().Include (fun u -> u.smallGroups) do
+        where (usr.userId = uId)
+        exactlyOneOrDefault
       }
+    |> toOptionTask
 
   /// Get a list of all users
   member this.AllUsers () =
     task {
-      let! usrs = this.Users.AsNoTracking().OrderBy(fun u -> u.lastName).ThenBy(fun u -> u.firstName).ToListAsync ()
+      let q =
+        query {
+          for usr in this.Users.AsNoTracking () do
+            sortBy usr.lastName
+            thenBy usr.firstName
+          }
+      let! usrs = q.ToListAsync ()
       return List.ofSeq usrs
       }
 
   /// Get all PrayerTracker users as members (used to send e-mails)
   member this.AllUsersAsMembers () =
     task {
-      let! usrs =
-        this.Users.AsNoTracking().OrderBy(fun u -> u.lastName).ThenBy(fun u -> u.firstName).ToListAsync ()
-      return usrs
-        |> Seq.map (fun u -> { Member.empty with email = u.emailAddress; memberName = u.fullName })
-        |> List.ofSeq
+      let q =
+        query {
+          for usr in this.Users.AsNoTracking () do
+            sortBy usr.lastName
+            thenBy usr.firstName
+            select { Member.empty with email = usr.emailAddress; memberName = usr.fullName }
+          }
+      let! usrs = q.ToListAsync ()
+      return List.ofSeq usrs
       }
 
   /// Find a user based on their credentials
   member this.TryUserLogOnByPassword email pwHash gId =
-    task {
-      let! user =
-        this.Users.FirstOrDefaultAsync (fun u ->
-          u.emailAddress = email
-          && u.passwordHash = pwHash
-          && u.smallGroups.Any (fun xref -> xref.smallGroupId = gId))
-      return Option.fromObject user
+    query {
+      for usr in this.Users.AsNoTracking () do
+        where (   usr.emailAddress = email
+               && usr.passwordHash = pwHash
+               && usr.smallGroups.Any (fun xref -> xref.smallGroupId = gId))
+        exactlyOneOrDefault
       }
+    |> toOptionTask
 
   /// Find a user based on credentials stored in a cookie
   member this.TryUserLogOnByCookie uId gId pwHash =
     task {
-      let! user = this.TryUserByIdWithGroups uId
-      match user with
+      match! this.TryUserByIdWithGroups uId with
       | None -> return None
-      | Some u ->
-          match pwHash = u.passwordHash && u.smallGroups |> Seq.exists (fun xref -> xref.smallGroupId = gId) with
+      | Some usr ->
+          match pwHash = usr.passwordHash && usr.smallGroups |> Seq.exists (fun xref -> xref.smallGroupId = gId) with
           | true ->
-              this.Entry<User>(u).State <- EntityState.Detached
-              return Some { u with passwordHash = ""; salt = None; smallGroups = List<UserSmallGroup>() }
+              this.Entry<User>(usr).State <- EntityState.Detached
+              return Some { usr with passwordHash = ""; salt = None; smallGroups = List<UserSmallGroup>() }
           | _ -> return None
       }
 
