@@ -52,22 +52,22 @@ let tableSummary itemCount (s : IStringLocalizer) =
 let namedColorList name selected attrs (s : IStringLocalizer) =
   /// The list of HTML named colors (name, display, text color)
   seq {
-    yield ("aqua",    s.["Aqua"],    "black")
-    yield ("black",   s.["Black"],   "white")
-    yield ("blue",    s.["Blue"],    "white")
-    yield ("fuchsia", s.["Fuchsia"], "black")
-    yield ("gray",    s.["Gray"],    "white")
-    yield ("green",   s.["Green"],   "white")
-    yield ("lime",    s.["Lime"],    "black")
-    yield ("maroon",  s.["Maroon"],  "white")
-    yield ("navy",    s.["Navy"],    "white")
-    yield ("olive",   s.["Olive"],   "white")
-    yield ("purple",  s.["Purple"],  "white")
-    yield ("red",     s.["Red"],     "black")
-    yield ("silver",  s.["Silver"],  "black")
-    yield ("teal",    s.["Teal"],    "white")
-    yield ("white",   s.["White"],   "black")
-    yield ("yellow",  s.["Yellow"],  "black")
+    ("aqua",    s.["Aqua"],    "black")
+    ("black",   s.["Black"],   "white")
+    ("blue",    s.["Blue"],    "white")
+    ("fuchsia", s.["Fuchsia"], "black")
+    ("gray",    s.["Gray"],    "white")
+    ("green",   s.["Green"],   "white")
+    ("lime",    s.["Lime"],    "black")
+    ("maroon",  s.["Maroon"],  "white")
+    ("navy",    s.["Navy"],    "white")
+    ("olive",   s.["Olive"],   "white")
+    ("purple",  s.["Purple"],  "white")
+    ("red",     s.["Red"],     "black")
+    ("silver",  s.["Silver"],  "black")
+    ("teal",    s.["Teal"],    "white")
+    ("white",   s.["White"],   "black")
+    ("yellow",  s.["Yellow"],  "black")
     }
   |> Seq.map (fun color ->
       let (colorName, dispText, txtColor) = color
@@ -81,18 +81,18 @@ let namedColorList name selected attrs (s : IStringLocalizer) =
 
 /// Generate an input[type=radio] that is selected if its value is the current value
 let radio name domId value current =
-  input [ yield _type "radio"
-          yield _name name
-          yield _id domId
-          yield _value value
-          match value = current with true -> yield _checked | false -> () ]
+  input [ _type "radio"
+          _name name
+          _id domId
+          _value value
+          match value = current with true -> _checked | false -> () ]
 
 /// Generate a select list with the current value selected
 let selectList name selected attrs items =
   items
   |> Seq.map (fun (value, text) ->
-      option [ yield _value value
-               match value = selected with true -> yield _selected | false -> () ] [ encodedText text ])
+      option [ _value value
+               match value = selected with true -> _selected | false -> () ] [ encodedText text ])
   |> List.ofSeq
   |> select (List.concat [ [ _name name; _id name ]; attrs ])
 

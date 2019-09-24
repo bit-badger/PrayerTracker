@@ -44,12 +44,12 @@ let appVersion =
   sprintf "v%A" v
 #else
   seq {
-    yield sprintf "v%d" v.Major
+    sprintf "v%d" v.Major
     match v.Minor with
-    | 0 -> match v.Build with 0 -> () | _ -> yield sprintf ".0.%d" v.Build
+    | 0 -> match v.Build with 0 -> () | _ -> sprintf ".0.%d" v.Build
     | _ ->
-        yield sprintf ".%d" v.Minor
-        match v.Build with 0 -> () | _ -> yield sprintf ".%d" v.Build
+        sprintf ".%d" v.Minor
+        match v.Build with 0 -> () | _ -> sprintf ".%d" v.Build
     }
   |> String.concat ""
 #endif

@@ -24,11 +24,11 @@ let assignGroups m groups curGroups ctx vi =
           let inputId = sprintf "id-%s" grpId
           tr [] [
             td [] [
-              input [ yield _type "checkbox"
-                      yield _name "smallGroups"
-                      yield _id inputId
-                      yield _value grpId
-                      match curGroups |> List.contains grpId with true -> yield _checked | false -> () ]
+              input [ _type "checkbox"
+                      _name "smallGroups"
+                      _id inputId
+                      _value grpId
+                      match curGroups |> List.contains grpId with true -> _checked | false -> () ]
               ]
             td [] [ label [ _for inputId ] [ str grpName ] ]
             ])
@@ -114,11 +114,11 @@ let edit (m : EditUser) ctx vi =
           ]
         ]
       div [ _class "pt-checkbox-field" ] [
-        input [ yield _type "checkbox"
-                yield _name "isAdmin"
-                yield _id "isAdmin"
-                yield _value "True"
-                match m.isAdmin with Some x when x -> yield _checked | _ -> () ]
+        input [ _type "checkbox"
+                _name "isAdmin"
+                _id "isAdmin"
+                _value "True"
+                match m.isAdmin with Some x when x -> _checked | _ -> () ]
         label [ _for "isAdmin" ] [ locStr s.["This user is a PrayerTracker administrator"] ]
         ]
       div [ _class "pt-field-row" ] [ submit [] "save" s.["Save User"] ]
@@ -151,7 +151,7 @@ let logOn (m : UserLogOn) groups ctx vi =
       div [ _class "pt-field" ] [
         label [ _for "smallGroupId" ] [ locStr s.["Group"] ]
         seq {
-          yield "", selectDefault s.["Select Group"].Value
+          "", selectDefault s.["Select Group"].Value
           yield! groups
           }
         |> selectList "smallGroupId" "" [ _required ]
@@ -205,8 +205,8 @@ let maintain (users : User list) ctx vi =
                 td [] [ str user.fullName ]
                 td [ _class "pt-center-text" ] [
                   match user.isAdmin with
-                  | true -> yield strong [] [ locStr s.["Yes"] ]
-                  | false -> yield locStr s.["No"]
+                  | true -> strong [] [ locStr s.["Yes"] ]
+                  | false -> locStr s.["No"]
                   ]
                 ])
           |> tbody []

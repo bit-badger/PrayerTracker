@@ -22,7 +22,7 @@ module Navigation =
     let leftLinks = [
       match m.user with
       | Some u ->
-          yield li [ _class "dropdown" ] [
+          li [ _class "dropdown" ] [
             a [ _class "dropbtn"; _role "button"; _aria "label" s.["Requests"].Value; _title s.["Requests"].Value ]
               [ icon "question_answer"; space; locStr s.["Requests"]; space; icon "keyboard_arrow_down" ]
             div [ _class "dropdown-content"; _role "menu" ] [
@@ -30,7 +30,7 @@ module Navigation =
               a [ _href "/web/prayer-requests/view" ] [ icon "list";           menuSpacer; locStr s.["View List"] ]
               ]
             ]
-          yield li [ _class "dropdown" ] [
+          li [ _class "dropdown" ] [
             a [ _class "dropbtn"; _role "button"; _aria "label" s.["Group"].Value; _title s.["Group"].Value ]
               [ icon "group"; space; locStr s.["Group"]; space; icon "keyboard_arrow_down" ]
             div [ _class "dropdown-content"; _role "menu" ] [
@@ -41,7 +41,7 @@ module Navigation =
             ]
           match u.isAdmin with
           | true ->
-              yield li [ _class "dropdown" ] [
+              li [ _class "dropdown" ] [
                 a [ _class "dropbtn"; _role "button"; _aria "label" s.["Administration"].Value; _title s.["Administration"].Value ]
                   [ icon "settings"; space; locStr s.["Administration"]; space; icon "keyboard_arrow_down" ]
                 div [ _class "dropdown-content"; _role "menu" ] [
@@ -54,14 +54,14 @@ module Navigation =
       | None ->
           match m.group with
           | Some _ ->
-              yield li [] [
+              li [] [
                 a [ _href "/web/prayer-requests/view"
                     _aria "label" s.["View Request List"].Value
                     _title s.["View Request List"].Value ]
                   [ icon "list"; space; locStr s.["View Request List"] ]
                 ]
           | None ->
-              yield li [ _class "dropdown" ] [
+              li [ _class "dropdown" ] [
                 a [ _class "dropbtn"; _role "button"; _aria "label" s.["Log On"].Value; _title s.["Log On"].Value ]
                   [ icon "security"; space; locStr s.["Log On"]; space; icon "keyboard_arrow_down" ]
                 div [ _class "dropdown-content"; _role "menu" ] [
@@ -69,13 +69,13 @@ module Navigation =
                   a [ _href "/web/small-group/log-on" ] [ icon "group";  menuSpacer; locStr s.["Group"] ]
                   ]
                 ]
-              yield li [] [
+              li [] [
                 a [ _href "/web/prayer-requests/lists"
                     _aria "label" s.["View Request List"].Value
                     _title s.["View Request List"].Value ]
                   [ icon "list"; space; locStr s.["View Request List"] ]
                 ]
-      yield li [] [
+      li [] [
         a [ _href   (sprintf "https://docs.prayer.bitbadger.solutions/%s" <| langCode ())
             _aria   "label" s.["Help"].Value;
             _title  s.["View Help"].Value
@@ -89,14 +89,14 @@ module Navigation =
       | Some _ ->
           [ match m.user with
             | Some _ ->
-                yield li [] [
+                li [] [
                   a [ _href "/web/user/password"
                       _aria "label" s.["Change Your Password"].Value
                       _title s.["Change Your Password"].Value ]
                     [ icon "lock"; space; locStr s.["Change Your Password"] ]
                   ]
             | None -> ()
-            yield li [] [
+            li [] [
               a [ _href "/web/log-off"; _aria "label" s.["Log Off"].Value; _title s.["Log Off"].Value ]
                 [ icon "power_settings_new"; space; locStr s.["Log Off"] ]
               ]
@@ -120,35 +120,35 @@ module Navigation =
     let s = I18N.localizer.Force ()
     header [ _id "pt-language" ] [
       div [] [
-        yield span [ _class "u" ] [ locStr s.["Language"]; rawText ": " ]
+        span [ _class "u" ] [ locStr s.["Language"]; rawText ": " ]
         match langCode () with
         | "es" -> 
-            yield locStr s.["Spanish"]
-            yield rawText " &nbsp; &bull; &nbsp; "
-            yield a [ _href "/web/language/en" ] [ locStr s.["Change to English"] ]
+            locStr s.["Spanish"]
+            rawText " &nbsp; &bull; &nbsp; "
+            a [ _href "/web/language/en" ] [ locStr s.["Change to English"] ]
         | _ ->
-            yield locStr s.["English"]
-            yield rawText " &nbsp; &bull; &nbsp; "
-            yield a [ _href "/web/language/es" ] [ locStr s.["Cambie a Español"] ]
+            locStr s.["English"]
+            rawText " &nbsp; &bull; &nbsp; "
+            a [ _href "/web/language/es" ] [ locStr s.["Cambie a Español"] ]
         ]
       match m.group with
       | Some g ->
           [ match m.user with
             | Some u ->
-                yield span [ _class "u" ] [ locStr s.["Currently Logged On"] ]
-                yield rawText "&nbsp; &nbsp;"
-                yield icon "person"
-                yield strong [] [ str u.fullName ]
-                yield rawText "&nbsp; &nbsp; "
+                span [ _class "u" ] [ locStr s.["Currently Logged On"] ]
+                rawText "&nbsp; &nbsp;"
+                icon "person"
+                strong [] [ str u.fullName ]
+                rawText "&nbsp; &nbsp; "
             | None ->
-                yield locStr s.["Logged On as a Member of"]
-                yield rawText "&nbsp; "
-            yield icon "group"
-            yield space
+                locStr s.["Logged On as a Member of"]
+                rawText "&nbsp; "
+            icon "group"
+            space
             match m.user with
-            | Some _ -> yield  a [ _href "/web/small-group" ] [ strong [] [ str g.name ] ]
-            | None -> yield strong [] [ str g.name ]
-            yield rawText " &nbsp;"
+            | Some _ -> a [ _href "/web/small-group" ] [ strong [] [ str g.name ] ]
+            | None -> strong [] [ str g.name ]
+            rawText " &nbsp;"
             ]
       | None -> []
       |> div []
@@ -179,13 +179,13 @@ let private commonHead =
 let private htmlHead m pageTitle =
   let s = I18N.localizer.Force ()
   head [] [
-    yield meta [ _charset "UTF-8" ]
-    yield title [] [ locStr pageTitle; titleSep; locStr s.["PrayerTracker"] ]
+    meta [ _charset "UTF-8" ]
+    title [] [ locStr pageTitle; titleSep; locStr s.["PrayerTracker"] ]
     yield! commonHead
     for cssFile in m.style do
-      yield link [ _rel "stylesheet"; _href (sprintf "/css/%s.css" cssFile); _type "text/css" ]
+      link [ _rel "stylesheet"; _href (sprintf "/css/%s.css" cssFile); _type "text/css" ]
     for jsFile in m.script do
-      yield script [ _src (sprintf "/js/%s.js" jsFile) ] []
+      script [ _src (sprintf "/js/%s.js" jsFile) ] []
     ]
   
 /// Render a link to the help page for the current page
@@ -202,10 +202,8 @@ let private helpLink link =
 /// Render the page title, and optionally a help link
 let private renderPageTitle m pageTitle =
   h2 [ _id "pt-page-title" ] [
-    match m.helpLink with
-    | Some link -> yield  Help.fullLink (langCode ()) link |> helpLink
-    | None -> ()
-    yield locStr pageTitle
+    match m.helpLink with Some link -> Help.fullLink (langCode ()) link |> helpLink | None -> ()
+    locStr pageTitle
     ]
 
 /// Render the messages that may need to be displayed to the user
@@ -219,13 +217,13 @@ let private messages m =
             match msg.level with
             | "Info" -> ()
             | lvl ->
-                yield strong [] [ locStr s.[lvl] ]
-                yield rawText " &#xbb; "
-            yield rawText msg.text.Value
+                strong [] [ locStr s.[lvl] ]
+                rawText " &#xbb; "
+            rawText msg.text.Value
             match msg.description with
             | Some desc ->
-                yield br []
-                yield div [ _class "description" ] [ rawText desc.Value ]
+                br []
+                div [ _class "description" ] [ rawText desc.Value ]
             | None -> ()
             ]
           ]
@@ -262,7 +260,7 @@ let private htmlFooter m =
     ]
 
 /// The standard layout for PrayerTracker
-let standard m pageTitle content =
+let standard m pageTitle (content : XmlNode) =
   let s   = I18N.localizer.Force ()
   let ttl = s.[pageTitle]
   html [ _lang "" ] [
@@ -270,11 +268,11 @@ let standard m pageTitle content =
     body [] [
       Navigation.top m
       div [ _id "pt-body" ] [
-        yield  Navigation.identity m
-        yield  renderPageTitle m ttl
+        Navigation.identity m
+        renderPageTitle m ttl
         yield! messages m
-        yield  content
-        yield  htmlFooter m
+        content
+        htmlFooter m
         ]
       ]
     ]
@@ -288,7 +286,5 @@ let bare pageTitle content =
       meta [ _charset "UTF-8" ]
       title [] [ locStr ttl; titleSep; locStr s.["PrayerTracker"] ]
       ]
-    body [] [
-      content
-      ]
+    body [] [ content ]
     ]
