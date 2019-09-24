@@ -30,17 +30,15 @@ module String =
   /// string.Replace()
   let replace (find : string) repl (str : string) = str.Replace (find, repl)
 
-
   /// Replace the first occurrence of a string with a second string within a given string
   let replaceFirst (needle : string) replacement (haystack : string) =
     match haystack.IndexOf needle with
     | -1 -> haystack
     | idx ->
-        seq {
-          yield haystack.[0..idx - 1]
-          yield replacement
-          yield haystack.[idx + needle.Length..]
-          }
+        [ haystack.[0..idx - 1]
+          replacement
+          haystack.[idx + needle.Length..]
+          ]
         |> String.concat ""
 
 

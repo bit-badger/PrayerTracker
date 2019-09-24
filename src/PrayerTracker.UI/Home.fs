@@ -32,9 +32,9 @@ let error code vi =
               raw l.["Please use your &ldquo;Back&rdquo; button to return to {0}.", s.["PrayerTracker"]]
               ]
             ]
-    yield br []
-    yield hr []
-    yield div [ _style "font-size:70%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen-Sans,Ubuntu,Cantarell,'Helvetica Neue',sans-serif" ] [
+    br []
+    hr []
+    div [ _style "font-size:70%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen-Sans,Ubuntu,Cantarell,'Helvetica Neue',sans-serif" ] [
       img [ _src (sprintf "/img/%A.png" s.["footer_en"])
             _alt (sprintf "%A %A" s.["PrayerTracker"] s.["from Bit Badger Solutions"])
             _title (sprintf "%A %A" s.["PrayerTracker"] s.["from Bit Badger Solutions"])

@@ -29,11 +29,11 @@ let edit (m : EditChurch) ctx vi =
         ]
       div [ _class "pt-field-row" ] [
         div [ _class "pt-checkbox-field" ] [
-          input [ yield _type "checkbox"
-                  yield _name "hasInterface"
-                  yield _id "hasInterface"
-                  yield _value "True"
-                  match m.hasInterface with Some x when x -> yield _checked | _ -> () ]
+          input [ _type "checkbox"
+                  _name "hasInterface"
+                  _id "hasInterface"
+                  _value "True"
+                  match m.hasInterface with Some x when x -> _checked | _ -> () ]
           label [ _for "hasInterface" ] [ locStr s.["Has an interface with Virtual Prayer Room"] ]
           ]
         ]
