@@ -1,6 +1,7 @@
 ﻿[<AutoOpen>]
 module PrayerTracker.Extensions
 
+open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
 open Microsoft.FSharpLu
 open Newtonsoft.Json
@@ -44,3 +45,9 @@ type ISession with
 type HttpContext with
   /// Get the EF database context from DI
   member this.dbContext () : AppDbContext = downcast this.RequestServices.GetService typeof<AppDbContext>
+
+
+type IApplicationBuilder with
+  /// Insert the PrayerTracker custom security middleware into the request pipeline
+  member this.UseSecurityMiddleware () =
+    this.UseMiddleware<SecurityMiddleware>();

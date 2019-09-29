@@ -15,9 +15,10 @@
 
   <ItemGroup>
     <None Include="appsettings.json" />
-    <Compile Include="Extensions.fs" />
     <Compile Include="Cookies.fs" />
     <Compile Include="Email.fs" />
+    <Compile Include="SecurityMiddleware.fs" />
+    <Compile Include="Extensions.fs" />
     <Compile Include="CommonFunctions.fs" />
     <Compile Include="Church.fs" />
     <Compile Include="Home.fs" />

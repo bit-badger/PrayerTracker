@@ -53,8 +53,9 @@ module Configure =
       .AddAntiforgery()
       .AddSingleton<IClock>(SystemClock.Instance)
     |> ignore
-    let config = svc.BuildServiceProvider().GetRequiredService<IConfiguration>()
+    let config     = svc.BuildServiceProvider().GetRequiredService<IConfiguration>()
     let authConfig = config.GetSection "Tokens"
+    let iss        = authConfig.["Issuer"]
     svc.AddAuthentication()
       .AddCookie(
         fun opts ->
@@ -62,17 +63,16 @@ module Configure =
           opts.Cookie.HttpOnly   <- false
           opts.Cookie.SameSite   <- SameSiteMode.Strict
           opts.SlidingExpiration <- true
-          opts.ClaimsIssuer      <- authConfig.["Issuer"])
+          opts.ClaimsIssuer      <- iss)
       .AddJwtBearer(
         fun opts ->
-          opts.SaveToken    <- true
-          opts.ClaimsIssuer <- "PrayerTracker"
-          opts.TokenValidationParameters                  <- TokenValidationParameters ()
-          opts.TokenValidationParameters.ValidIssuer      <- authConfig.["Issuer"]
-          opts.TokenValidationParameters.ValidAudience    <- authConfig.["Issuer"]
-          opts.TokenValidationParameters.IssuerSigningKey <- SymmetricSecurityKey (Convert.FromBase64String authConfig.["Key"]))
+          opts.SaveToken                 <- true
+          opts.ClaimsIssuer              <- iss
+          opts.TokenValidationParameters <- TokenValidationParameters (
+            ValidIssuer      = iss,
+            ValidAudience    = iss,
+            IssuerSigningKey = SymmetricSecurityKey (Convert.FromBase64String authConfig.["Key"])))
     |> ignore
-    let config = svc.BuildServiceProvider().GetRequiredService<IConfiguration>()
     let crypto = config.GetSection "CookieCrypto"
     CookieCrypto (crypto.["Key"], crypto.["IV"]) |> setCrypto
     svc.AddDbContext<AppDbContext>(
@@ -195,7 +195,7 @@ module Configure =
       .UseStaticFiles()
       .UseSession()
       .UseRequestLocalization(app.ApplicationServices.GetService<IOptions<RequestLocalizationOptions>>().Value)
-      .UseAuthentication()
+      .UseSecurityMiddleware()
       .UseGiraffe(webApp)
       |> ignore
     Views.I18N.setUpFactories <| app.ApplicationServices.GetRequiredService<IStringLocalizerFactory> ()
