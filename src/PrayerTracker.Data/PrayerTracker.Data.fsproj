@@ -1,10 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <AssemblyVersion>7.3.2.0</AssemblyVersion>
-    <FileVersion>7.3.2.0</FileVersion>
-    <Version>7.3.2</Version>
+    <TargetFramework>netstandard2.1</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,14 +14,14 @@
 
   <ItemGroup>
     <PackageReference Include="FSharp.EFCore.OptionConverter" Version="1.0.0" />
-    <PackageReference Include="Microsoft.FSharpLu" Version="0.10.31" />
-    <PackageReference Include="NodaTime" Version="2.4.5" />
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="2.2.4" />
+    <PackageReference Include="Microsoft.FSharpLu" Version="0.11.5" />
+    <PackageReference Include="NodaTime" Version="2.4.7" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="3.0.1" />
     <PackageReference Include="TaskBuilder.fs" Version="2.1.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Update="FSharp.Core" Version="4.6.2" />
+    <PackageReference Update="FSharp.Core" Version="4.7.0" />
   </ItemGroup>
 
 </Project>

@@ -11,9 +11,9 @@ open System.IO
 let announcement isAdmin ctx vi =
   let s        = I18N.localizer.Force ()
   let reqTypes = ReferenceList.requestTypeList s
-  [ form [ _action "/small-group/announcement/send"; _method "post"; _class "pt-center-columns" ] [
-      yield csrfToken ctx
-      yield div [ _class "pt-field-row" ] [
+  [ form [ _action "/web/small-group/announcement/send"; _method "post"; _class "pt-center-columns" ] [
+      csrfToken ctx
+      div [ _class "pt-field-row" ] [
         div [ _class "pt-field pt-editor" ] [
           label [ _for "text" ] [ locStr s.["Announcement Text"] ]
           textarea [ _name "text"; _id "text"; _autofocus ] []
@@ -21,7 +21,7 @@ let announcement isAdmin ctx vi =
         ]
       match isAdmin with
       | true ->
-          yield div [ _class "pt-field-row" ] [
+          div [ _class "pt-field-row" ] [
             div [ _class "pt-field" ] [
               label [] [ locStr s.["Send Announcement to"]; rawText ":" ]
               div [ _class "pt-center-text" ] [
@@ -32,15 +32,14 @@ let announcement isAdmin ctx vi =
                 ]
               ]
             ]
-      | false ->
-          yield input [ _type "hidden"; _name "sendToClass"; _value "Y" ]
-      yield div [ _class "pt-field-row pt-fadeable pt-shown"; _id "divAddToList" ] [
+      | false -> input [ _type "hidden"; _name "sendToClass"; _value "Y" ]
+      div [ _class "pt-field-row pt-fadeable pt-shown"; _id "divAddToList" ] [
         div [ _class "pt-checkbox-field" ] [
           input [ _type "checkbox"; _name "addToRequestList"; _id "addToRequestList"; _value "True" ]
           label [ _for "addToRequestList" ] [ locStr s.["Add to Request List"] ]
           ]
         ]
-      yield div [ _class "pt-field-row pt-fadeable"; _id "divCategory" ] [
+      div [ _class "pt-field-row pt-fadeable"; _id "divCategory" ] [
         div [ _class "pt-field" ] [
           label [ _for "requestType" ] [ locStr s.["Request Type"] ]
           reqTypes
@@ -49,7 +48,7 @@ let announcement isAdmin ctx vi =
           |> selectList "requestType" "Announcement" []
           ]
         ]
-      yield div [ _class "pt-field-row" ] [ submit [] "send" s.["Send Announcement"] ]
+      div [ _class "pt-field-row" ] [ submit [] "send" s.["Send Announcement"] ]
       ]
     script [] [ rawText "PT.onLoad(PT.smallGroup.announcement.onPageLoad)" ]
     ]
@@ -75,7 +74,7 @@ let announcementSent (m : Announcement) vi =
 let edit (m : EditSmallGroup) (churches : Church list) ctx vi =
   let s         = I18N.localizer.Force ()
   let pageTitle = match m.isNew () with true -> "Add a New Group" | false -> "Edit Group"
-  form [ _action "/small-group/save"; _method "post"; _class "pt-center-columns" ] [
+  form [ _action "/web/small-group/save"; _method "post"; _class "pt-center-columns" ] [
     csrfToken ctx
     input [ _type "hidden"; _name "smallGroupId"; _value (flatGuid m.smallGroupId) ]
     div [ _class "pt-field-row" ] [
@@ -88,7 +87,7 @@ let edit (m : EditSmallGroup) (churches : Church list) ctx vi =
       div [ _class "pt-field" ] [
         label [ _for "churchId" ] [ locStr s.["Church"] ]
         seq {
-          yield  "", selectDefault s.["Select Church"].Value
+          "", selectDefault s.["Select Church"].Value
           yield! churches |> List.map (fun c -> flatGuid c.churchId, c.name)
           }
         |> selectList "churchId" (flatGuid m.churchId) [ _required ] 
@@ -105,7 +104,7 @@ let edit (m : EditSmallGroup) (churches : Church list) ctx vi =
 let editMember (m : EditMember) (typs : (string * LocalizedString) seq) ctx vi =
   let s         = I18N.localizer.Force ()
   let pageTitle = match m.isNew () with true -> "Add a New Group Member" | false -> "Edit Group Member"
-  form [ _action "/small-group/member/save"; _method "post"; _class "pt-center-columns" ] [
+  form [ _action "/web/small-group/member/save"; _method "post"; _class "pt-center-columns" ] [
     style [ _scoped ] [ rawText "#memberName { width: 15rem; } #emailAddress { width: 20rem; }" ]
     csrfToken ctx
     input [ _type "hidden"; _name "memberId"; _value (flatGuid m.memberId) ]
@@ -137,16 +136,16 @@ let editMember (m : EditMember) (typs : (string * LocalizedString) seq) ctx vi =
 /// View for the small group log on page
 let logOn (grps : SmallGroup list) grpId ctx vi =
   let s = I18N.localizer.Force ()
-  [ form [ _action "/small-group/log-on/submit"; _method "post"; _class "pt-center-columns" ] [
+  [ form [ _action "/web/small-group/log-on/submit"; _method "post"; _class "pt-center-columns" ] [
       csrfToken ctx
       div [ _class "pt-field-row" ] [
         div [ _class "pt-field" ] [
           label [ _for "smallGroupId" ] [ locStr s.["Group"] ]
           seq {
             match grps.Length with
-            | 0 -> yield "", s.["There are no classes with passwords defined"].Value
+            | 0 -> "", s.["There are no classes with passwords defined"].Value
             | _ ->
-                yield "", selectDefault s.["Select Group"].Value
+                "", selectDefault s.["Select Group"].Value
                 yield! grps
                   |> List.map (fun grp -> flatGuid grp.smallGroupId, sprintf "%s | %s" grp.church.name grp.name)
             }
@@ -191,12 +190,12 @@ let maintain (grps : SmallGroup list) ctx vi =
           grps
           |> List.map (fun g ->
               let grpId     = flatGuid g.smallGroupId
-              let delAction = sprintf "/small-group/%s/delete" grpId
+              let delAction = sprintf "/web/small-group/%s/delete" grpId
               let delPrompt = s.["Are you sure you want to delete this {0}?  This action cannot be undone.",
                                    sprintf "%s (%s)" (s.["Small Group"].Value.ToLower ()) g.name].Value
               tr [] [
                 td [] [
-                  a [ _href (sprintf "/small-group/%s/edit" grpId); _title s.["Edit This Group"].Value ] [ icon "edit" ]
+                  a [ _href (sprintf "/web/small-group/%s/edit" grpId); _title s.["Edit This Group"].Value ] [ icon "edit" ]
                   a [ _href delAction
                       _title s.["Delete This Group"].Value
                       _onclick (sprintf "return PT.confirmDelete('%s','%s')" delAction delPrompt) ]
@@ -210,7 +209,7 @@ let maintain (grps : SmallGroup list) ctx vi =
           ]
   [ div [ _class "pt-center-text" ] [
       br []
-      a [ _href (sprintf "/small-group/%s/edit" emptyGuid); _title s.["Add a New Group"].Value ] [
+      a [ _href (sprintf "/web/small-group/%s/edit" emptyGuid); _title s.["Add a New Group"].Value ] [
         icon "add_circle"
         rawText " &nbsp;"
         locStr s.["Add a New Group"]
@@ -245,14 +244,14 @@ let members (mbrs : Member list) (emailTyps : Map<string, LocalizedString>) ctx 
           mbrs
           |> List.map (fun mbr ->
               let mbrId     = flatGuid mbr.memberId
-              let delAction = sprintf "/small-group/member/%s/delete" mbrId
+              let delAction = sprintf "/web/small-group/member/%s/delete" mbrId
               let delPrompt =
                 s.["Are you sure you want to delete this {0}?  This action cannot be undone.", s.["group member"]]
                   .Value
                   .Replace("?", sprintf " (%s)?" mbr.memberName)
               tr [] [
                 td [] [
-                  a [ _href (sprintf "/small-group/member/%s/edit" mbrId); _title s.["Edit This Group Member"].Value ]
+                  a [ _href (sprintf "/web/small-group/member/%s/edit" mbrId); _title s.["Edit This Group Member"].Value ]
                     [ icon "edit" ]
                   a [ _href delAction
                       _title s.["Delete This Group Member"].Value
@@ -267,7 +266,7 @@ let members (mbrs : Member list) (emailTyps : Map<string, LocalizedString>) ctx 
           ]
   [ div [ _class"pt-center-text" ] [
       br []
-      a [ _href (sprintf "/small-group/member/%s/edit" emptyGuid); _title s.["Add a New Group Member"].Value ]
+      a [ _href (sprintf "/web/small-group/member/%s/edit" emptyGuid); _title s.["Add a New Group Member"].Value ]
         [ icon "add_circle"; rawText " &nbsp;"; locStr s.["Add a New Group Member"] ]
       br []
       br []
@@ -292,11 +291,11 @@ let overview m vi =
         locStr s.["Quick Actions"]
         ]
       div [] [
-        a [ _href "/prayer-requests/view" ] [ icon "list"; linkSpacer; locStr s.["View Prayer Request List"] ]
+        a [ _href "/web/prayer-requests/view" ] [ icon "list"; linkSpacer; locStr s.["View Prayer Request List"] ]
         hr []
-        a [ _href "/small-group/announcement" ] [ icon "send"; linkSpacer; locStr s.["Send Announcement"] ]
+        a [ _href "/web/small-group/announcement" ] [ icon "send"; linkSpacer; locStr s.["Send Announcement"] ]
         hr []
-        a [ _href "/small-group/preferences" ] [ icon "build"; linkSpacer; locStr s.["Change Preferences"] ]
+        a [ _href "/web/small-group/preferences" ] [ icon "build"; linkSpacer; locStr s.["Change Preferences"] ]
         ]
       ]
     section [] [
@@ -305,21 +304,21 @@ let overview m vi =
         locStr s.["Prayer Requests"]
         ]
       div [] [
-        yield p [ _class "pt-center-text" ] [
+        p [ _class "pt-center-text" ] [
           strong [] [ str (m.totalActiveReqs.ToString "N0"); space; locStr s.["Active Requests"] ]
           ]
-        yield hr []
+        hr []
         for cat in m.activeReqsByCat do
-          yield str (cat.Value.ToString "N0")
-          yield space
-          yield locStr typs.[cat.Key]
-          yield br []
-        yield br []
-        yield str (m.allReqs.ToString "N0")
-        yield space
-        yield locStr s.["Total Requests"]
-        yield hr []
-        yield a [ _href "/prayer-requests/maintain" ] [
+          str (cat.Value.ToString "N0")
+          space
+          locStr typs.[cat.Key]
+          br []
+        br []
+        str (m.allReqs.ToString "N0")
+        space
+        locStr s.["Total Requests"]
+        hr []
+        a [ _href "/web/prayer-requests/maintain" ] [
           icon "compare_arrows"
           linkSpacer
           locStr s.["Maintain Prayer Requests"]
@@ -334,7 +333,7 @@ let overview m vi =
       div [ _class "pt-center-text" ] [
         strong [] [ str (m.totalMbrs.ToString "N0"); space; locStr s.["Members"] ]
         hr []
-        a [ _href "/small-group/members" ] [ icon "email"; linkSpacer; locStr s.["Maintain Group Members"] ]
+        a [ _href "/web/small-group/members" ] [ icon "email"; linkSpacer; locStr s.["Maintain Group Members"] ]
         ]
       ]
     ]
@@ -349,7 +348,7 @@ let preferences (m : EditPreferences) (tzs : TimeZone list) ctx vi =
   let l   = I18N.forView "SmallGroup/Preferences"
   use sw  = new StringWriter ()
   let raw = rawLocText sw
-  [ form [ _action "/small-group/preferences/save"; _method "post"; _class "pt-center-columns" ] [
+  [ form [ _action "/web/small-group/preferences/save"; _method "post"; _class "pt-center-columns" ] [
       style [ _scoped ] [ rawText "#expireDays, #daysToKeepNew, #longTermUpdateWeeks, #headingFontSize, #listFontSize, #pageSize { width: 3rem; } #emailFromAddress { width: 20rem; } #listFonts { width: 40rem; } @media screen and (max-width: 40rem) { #listFonts { width: 100%; } }" ]
       csrfToken ctx
       fieldset [] [
@@ -406,7 +405,7 @@ let preferences (m : EditPreferences) (tzs : TimeZone list) ctx vi =
           div [ _class "pt-field" ] [
             label [ _for "defaultEmailType" ] [ locStr s.["E-mail Format"] ]
             seq {
-              yield "", selectDefault s.["Select"].Value
+              "", selectDefault s.["Select"].Value
               yield! ReferenceList.emailTypeList HtmlFormat s
                 |> Seq.skip 1
                 |> Seq.map (fun typ -> fst typ, (snd typ).Value)
@@ -424,16 +423,16 @@ let preferences (m : EditPreferences) (tzs : TimeZone list) ctx vi =
               radio "headingLineType" "headingLineType_Name" "Name" m.headingLineType
               label [ _for "headingLineType_Name" ] [ locStr s.["Named Color"] ]
               namedColorList "headingLineColor" m.headingLineColor
-                [ yield _id "headingLineColor_Select"
-                  match m.headingLineColor.StartsWith "#" with true -> yield _disabled | false -> () ] s
+                [ _id "headingLineColor_Select"
+                  match m.headingLineColor.StartsWith "#" with true -> _disabled | false -> () ] s
               rawText "&nbsp; &nbsp; "; str (s.["or"].Value.ToUpper ())
               radio "headingLineType" "headingLineType_RGB" "RGB" m.headingLineType
               label [ _for "headingLineType_RGB" ] [ locStr s.["Custom Color"] ]
-              input [ yield _type "color" 
-                      yield _name "headingLineColor"
-                      yield _id "headingLineColor_Color"
-                      yield _value m.headingLineColor
-                      match m.headingLineColor.StartsWith "#" with true -> () | false -> yield _disabled ]
+              input [ _type "color" 
+                      _name "headingLineColor"
+                      _id "headingLineColor_Color"
+                      _value m.headingLineColor
+                      match m.headingLineColor.StartsWith "#" with true -> () | false -> _disabled ]
               ]
             ]
           ]
@@ -444,16 +443,16 @@ let preferences (m : EditPreferences) (tzs : TimeZone list) ctx vi =
               radio "headingTextType" "headingTextType_Name" "Name" m.headingTextType
               label [ _for "headingTextType_Name" ] [ locStr s.["Named Color"] ]
               namedColorList "headingTextColor" m.headingTextColor
-                [ yield _id "headingTextColor_Select"
-                  match m.headingTextColor.StartsWith "#" with true -> yield _disabled | false -> () ] s
+                [ _id "headingTextColor_Select"
+                  match m.headingTextColor.StartsWith "#" with true -> _disabled | false -> () ] s
               rawText "&nbsp; &nbsp; "; str (s.["or"].Value.ToUpper ())
               radio "headingTextType" "headingTextType_RGB" "RGB" m.headingTextType
               label [ _for "headingTextType_RGB" ] [ locStr s.["Custom Color"] ]
-              input [ yield _type "color"
-                      yield _name "headingTextColor"
-                      yield _id "headingTextColor_Color"
-                      yield _value m.headingTextColor
-                      match m.headingTextColor.StartsWith "#" with true -> () | false -> yield _disabled ]
+              input [ _type "color"
+                      _name "headingTextColor"
+                      _id "headingTextColor_Color"
+                      _value m.headingTextColor
+                      match m.headingTextColor.StartsWith "#" with true -> () | false -> _disabled ]
               ]
             ]
           ]
@@ -483,7 +482,7 @@ let preferences (m : EditPreferences) (tzs : TimeZone list) ctx vi =
           div [ _class "pt-field" ] [
             label [ _for "timeZone" ] [ locStr s.["Time Zone"] ]
             seq {
-              yield "", selectDefault s.["Select"].Value
+              "", selectDefault s.["Select"].Value
               yield! tzs |> List.map (fun tz -> tz.timeZoneId, (TimeZones.name tz.timeZoneId s).Value)
               }
             |> selectList "timeZone" m.timeZone [ _required ]
@@ -502,10 +501,10 @@ let preferences (m : EditPreferences) (tzs : TimeZone list) ctx vi =
             label [ _for "viz_Password" ] [ locStr s.["Password Protected"] ]
             ]
           ]
-        div [ yield _id "divClassPassword"
+        div [ _id "divClassPassword"
               match m.listVisibility = RequestVisibility.passwordProtected with
-              | true -> yield _class "pt-field-row pt-fadeable pt-show"
-              | false -> yield _class "pt-field-row pt-fadeable"
+              | true -> _class "pt-field-row pt-fadeable pt-show"
+              | false -> _class "pt-field-row pt-fadeable"
               ] [
           div [ _class "pt-field" ] [
             label [ _for "groupPassword" ] [ locStr s.["Group Password (Used to Read Online)"] ]
@@ -526,8 +525,8 @@ let preferences (m : EditPreferences) (tzs : TimeZone list) ctx vi =
             |> selectList "asOfDate" m.asOfDate [ _required ]
             ]
           ]
-        div [ _class "pt-field-row" ] [ submit [] "save" s.["Save Preferences"] ]
         ]
+      div [ _class "pt-field-row" ] [ submit [] "save" s.["Save Preferences"] ]
       ]
     p [] [
       rawText "** "

@@ -25,16 +25,16 @@ module ReferenceList =
       | HtmlFormat -> s.["HTML Format"].Value
       | PlainTextFormat -> s.["Plain-Text Format"].Value
     seq {
-      yield "", LocalizedString ("", sprintf "%s (%s)" s.["Group Default"].Value defaultType)
-      yield HtmlFormat.code, s.["HTML Format"]
-      yield PlainTextFormat.code, s.["Plain-Text Format"]
+      "", LocalizedString ("", sprintf "%s (%s)" s.["Group Default"].Value defaultType)
+      HtmlFormat.code, s.["HTML Format"]
+      PlainTextFormat.code, s.["Plain-Text Format"]
       }
 
   /// A list of expiration options
   let expirationList (s : IStringLocalizer) includeExpireNow =
-    [ yield Automatic.code, s.["Expire Normally"]
-      yield Manual.code, s.["Request Never Expires"]
-      match includeExpireNow with true -> yield Forced.code, s.["Expire Immediately"] | false -> ()
+    [ Automatic.code, s.["Expire Normally"]
+      Manual.code, s.["Request Never Expires"]
+      match includeExpireNow with true -> Forced.code, s.["Expire Immediately"] | false -> ()
       ]
 
   /// A list of request types
@@ -583,7 +583,7 @@ with
     let asOfSize = Math.Round (float prefs.textFontSize * 0.8, 2)
     [ match this.showHeader with
       | true ->
-          yield div [ _style (sprintf "text-align:center;font-family:%s" prefs.listFonts) ] [
+          div [ _style (sprintf "text-align:center;font-family:%s" prefs.listFonts) ] [
             span [ _style (sprintf "font-size:%ipt;" prefs.headingFontSize) ] [
               strong [] [ str s.["Prayer Requests"].Value ]
               ]
@@ -594,7 +594,7 @@ with
               str (this.date.ToString s.["MMMM d, yyyy"].Value)
               ]
             ]
-          yield br []
+          br []
       | false -> ()
       let typs = ReferenceList.requestTypeList s
       for cat in
@@ -604,7 +604,7 @@ with
           |> Seq.filter (fun c -> 0 < (this.requests |> List.filter (fun req -> req.requestType = c) |> List.length)) do
         let reqs    = this.requestsInCategory cat
         let catName = typs |> List.filter (fun t -> fst t = cat) |> List.head |> snd
-        yield div [ _style "padding-left:10px;padding-bottom:.5em;" ] [
+        div [ _style "padding-left:10px;padding-bottom:.5em;" ] [
           table [ _style (sprintf "font-family:%s;page-break-inside:avoid;" prefs.listFonts) ] [
             tr [] [
               td [ _style (sprintf "font-size:%ipt;color:%s;padding:3px 0;border-top:solid 3px %s;border-bottom:solid 3px %s;font-weight:bold;"
@@ -614,44 +614,43 @@ with
               ]
             ]
           ]
-        yield
-          reqs
-          |> List.map (fun req ->
-              let bullet = match this.isNew req with true -> "circle" | false -> "disc"
-              li [ _style (sprintf "list-style-type:%s;font-family:%s;font-size:%ipt;padding-bottom:.25em;"
-                                      bullet prefs.listFonts prefs.textFontSize) ] [
-                match req.requestor with
-                | Some rqstr when rqstr <> "" ->
-                    yield strong [] [ str rqstr ]
-                    yield rawText " &mdash; "
-                | Some _ -> ()
-                | None -> ()
-                yield rawText req.text
-                match prefs.asOfDateDisplay with
-                | NoDisplay -> ()
-                | ShortDate
-                | LongDate ->
-                    let dt =
-                      match prefs.asOfDateDisplay with
-                      | ShortDate -> req.updatedDate.ToShortDateString ()
-                      | LongDate -> req.updatedDate.ToLongDateString ()
-                      | _ -> ""
-                    yield i [ _style (sprintf "font-size:%.2fpt" asOfSize) ] [
-                      rawText "&nbsp; ("; str s.["as of"].Value; str " "; str dt; rawText ")"
-                      ]
-                ])
+        reqs
+        |> List.map (fun req ->
+            let bullet = match this.isNew req with true -> "circle" | false -> "disc"
+            li [ _style (sprintf "list-style-type:%s;font-family:%s;font-size:%ipt;padding-bottom:.25em;"
+                                    bullet prefs.listFonts prefs.textFontSize) ] [
+              match req.requestor with
+              | Some rqstr when rqstr <> "" ->
+                  strong [] [ str rqstr ]
+                  rawText " &mdash; "
+              | Some _ -> ()
+              | None -> ()
+              rawText req.text
+              match prefs.asOfDateDisplay with
+              | NoDisplay -> ()
+              | ShortDate
+              | LongDate ->
+                  let dt =
+                    match prefs.asOfDateDisplay with
+                    | ShortDate -> req.updatedDate.ToShortDateString ()
+                    | LongDate -> req.updatedDate.ToLongDateString ()
+                    | _ -> ""
+                  i [ _style (sprintf "font-size:%.2fpt" asOfSize) ] [
+                    rawText "&nbsp; ("; str s.["as of"].Value; str " "; str dt; rawText ")"
+                    ]
+              ])
           |> ul []
-        yield br []
+        br []
       ]
     |> renderHtmlNodes
 
   /// Generate this list as plain text
   member this.asText (s : IStringLocalizer) =
     seq {
-      yield this.listGroup.name
-      yield s.["Prayer Requests"].Value
-      yield this.date.ToString s.["MMMM d, yyyy"].Value
-      yield " "
+      this.listGroup.name
+      s.["Prayer Requests"].Value
+      this.date.ToString s.["MMMM d, yyyy"].Value
+      " "
       let typs = ReferenceList.requestTypeList s
       for cat in
           typs
@@ -661,24 +660,23 @@ with
         let reqs   = this.requestsInCategory cat
         let typ    = (typs |> List.filter (fun t -> fst t = cat) |> List.head |> snd).Value
         let dashes = String.replicate (typ.Length + 4) "-"
-        yield dashes
-        yield sprintf @"  %s" (typ.ToUpper ())
-        yield dashes
+        dashes
+        sprintf @"  %s" (typ.ToUpper ())
+        dashes
         for req in reqs do
           let bullet = match this.isNew req with true -> "+" | false -> "-"
           let requestor = match req.requestor with Some r -> sprintf "%s - " r | None -> ""
-          yield
-            match this.listGroup.preferences.asOfDateDisplay with
-            | NoDisplay -> ""
-            | _ ->
-                let dt =
-                  match this.listGroup.preferences.asOfDateDisplay with
-                  | ShortDate -> req.updatedDate.ToShortDateString ()
-                  | LongDate -> req.updatedDate.ToLongDateString ()
-                  | _ -> ""
-                sprintf "  (%s %s)" s.["as of"].Value dt
-            |> sprintf "  %s %s%s%s" bullet requestor (htmlToPlainText req.text)
-        yield " "
+          match this.listGroup.preferences.asOfDateDisplay with
+          | NoDisplay -> ""
+          | _ ->
+              let dt =
+                match this.listGroup.preferences.asOfDateDisplay with
+                | ShortDate -> req.updatedDate.ToShortDateString ()
+                | LongDate -> req.updatedDate.ToLongDateString ()
+                | _ -> ""
+              sprintf "  (%s %s)" s.["as of"].Value dt
+          |> sprintf "  %s %s%s%s" bullet requestor (htmlToPlainText req.text)
+        " "
       }
     |> String.concat "\n"
     |> wordWrap 74

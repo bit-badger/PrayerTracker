@@ -19,7 +19,7 @@ let private findRequest (ctx : HttpContext) reqId =
     | Some _ ->
         let s = Views.I18N.localizer.Force ()
         addError ctx s.["The prayer request you tried to access is not assigned to your group"]
-        return Error (redirectTo false "/unauthorized")
+        return Error (redirectTo false "/web/unauthorized")
     | None -> return Error fourOhFour
     }
 
@@ -121,7 +121,7 @@ let delete reqId : HttpHandler =
           db.PrayerRequests.Remove r |> ignore
           let! _ = db.SaveChangesAsync ()
           addInfo ctx s.["The prayer request was deleted successfully"]
-          return! redirectTo false "/prayer-requests" next ctx
+          return! redirectTo false "/web/prayer-requests" next ctx
       | Error e -> return! e next ctx
       }
 
@@ -139,7 +139,7 @@ let expire reqId : HttpHandler =
           db.UpdateEntry { r with expiration = Forced }
           let! _ = db.SaveChangesAsync ()
           addInfo ctx s.["Successfully {0} prayer request", s.["Expired"].Value.ToLower ()]
-          return! redirectTo false "/prayer-requests" next ctx
+          return! redirectTo false "/web/prayer-requests" next ctx
       | Error e -> return! e next ctx
       }
 
@@ -170,7 +170,7 @@ let list groupId : HttpHandler =
       | Some _ ->
           let s = Views.I18N.localizer.Force ()
           addError ctx s.["The request list for the group you tried to view is not public."]
-          return! redirectTo false "/unauthorized" next ctx
+          return! redirectTo false "/web/unauthorized" next ctx
       | None -> return! fourOhFour next ctx
       }
 
@@ -250,7 +250,7 @@ let restore reqId : HttpHandler =
           db.UpdateEntry { r with expiration = Automatic; updatedDate = DateTime.Now }
           let! _ = db.SaveChangesAsync ()
           addInfo ctx s.["Successfully {0} prayer request", s.["Restored"].Value.ToLower ()]
-          return! redirectTo false "/prayer-requests" next ctx
+          return! redirectTo false "/web/prayer-requests" next ctx
       | Error e -> return! e next ctx
       }
 
@@ -295,7 +295,7 @@ let save : HttpHandler =
               let  s   = Views.I18N.localizer.Force ()
               let  act = match m.isNew () with true -> "Added" | false -> "Updated"
               addInfo ctx s.["Successfully {0} prayer request", s.[act].Value.ToLower ()]
-              return! redirectTo false "/prayer-requests" next ctx
+              return! redirectTo false "/web/prayer-requests" next ctx
           | None -> return! fourOhFour next ctx
       | Error e -> return! bindError e next ctx
       }

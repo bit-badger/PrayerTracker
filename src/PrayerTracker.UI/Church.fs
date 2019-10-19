@@ -8,7 +8,7 @@ open PrayerTracker.ViewModels
 let edit (m : EditChurch) ctx vi =
   let pageTitle = match m.isNew () with true -> "Add a New Church" | false -> "Edit Church"
   let s         = I18N.localizer.Force ()
-  [ form [ _action "/church/save"; _method "post"; _class "pt-center-columns" ] [
+  [ form [ _action "/web/church/save"; _method "post"; _class "pt-center-columns" ] [
       style [ _scoped ]
         [ rawText "#name { width: 20rem; } #city { width: 10rem; } #st { width: 3rem; } #interfaceAddress { width: 30rem; }" ]
       csrfToken ctx
@@ -29,11 +29,11 @@ let edit (m : EditChurch) ctx vi =
         ]
       div [ _class "pt-field-row" ] [
         div [ _class "pt-checkbox-field" ] [
-          input [ yield _type "checkbox"
-                  yield _name "hasInterface"
-                  yield _id "hasInterface"
-                  yield _value "True"
-                  match m.hasInterface with Some x when x -> yield _checked | _ -> () ]
+          input [ _type "checkbox"
+                  _name "hasInterface"
+                  _id "hasInterface"
+                  _value "True"
+                  match m.hasInterface with Some x when x -> _checked | _ -> () ]
           label [ _for "hasInterface" ] [ locStr s.["Has an interface with Virtual Prayer Room"] ]
           ]
         ]
@@ -74,12 +74,12 @@ let maintain (churches : Church list) (stats : Map<string, ChurchStats>) ctx vi 
           churches
           |> List.map (fun ch ->
               let chId      = flatGuid ch.churchId
-              let delAction = sprintf "/church/%s/delete" chId
+              let delAction = sprintf "/web/church/%s/delete" chId
               let delPrompt = s.["Are you sure you want to delete this {0}?  This action cannot be undone.",
                                   sprintf "%s (%s)" (s.["Church"].Value.ToLower ()) ch.name]
               tr [] [
                 td [] [
-                  a [ _href (sprintf "/church/%s/edit" chId); _title s.["Edit This Church"].Value ] [ icon "edit" ]
+                  a [ _href (sprintf "/web/church/%s/edit" chId); _title s.["Edit This Church"].Value ] [ icon "edit" ]
                   a [ _href delAction
                       _title s.["Delete This Church"].Value
                       _onclick (sprintf "return PT.confirmDelete('%s','%A')" delAction delPrompt) ]
@@ -96,7 +96,7 @@ let maintain (churches : Church list) (stats : Map<string, ChurchStats>) ctx vi 
           ]
   [ div [ _class "pt-center-text" ] [
       br []
-      a [ _href (sprintf "/church/%s/edit" emptyGuid); _title s.["Add a New Church"].Value ]
+      a [ _href (sprintf "/web/church/%s/edit" emptyGuid); _title s.["Add a New Church"].Value ]
         [ icon "add_circle"; rawText " &nbsp;"; locStr s.["Add a New Church"] ]
       br []
       br []

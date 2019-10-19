@@ -47,7 +47,7 @@ let language culture : HttpHandler =
           CookieRequestCultureProvider.MakeCookieValue (RequestCulture c),
           CookieOptions (Expires = Nullable<DateTimeOffset> (DateTimeOffset (DateTime.Now.AddYears 1))))
     | _ -> ()
-    let url = match string ctx.Request.Headers.["Referer"] with null | "" -> "/" | r -> r
+    let url = match string ctx.Request.Headers.["Referer"] with null | "" -> "/web/" | r -> r
     redirectTo false url next ctx
 
 
@@ -78,7 +78,7 @@ let logOff : HttpHandler =
     Key.Cookie.logOffCookies |> List.iter ctx.Response.Cookies.Delete
     let s = Views.I18N.localizer.Force ()
     addHtmlInfo ctx s.["Log Off Successful • Have a nice day!"]
-    redirectTo false "/" next ctx
+    redirectTo false "/web/" next ctx
 
 
 /// GET /unauthorized

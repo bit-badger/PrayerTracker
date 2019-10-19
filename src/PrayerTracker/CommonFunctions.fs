@@ -44,12 +44,12 @@ let appVersion =
   sprintf "v%A" v
 #else
   seq {
-    yield sprintf "v%d" v.Major
+    sprintf "v%d" v.Major
     match v.Minor with
-    | 0 -> match v.Build with 0 -> () | _ -> yield sprintf ".0.%d" v.Build
+    | 0 -> match v.Build with 0 -> () | _ -> sprintf ".0.%d" v.Build
     | _ ->
-        yield sprintf ".%d" v.Minor
-        match v.Build with 0 -> () | _ -> yield sprintf ".%d" v.Build
+        sprintf ".%d" v.Minor
+        match v.Build with 0 -> () | _ -> sprintf ".%d" v.Build
     }
   |> String.concat ""
 #endif
@@ -256,17 +256,17 @@ let requireAccess level : HttpHandler =
           | false ->
               let s = Views.I18N.localizer.Force ()
               addError ctx s.["You are not authorized to view the requested page."]
-              return! redirectTo false "/unauthorized" next ctx
+              return! redirectTo false "/web/unauthorized" next ctx
       | _ when level |> List.contains User ->
           // Redirect to the user log on page
           ctx.Session.SetString (Key.Session.redirectUrl, ctx.Request.GetEncodedUrl ())
-          return! redirectTo false "/user/log-on" next ctx
+          return! redirectTo false "/web/user/log-on" next ctx
       | _ when level |> List.contains Group ->
           // Redirect to the small group log on page
           ctx.Session.SetString (Key.Session.redirectUrl, ctx.Request.GetEncodedUrl ())
-          return! redirectTo false "/small-group/log-on" next ctx
+          return! redirectTo false "/web/small-group/log-on" next ctx
       | _ ->
           let s = Views.I18N.localizer.Force ()
           addError ctx s.["You are not authorized to view the requested page."]
-          return! redirectTo false "/unauthorized" next ctx
+          return! redirectTo false "/web/unauthorized" next ctx
       }

@@ -36,7 +36,7 @@ let delete churchId : HttpHandler =
           addInfo ctx
             s.["The church {0} and its {1} small groups (with {2} prayer request(s)) were deleted successfully; revoked access from {3} user(s)",
                 ch.name, stats.smallGroups, stats.prayerRequests, stats.users]
-          return! redirectTo false "/churches" next ctx
+          return! redirectTo false "/web/churches" next ctx
       | None -> return! fourOhFour next ctx
       }
 
@@ -71,17 +71,14 @@ let maintain : HttpHandler =
   requireAccess [ Admin ]
   >=> fun next ctx ->
     let startTicks = DateTime.Now.Ticks
+    let await      = Async.AwaitTask >> Async.RunSynchronously
     let db         = ctx.dbContext ()
     task {
       let! churches = db.AllChurches ()
-      let! stats =
-        churches
-        |> Seq.ofList
-        |> Seq.map (fun c -> findStats db c.churchId)
-        |> Task.WhenAll
+      let  stats    = churches |> List.map (fun c -> await (findStats db c.churchId))
       return!
         viewInfo ctx startTicks
-        |> Views.Church.maintain churches (stats |> Map.ofArray) ctx
+        |> Views.Church.maintain churches (stats |> Map.ofList) ctx
         |> renderHtml next ctx
       }
 
@@ -108,7 +105,7 @@ let save : HttpHandler =
               let  s   = Views.I18N.localizer.Force ()
               let  act = s.[match m.isNew () with true -> "Added" | _ -> "Updated"].Value.ToLower ()
               addInfo ctx s.["Successfully {0} church “{1}”", act, m.name]
-              return! redirectTo false "/churches" next ctx
+              return! redirectTo false "/web/churches" next ctx
           | None -> return! fourOhFour next ctx
       | Error e -> return! bindError e next ctx
       }
