@@ -163,9 +163,8 @@ type AppDbContext with
       """ SELECT * FROM pt."PrayerRequest" WHERE "SmallGroupId" = {0} AND "Text" ILIKE {1}
         UNION
           SELECT * FROM pt."PrayerRequest" WHERE "SmallGroupId" = {0} AND COALESCE("Requestor", '') ILIKE {1}"""
-      |> RawSqlString
     let like = sprintf "%%%s%%"
-    this.PrayerRequests.FromSql(sql, grp.smallGroupId, like searchTerm).AsNoTracking ()
+    this.PrayerRequests.FromSqlRaw(sql, grp.smallGroupId, like searchTerm).AsNoTracking ()
     |> reqSort grp.preferences.requestSort
     |> function
     | q ->

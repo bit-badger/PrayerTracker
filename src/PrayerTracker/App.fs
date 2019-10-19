@@ -15,6 +15,7 @@ module Configure =
   open Microsoft.EntityFrameworkCore
   open Microsoft.Extensions.Configuration
   open Microsoft.Extensions.DependencyInjection
+  open Microsoft.Extensions.Hosting
   open Microsoft.Extensions.Localization
   open Microsoft.Extensions.Logging
   open Microsoft.Extensions.Options
@@ -150,7 +151,7 @@ module Configure =
   
   /// Configure logging
   let logging (log : ILoggingBuilder) =
-    let env = log.Services.BuildServiceProvider().GetService<IHostingEnvironment> ()
+    let env = log.Services.BuildServiceProvider().GetService<IWebHostEnvironment> ()
     match env.IsDevelopment () with
     | true -> log
     | false -> log.AddFilter (fun l -> l > LogLevel.Information)
@@ -158,8 +159,7 @@ module Configure =
     |> ignore
   
   let app (app : IApplicationBuilder) =
-    let env = app.ApplicationServices.GetRequiredService<IHostingEnvironment>()
-    let log = app.ApplicationServices.GetRequiredService<ILoggerFactory>()
+    let env = app.ApplicationServices.GetRequiredService<IWebHostEnvironment>()
     (match env.IsDevelopment () with
      | true ->
         app.UseDeveloperExceptionPage ()

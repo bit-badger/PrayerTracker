@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26228.4
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29411.108
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "PrayerTracker", "PrayerTracker\PrayerTracker.fsproj", "{63780D3F-D811-4BFB-9FB0-C28A83CCE28F}"
 EndProject
@@ -10,6 +10,11 @@ EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "PrayerTracker.Tests", "PrayerTracker.Tests\PrayerTracker.Tests.fsproj", "{786E7BE9-9370-4117-B194-02CC2F71AA09}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "PrayerTracker.Data", "PrayerTracker.Data\PrayerTracker.Data.fsproj", "{2B5BA107-9BDA-4A1D-A9AF-AFEE6BF12270}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{B290BA27-C8B8-44F3-BF01-D103302D815F}"
+	ProjectSection(SolutionItems) = preProject
+		Directory.Build.props = Directory.Build.props
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

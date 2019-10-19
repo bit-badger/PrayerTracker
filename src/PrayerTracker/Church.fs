@@ -71,17 +71,14 @@ let maintain : HttpHandler =
   requireAccess [ Admin ]
   >=> fun next ctx ->
     let startTicks = DateTime.Now.Ticks
+    let await      = Async.AwaitTask >> Async.RunSynchronously
     let db         = ctx.dbContext ()
     task {
       let! churches = db.AllChurches ()
-      let! stats =
-        churches
-        |> Seq.ofList
-        |> Seq.map (fun c -> findStats db c.churchId)
-        |> Task.WhenAll
+      let  stats    = churches |> List.map (fun c -> await (findStats db c.churchId))
       return!
         viewInfo ctx startTicks
-        |> Views.Church.maintain churches (stats |> Map.ofArray) ctx
+        |> Views.Church.maintain churches (stats |> Map.ofList) ctx
         |> renderHtml next ctx
       }
 
