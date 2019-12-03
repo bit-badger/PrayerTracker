@@ -8,10 +8,9 @@ open Microsoft.Extensions.Localization
 open MimeKit
 open MimeKit.Text
 open PrayerTracker.Entities
-open System
 
-/// The e-mail address from which e-mail is sent (must match Google account)
-let private fromAddress = "prayer@djs-consulting.com"
+/// The e-mail address from which e-mail is sent
+let private fromAddress = "prayer@bitbadger.solutions"
 
 /// Get an SMTP client connection
 // FIXME: make host configurable
