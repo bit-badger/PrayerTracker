@@ -142,19 +142,19 @@ let htmlString (x : LocalizedString) =
 
 /// Add an error message to the session
 let addError ctx msg =
-  addUserMessage ctx { UserMessage.Error with text = htmlLocString msg }
+  addUserMessage ctx { UserMessage.error with text = htmlLocString msg }
 
 /// Add an informational message to the session
 let addInfo ctx msg =
-  addUserMessage ctx { UserMessage.Info with text = htmlLocString msg }
+  addUserMessage ctx { UserMessage.info with text = htmlLocString msg }
 
 /// Add an informational HTML message to the session
 let addHtmlInfo ctx msg =
-  addUserMessage ctx { UserMessage.Info with text = htmlString msg }
+  addUserMessage ctx { UserMessage.info with text = htmlString msg }
   
 /// Add a warning message to the session
 let addWarning ctx msg =
-  addUserMessage ctx { UserMessage.Warning with text = htmlLocString msg }
+  addUserMessage ctx { UserMessage.warning with text = htmlLocString msg }
 
 
 /// A level of required access

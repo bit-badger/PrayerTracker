@@ -660,19 +660,19 @@ let userLogOnTests =
 let userMessageTests =
   testList "UserMessage" [
     test "Error is constructed properly" {
-      let msg = UserMessage.Error
+      let msg = UserMessage.error
       Expect.equal msg.level "ERROR" "Incorrect message level"
       Expect.equal msg.text HtmlString.Empty "Text should have been blank"
       Expect.isNone msg.description "Description should have been None"
       }
     test "Warning is constructed properly" {
-      let msg = UserMessage.Warning
+      let msg = UserMessage.warning
       Expect.equal msg.level "WARNING" "Incorrect message level"
       Expect.equal msg.text HtmlString.Empty "Text should have been blank"
       Expect.isNone msg.description "Description should have been None"
       }
     test "Info is constructed properly" {
-      let msg = UserMessage.Info
+      let msg = UserMessage.info
       Expect.equal msg.level "Info" "Incorrect message level"
       Expect.equal msg.text HtmlString.Empty "Text should have been blank"
       Expect.isNone msg.description "Description should have been None"

@@ -18,7 +18,7 @@ open System.Threading.Tasks
 let private setUserCookie (ctx : HttpContext) pwHash =
   ctx.Response.Cookies.Append (
     Key.Cookie.user,
-    { Id = (currentUser ctx).userId; GroupId = (currentGroup ctx).smallGroupId; PasswordHash = pwHash }.toPayload(),
+    { Id = (currentUser ctx).userId; GroupId = (currentGroup ctx).smallGroupId; PasswordHash = pwHash }.toPayload (),
     autoRefresh)
 
 /// Retrieve a user from the database by password
@@ -26,26 +26,21 @@ let private setUserCookie (ctx : HttpContext) pwHash =
 let private findUserByPassword m (db : AppDbContext) =
   task {
     match! db.TryUserByEmailAndGroup m.emailAddress m.smallGroupId with
-    | Some u ->
-        match u.salt with
-        | Some salt ->
-            // Already upgraded; match = success
-            let pwHash = pbkdf2Hash salt m.password
-            match u.passwordHash = pwHash with
-            | true -> return Some { u with passwordHash = ""; salt = None; smallGroups = List<UserSmallGroup>() }, pwHash
-            | _ -> return None, ""
-        | _ ->
-            // Not upgraded; check against old hash
-            match u.passwordHash = sha1Hash m.password with
-            | true ->
-                // Upgrade 'em!
-                let salt     = Guid.NewGuid ()
-                let pwHash   = pbkdf2Hash salt m.password
-                let upgraded = { u with salt = Some salt; passwordHash = pwHash }
-                db.UpdateEntry upgraded
-                let! _ = db.SaveChangesAsync ()
-                return Some { u with passwordHash = ""; salt = None; smallGroups = List<UserSmallGroup>() }, pwHash
-            | _ -> return None, ""
+    | Some u when Option.isSome u.salt ->
+        // Already upgraded; match = success
+        let pwHash = pbkdf2Hash (Option.get u.salt) m.password
+        match u.passwordHash = pwHash with
+        | true -> return Some { u with passwordHash = ""; salt = None; smallGroups = List<UserSmallGroup>() }, pwHash
+        | _ -> return None, ""
+    | Some u when u.passwordHash = sha1Hash m.password ->
+        // Not upgraded, but password is good; upgrade 'em!
+        // Upgrade 'em!
+        let salt     = Guid.NewGuid ()
+        let pwHash   = pbkdf2Hash salt m.password
+        let upgraded = { u with salt = Some salt; passwordHash = pwHash }
+        db.UpdateEntry upgraded
+        let! _ = db.SaveChangesAsync ()
+        return Some { u with passwordHash = ""; salt = None; smallGroups = List<UserSmallGroup>() }, pwHash
     | _ -> return None, ""
     }
 
@@ -56,8 +51,7 @@ let changePassword : HttpHandler =
   >=> validateCSRF
   >=> fun next ctx ->
     task {
-      let! result = ctx.TryBindFormAsync<ChangePassword> ()
-      match result with
+      match! ctx.TryBindFormAsync<ChangePassword> () with
       | Ok m ->
           let  s      = Views.I18N.localizer.Force ()
           let  db     = ctx.dbContext ()
@@ -101,14 +95,13 @@ let delete userId : HttpHandler =
   >=> validateCSRF
   >=> fun next ctx ->
     task {
-      let  db   = ctx.dbContext ()
-      let! user = db.TryUserById userId
-      match user with
-      | Some u ->
-          db.RemoveEntry u
+      let db = ctx.dbContext ()
+      match! db.TryUserById userId with
+      | Some user ->
+          db.RemoveEntry user
           let! _ = db.SaveChangesAsync ()
           let  s = Views.I18N.localizer.Force ()
-          addInfo ctx s.["Successfully deleted user {0}", u.fullName]
+          addInfo ctx s.["Successfully deleted user {0}", user.fullName]
           return! redirectTo false "/web/users" next ctx
       | _ -> return! fourOhFour next ctx
       }
@@ -120,8 +113,7 @@ let doLogOn : HttpHandler =
   >=> validateCSRF
   >=> fun next ctx ->
     task {
-      let! result = ctx.TryBindFormAsync<UserLogOn> ()
-      match result with
+      match! ctx.TryBindFormAsync<UserLogOn> () with
       | Ok m -> 
           let  db          = ctx.dbContext ()
           let  s           = Views.I18N.localizer.Force ()
@@ -140,7 +132,7 @@ let doLogOn : HttpHandler =
                 | Some x -> x
             | _ ->
                 let grpName = match grp with Some g -> g.name | _ -> "N/A"
-                { UserMessage.Error with
+                { UserMessage.error with
                     text        = htmlLocString s.["Invalid credentials - log on unsuccessful"]
                     description =
                       [ s.["This is likely due to one of the following reasons"].Value
@@ -175,12 +167,11 @@ let edit (userId : UserId) : HttpHandler =
             |> Views.User.edit EditUser.empty ctx
             |> renderHtml next ctx
       | false ->
-          let! user = ctx.dbContext().TryUserById userId
-          match user with
-          | Some u ->
+          match! ctx.dbContext().TryUserById userId with
+          | Some user ->
               return!
                 viewInfo ctx startTicks
-                |> Views.User.edit (EditUser.fromUser u) ctx
+                |> Views.User.edit (EditUser.fromUser user) ctx
                 |> renderHtml next ctx
           | _ -> return! fourOhFour next ctx
       }
@@ -236,8 +227,7 @@ let save : HttpHandler =
   >=> validateCSRF
   >=> fun next ctx ->
     task {
-      let! result = ctx.TryBindFormAsync<EditUser> ()
-      match result with
+      match! ctx.TryBindFormAsync<EditUser> () with
       | Ok m ->
           let  db   = ctx.dbContext ()
           let! user =
@@ -257,17 +247,18 @@ let save : HttpHandler =
             | _ -> user
           match saltedUser with
           | Some u ->
-              m.populateUser u (pbkdf2Hash (Option.get u.salt))
-              |> (match m.isNew () with true -> db.AddEntry | false -> db.UpdateEntry)
+              let updatedUser = m.populateUser u (pbkdf2Hash (Option.get u.salt))
+              updatedUser |> (match m.isNew () with true -> db.AddEntry | false -> db.UpdateEntry)
               let! _ = db.SaveChangesAsync ()
               let  s = Views.I18N.localizer.Force ()
               match m.isNew () with
               | true ->
                   let h = CommonFunctions.htmlString
-                  { UserMessage.Info with
+                  { UserMessage.info with
                       text = h s.["Successfully {0} user", s.["Added"].Value.ToLower ()]
                       description = 
-                        h s.[ "Please select at least one group for which this user ({0}) is authorized", u.fullName]
+                        h s.["Please select at least one group for which this user ({0}) is authorized",
+                              updatedUser.fullName]
                         |> Some
                     }
                   |> addUserMessage ctx
@@ -286,8 +277,7 @@ let saveGroups : HttpHandler =
   >=> validateCSRF
   >=> fun next ctx ->
     task {
-      let! result = ctx.TryBindFormAsync<AssignGroups> ()
-      match result with
+      match! ctx.TryBindFormAsync<AssignGroups> () with
       | Ok m ->
           let s = Views.I18N.localizer.Force ()
           match Seq.length m.smallGroups with
@@ -295,21 +285,20 @@ let saveGroups : HttpHandler =
               addError ctx s.["You must select at least one group to assign"]
               return! redirectTo false (sprintf "/web/user/%s/small-groups" (flatGuid m.userId)) next ctx
           | _ ->
-              let  db   = ctx.dbContext ()
-              let! user = db.TryUserByIdWithGroups m.userId
-              match user with
-              | Some u ->
+              let db = ctx.dbContext ()
+              match! db.TryUserByIdWithGroups m.userId with
+              | Some user ->
                   let grps =
                     m.smallGroups.Split ','
                     |> Array.map Guid.Parse
                     |> List.ofArray
-                  u.smallGroups
+                  user.smallGroups
                   |> Seq.filter (fun x -> not (grps |> List.exists (fun y -> y = x.smallGroupId)))
                   |> db.UserGroupXref.RemoveRange
                   grps
                   |> Seq.ofList
-                  |> Seq.filter (fun x -> not (u.smallGroups |> Seq.exists (fun y -> y.smallGroupId = x)))
-                  |> Seq.map (fun x -> { UserSmallGroup.empty with userId = u.userId; smallGroupId = x })
+                  |> Seq.filter (fun x -> not (user.smallGroups |> Seq.exists (fun y -> y.smallGroupId = x)))
+                  |> Seq.map (fun x -> { UserSmallGroup.empty with userId = user.userId; smallGroupId = x })
                   |> List.ofSeq
                   |> List.iter db.AddEntry
                   let! _ = db.SaveChangesAsync ()
@@ -327,14 +316,13 @@ let smallGroups userId : HttpHandler =
     let startTicks = DateTime.Now.Ticks
     let db         = ctx.dbContext ()
     task {
-      let! user = db.TryUserByIdWithGroups userId
-      match user with
-      | Some u ->
+      match! db.TryUserByIdWithGroups userId with
+      | Some user ->
           let! grps      = db.GroupList ()
-          let  curGroups = u.smallGroups |> Seq.map (fun g -> flatGuid g.smallGroupId) |> List.ofSeq
+          let  curGroups = user.smallGroups |> Seq.map (fun g -> flatGuid g.smallGroupId) |> List.ofSeq
           return! 
             viewInfo ctx startTicks
-            |> Views.User.assignGroups (AssignGroups.fromUser u) grps curGroups ctx
+            |> Views.User.assignGroups (AssignGroups.fromUser user) grps curGroups ctx
             |> renderHtml next ctx
       | None -> return! fourOhFour next ctx
       }

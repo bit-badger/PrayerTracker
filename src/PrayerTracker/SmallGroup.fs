@@ -16,7 +16,7 @@ open System.Threading.Tasks
 /// Set a small group "Remember Me" cookie
 let private setGroupCookie (ctx : HttpContext) pwHash =
   ctx.Response.Cookies.Append
-    (Key.Cookie.group, { GroupId = (currentGroup ctx).smallGroupId; PasswordHash = pwHash }.toPayload(), autoRefresh)
+    (Key.Cookie.group, { GroupId = (currentGroup ctx).smallGroupId; PasswordHash = pwHash }.toPayload (), autoRefresh)
 
 
 /// GET /small-group/announcement
@@ -37,16 +37,15 @@ let delete groupId : HttpHandler =
     let db = ctx.dbContext ()
     let s  = Views.I18N.localizer.Force ()
     task {
-      let! grp = db.TryGroupById groupId
-      match grp with
-      | Some g ->
+      match! db.TryGroupById groupId with
+      | Some grp ->
           let! reqs = db.CountRequestsBySmallGroup groupId
           let! usrs = db.CountUsersBySmallGroup    groupId
-          db.RemoveEntry g
+          db.RemoveEntry grp
           let! _ = db.SaveChangesAsync ()
           addInfo ctx
             s.["The group {0} and its {1} prayer request(s) were deleted successfully; revoked access from {2} user(s)",
-                 g.name, reqs, usrs]
+                 grp.name, reqs, usrs]
           return! redirectTo false "/web/small-groups" next ctx
       | None -> return! fourOhFour next ctx
       }
@@ -60,12 +59,11 @@ let deleteMember memberId : HttpHandler =
     let db = ctx.dbContext ()
     let s  = Views.I18N.localizer.Force ()
     task {
-      let! mbr = db.TryMemberById memberId
-      match mbr with
-      | Some m when m.smallGroupId = (currentGroup ctx).smallGroupId ->
-          db.RemoveEntry m
+      match! db.TryMemberById memberId with
+      | Some mbr when mbr.smallGroupId = (currentGroup ctx).smallGroupId ->
+          db.RemoveEntry mbr
           let! _ = db.SaveChangesAsync ()
-          addHtmlInfo ctx s.["The group member &ldquo;{0}&rdquo; was deleted successfully", m.memberName]
+          addHtmlInfo ctx s.["The group member &ldquo;{0}&rdquo; was deleted successfully", mbr.memberName]
           return! redirectTo false "/web/small-group/members" next ctx
       | Some _
       | None -> return! fourOhFour next ctx
@@ -87,12 +85,11 @@ let edit (groupId : SmallGroupId) : HttpHandler =
             |> Views.SmallGroup.edit EditSmallGroup.empty churches ctx
             |> renderHtml next ctx
       | false ->
-          let! grp = db.TryGroupById groupId
-          match grp with
-          | Some g ->
+          match! db.TryGroupById groupId with
+          | Some grp ->
               return!
                 viewInfo ctx startTicks
-                |> Views.SmallGroup.edit (EditSmallGroup.fromGroup g) churches ctx
+                |> Views.SmallGroup.edit (EditSmallGroup.fromGroup grp) churches ctx
                 |> renderHtml next ctx
           | None -> return! fourOhFour next ctx
       }
@@ -115,12 +112,11 @@ let editMember (memberId : MemberId) : HttpHandler =
             |> Views.SmallGroup.editMember EditMember.empty typs ctx
             |> renderHtml next ctx
       | false ->
-          let! mbr = db.TryMemberById memberId
-          match mbr with
-          | Some m when m.smallGroupId = grp.smallGroupId ->
+          match! db.TryMemberById memberId with
+          | Some mbr when mbr.smallGroupId = grp.smallGroupId ->
               return!
                 viewInfo ctx startTicks
-                |> Views.SmallGroup.editMember (EditMember.fromMember m) typs ctx
+                |> Views.SmallGroup.editMember (EditMember.fromMember mbr) typs ctx
                 |> renderHtml next ctx
           | Some _
           | None -> return! fourOhFour next ctx
@@ -148,16 +144,14 @@ let logOnSubmit : HttpHandler =
   >=> validateCSRF
   >=> fun next ctx ->
     task {
-      let! result = ctx.TryBindFormAsync<GroupLogOn> ()
-      match result with
+      match! ctx.TryBindFormAsync<GroupLogOn> () with
       | Ok m ->
-        let  s   = Views.I18N.localizer.Force ()
-        let! grp = ctx.dbContext().TryGroupLogOnByPassword m.smallGroupId m.password
-        match grp with
-        | Some _ ->
-            ctx.Session.SetSmallGroup grp
+        let s = Views.I18N.localizer.Force ()
+        match! ctx.dbContext().TryGroupLogOnByPassword m.smallGroupId m.password with
+        | Some grp ->
+            (Some >> ctx.Session.SetSmallGroup) grp
             match m.rememberMe with
-            | Some x when x -> (setGroupCookie ctx << Utils.sha1Hash) m.password
+            | Some x when x -> (setGroupCookie ctx << sha1Hash) m.password
             | _ -> ()
             addInfo ctx s.["Log On Successful • Welcome to {0}", s.["PrayerTracker"]]
             return! redirectTo false "/web/prayer-requests/view" next ctx
@@ -251,22 +245,21 @@ let save : HttpHandler =
   >=> fun next ctx ->
     let s = Views.I18N.localizer.Force ()
     task {
-      let! result = ctx.TryBindFormAsync<EditSmallGroup> ()
-      match result with
+      match! ctx.TryBindFormAsync<EditSmallGroup> () with
       | Ok m ->
           let db = ctx.dbContext ()
-          let! grp =
+          let! group =
             match m.isNew () with
             | true -> Task.FromResult<SmallGroup option>(Some { SmallGroup.empty with smallGroupId = Guid.NewGuid () })
             | false -> db.TryGroupById m.smallGroupId
-          match grp with
-          | Some g ->
-              m.populateGroup g
+          match group with
+          | Some grp ->
+              m.populateGroup grp
               |> function
-              | g when m.isNew () ->
-                  db.AddEntry g
-                  db.AddEntry { g.preferences with smallGroupId = g.smallGroupId }
-              | g -> db.UpdateEntry g
+              | grp when m.isNew () ->
+                  db.AddEntry grp
+                  db.AddEntry { grp.preferences with smallGroupId = grp.smallGroupId }
+              | grp -> db.UpdateEntry grp
               let! _ = db.SaveChangesAsync ()
               let act = s.[match m.isNew () with true -> "Added" | false -> "Updated"].Value.ToLower ()
               addHtmlInfo ctx s.["Successfully {0} group “{1}”", act, m.name]
@@ -282,8 +275,7 @@ let saveMember : HttpHandler =
   >=> validateCSRF
   >=> fun next ctx ->
     task {
-      let! result = ctx.TryBindFormAsync<EditMember> ()
-      match result with
+      match! ctx.TryBindFormAsync<EditMember> () with
       | Ok m ->
           let  grp  = currentGroup ctx
           let  db   = ctx.dbContext ()
@@ -322,21 +314,19 @@ let savePreferences : HttpHandler =
   >=> validateCSRF
   >=> fun next ctx ->
     task {
-      let! result = ctx.TryBindFormAsync<EditPreferences> ()
-      match result with
+      match! ctx.TryBindFormAsync<EditPreferences> () with
       | Ok m ->
           let db = ctx.dbContext ()
           // Since the class is stored in the session, we'll use an intermediate instance to persist it; once that
           // works, we can repopulate the session instance.  That way, if the update fails, the page should still show
           // the database values, not the then out-of-sync session ones.
-          let! grp = db.TryGroupById (currentGroup ctx).smallGroupId
-          match grp with
-          | Some g ->
-              let prefs = m.populatePreferences g.preferences
+          match! db.TryGroupById (currentGroup ctx).smallGroupId with
+          | Some grp ->
+              let prefs = m.populatePreferences grp.preferences
               db.UpdateEntry prefs
               let! _ = db.SaveChangesAsync ()
               // Refresh session instance
-              ctx.Session.SetSmallGroup <| Some { g with preferences = prefs }
+              ctx.Session.SetSmallGroup <| Some { grp with preferences = prefs }
               let s = Views.I18N.localizer.Force ()
               addInfo ctx s.["Group preferences updated successfully"]
               return! redirectTo false "/web/small-group/preferences" next ctx
@@ -352,8 +342,7 @@ let sendAnnouncement : HttpHandler =
   >=> fun next ctx ->
     let startTicks = DateTime.Now.Ticks
     task {
-      let! result = ctx.TryBindFormAsync<Announcement> ()
-      match result with
+      match! ctx.TryBindFormAsync<Announcement> () with
       | Ok m ->
           let grp = currentGroup ctx
           let usr = currentUser ctx

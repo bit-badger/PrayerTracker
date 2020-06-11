@@ -45,7 +45,8 @@ module ReferenceList =
       Expecting,       s.["Expecting"]
       Announcement,    s.["Announcements"]
       ]
-    
+
+// fsharplint:disable RecordFieldNames MemberNames
 
 /// This is used to create a message that is displayed to the user
 [<NoComparison; NoEquality>]
@@ -57,25 +58,25 @@ type UserMessage =
     /// The description (further information)
     description : HtmlString option
     }
-  with
-    /// Error message template
-    static member Error =
-      { level       = "ERROR"
-        text        = HtmlString.Empty
-        description = None
-        }
-    /// Warning message template
-    static member Warning =
-      { level       = "WARNING"
-        text        = HtmlString.Empty
-        description = None
-        }
-    /// Info message template
-    static member Info =
-      { level       = "Info"
-        text        = HtmlString.Empty
-        description = None
-        }
+module UserMessage =
+  /// Error message template
+  let error =
+    { level       = "ERROR"
+      text        = HtmlString.Empty
+      description = None
+      }
+  /// Warning message template
+  let warning =
+    { level       = "WARNING"
+      text        = HtmlString.Empty
+      description = None
+      }
+  /// Info message template
+  let info =
+    { level       = "Info"
+      text        = HtmlString.Empty
+      description = None
+      }
 
 
 /// View model required by the layout template, given as first parameter for all pages in PrayerTracker
@@ -98,18 +99,18 @@ type AppViewInfo =
     /// The currently logged on small group, if there is one
     group        : SmallGroup option
     }
-  with
-    /// A fresh version that can be populated to process the current request
-    static member fresh =
-      { style        = []
-        script       = []
-        helpLink     = None
-        messages     = []
-        version      = ""
-        requestStart = DateTime.Now.Ticks
-        user         = None
-        group        = None
-        }
+module AppViewInfo =
+  /// A fresh version that can be populated to process the current request
+  let fresh =
+    { style        = []
+      script       = []
+      helpLink     = None
+      messages     = []
+      version      = ""
+      requestStart = DateTime.Now.Ticks
+      user         = None
+      group        = None
+      }
 
 
 /// Form for sending a small group or system-wide announcement
@@ -139,9 +140,9 @@ type AssignGroups =
     /// The Ids of the small groups to which the user is authorized
     smallGroups : string
     }
-with
+module AssignGroups =
   /// Create an instance of this form from an existing user
-  static member fromUser (u : User) =
+  let fromUser (u : User) =
     { userId      = u.userId
       userName    = u.fullName
       smallGroups = ""
@@ -177,24 +178,6 @@ type EditChurch =
     interfaceAddress : string option
     }
 with
-  /// Create an instance from an existing church
-  static member fromChurch (ch : Church) =
-    { churchId = ch.churchId
-      name     = ch.name
-      city     = ch.city
-      st       = ch.st
-      hasInterface = match ch.hasInterface with true -> Some true | false -> None
-      interfaceAddress = ch.interfaceAddress
-      }
-  /// An instance to use for adding churches
-  static member empty =
-    { churchId         = Guid.Empty
-      name             = ""
-      city             = ""
-      st               = ""
-      hasInterface     = None
-      interfaceAddress = None
-      }
   /// Is this a new church?
   member this.isNew () = Guid.Empty = this.churchId
   /// Populate a church from this form
@@ -206,7 +189,26 @@ with
         hasInterface     = match this.hasInterface with Some x -> x | None -> false
         interfaceAddress = match this.hasInterface with Some x when x -> this.interfaceAddress | _ -> None
       }
-  
+module EditChurch =
+  /// Create an instance from an existing church
+  let fromChurch (ch : Church) =
+    { churchId = ch.churchId
+      name     = ch.name
+      city     = ch.city
+      st       = ch.st
+      hasInterface = match ch.hasInterface with true -> Some true | false -> None
+      interfaceAddress = ch.interfaceAddress
+      }
+  /// An instance to use for adding churches
+  let empty =
+    { churchId         = Guid.Empty
+      name             = ""
+      city             = ""
+      st               = ""
+      hasInterface     = None
+      interfaceAddress = None
+      }
+
   
 /// Form for adding/editing small group members
 [<CLIMutable; NoComparison; NoEquality>]
@@ -221,22 +223,23 @@ type EditMember =
     emailType    : string
     }
 with
+  /// Is this a new member?
+  member this.isNew () = Guid.Empty = this.memberId
+module EditMember =
   /// Create an instance from an existing member
-  static member fromMember (m : Member) =
+  let fromMember (m : Member) =
     { memberId     = m.memberId
       memberName   = m.memberName
       emailAddress = m.email
       emailType    = match m.format with Some f -> f | None -> ""
     }
   /// An empty instance
-  static member empty =
+  let empty =
     { memberId     = Guid.Empty
       memberName   = ""
       emailAddress = ""
       emailType    = ""
     }
-  /// Is this a new member?
-  member this.isNew () = Guid.Empty = this.memberId
 
 
 /// This form allows the user to set class preferences
@@ -282,32 +285,6 @@ type EditPreferences =
     asOfDate            : string
     }
 with
-  static member fromPreferences (prefs : ListPreferences) =
-    let setType (x : string) = match x.StartsWith "#" with true -> "RGB" | false -> "Name"
-    { expireDays          = prefs.daysToExpire
-      daysToKeepNew       = prefs.daysToKeepNew
-      longTermUpdateWeeks = prefs.longTermUpdateWeeks
-      requestSort         = prefs.requestSort.code
-      emailFromName       = prefs.emailFromName
-      emailFromAddress    = prefs.emailFromAddress
-      defaultEmailType    = prefs.defaultEmailType.code
-      headingLineType     = setType prefs.lineColor
-      headingLineColor    = prefs.lineColor
-      headingTextType     = setType prefs.headingColor
-      headingTextColor    = prefs.headingColor
-      listFonts           = prefs.listFonts
-      headingFontSize     = prefs.headingFontSize
-      listFontSize        = prefs.textFontSize
-      timeZone            = prefs.timeZoneId
-      groupPassword       = Some prefs.groupPassword
-      pageSize            = prefs.pageSize
-      asOfDate            = prefs.asOfDateDisplay.code
-      listVisibility      =
-        match true with 
-        | _ when prefs.isPublic -> RequestVisibility.``public``
-        | _ when prefs.groupPassword = "" -> RequestVisibility.``private``
-        | _ -> RequestVisibility.passwordProtected
-      }
   /// Set the properties of a small group based on the form's properties
   member this.populatePreferences (prefs : ListPreferences) =
     let isPublic, grpPw =
@@ -335,6 +312,34 @@ with
         pageSize            = this.pageSize
         asOfDateDisplay     = AsOfDateDisplay.fromCode this.asOfDate
       }
+module EditPreferences =
+  /// Populate an edit form from existing preferences
+  let fromPreferences (prefs : ListPreferences) =
+    let setType (x : string) = match x.StartsWith "#" with true -> "RGB" | false -> "Name"
+    { expireDays          = prefs.daysToExpire
+      daysToKeepNew       = prefs.daysToKeepNew
+      longTermUpdateWeeks = prefs.longTermUpdateWeeks
+      requestSort         = prefs.requestSort.code
+      emailFromName       = prefs.emailFromName
+      emailFromAddress    = prefs.emailFromAddress
+      defaultEmailType    = prefs.defaultEmailType.code
+      headingLineType     = setType prefs.lineColor
+      headingLineColor    = prefs.lineColor
+      headingTextType     = setType prefs.headingColor
+      headingTextColor    = prefs.headingColor
+      listFonts           = prefs.listFonts
+      headingFontSize     = prefs.headingFontSize
+      listFontSize        = prefs.textFontSize
+      timeZone            = prefs.timeZoneId
+      groupPassword       = Some prefs.groupPassword
+      pageSize            = prefs.pageSize
+      asOfDate            = prefs.asOfDateDisplay.code
+      listVisibility      =
+        match true with 
+        | _ when prefs.isPublic -> RequestVisibility.``public``
+        | _ when prefs.groupPassword = "" -> RequestVisibility.``private``
+        | _ -> RequestVisibility.passwordProtected
+      }
 
 
 /// Form for adding or editing prayer requests
@@ -357,8 +362,11 @@ type EditRequest =
     text           : string
     }
 with
+  /// Is this a new request?
+  member this.isNew () = Guid.Empty = this.requestId
+module EditRequest =
   /// An empty instance to use for new requests
-  static member empty =
+  let empty =
     { requestId      = Guid.Empty
       requestType    = CurrentRequest.code
       enteredDate    = None
@@ -368,16 +376,14 @@ with
       text           = ""
       }
   /// Create an instance from an existing request
-  static member fromRequest req =
-    { EditRequest.empty with
+  let fromRequest req =
+    { empty with
         requestId   = req.prayerRequestId
         requestType = req.requestType.code
         requestor   = req.requestor
         expiration  = req.expiration.code
         text        = req.text
       }
-  /// Is this a new request?
-  member this.isNew () = Guid.Empty = this.requestId
 
 
 /// Form for the admin-level editing of small groups
@@ -391,18 +397,6 @@ type EditSmallGroup =
     churchId     : ChurchId
     }
 with
-  /// Create an instance from an existing small group
-  static member fromGroup (g : SmallGroup) =
-    { smallGroupId = g.smallGroupId
-      name         = g.name
-      churchId     = g.churchId
-    }
-  /// An empty instance (used when adding a new group)
-  static member empty =
-    { smallGroupId = Guid.Empty
-      name         = ""
-      churchId     = Guid.Empty
-      }
   /// Is this a new small group?
   member this.isNew () = Guid.Empty = this.smallGroupId
   /// Populate a small group from this form
@@ -410,6 +404,19 @@ with
     { grp with
         name     = this.name
         churchId = this.churchId
+      }
+module EditSmallGroup =
+  /// Create an instance from an existing small group
+  let fromGroup (g : SmallGroup) =
+    { smallGroupId = g.smallGroupId
+      name         = g.name
+      churchId     = g.churchId
+    }
+  /// An empty instance (used when adding a new group)
+  let empty =
+    { smallGroupId = Guid.Empty
+      name         = ""
+      churchId     = Guid.Empty
       }
 
 
@@ -432,25 +439,6 @@ type EditUser =
     isAdmin         : bool option
     }
 with
-  /// An empty instance
-  static member empty =
-    { userId          = Guid.Empty
-      firstName       = ""
-      lastName        = ""
-      emailAddress    = ""
-      password        = ""
-      passwordConfirm = ""
-      isAdmin         = None
-      }
-  /// Create an instance from an existing user
-  static member fromUser (user : User) =
-    { EditUser.empty with
-        userId       = user.userId
-        firstName    = user.firstName
-        lastName     = user.lastName
-        emailAddress = user.emailAddress
-        isAdmin      = match user.isAdmin with true -> Some true | false -> None
-      }
   /// Is this a new user?
   member this.isNew () = Guid.Empty = this.userId
   /// Populate a user from the form
@@ -462,8 +450,28 @@ with
         isAdmin      = match this.isAdmin with Some x -> x | None -> false
       }
     |> function
-    | u when this.password = null || this.password = "" -> u
+    | u when isNull this.password || this.password = "" -> u
     | u -> { u with passwordHash = hasher this.password }
+module EditUser =
+  /// An empty instance
+  let empty =
+    { userId          = Guid.Empty
+      firstName       = ""
+      lastName        = ""
+      emailAddress    = ""
+      password        = ""
+      passwordConfirm = ""
+      isAdmin         = None
+      }
+  /// Create an instance from an existing user
+  let fromUser (user : User) =
+    { empty with
+        userId       = user.userId
+        firstName    = user.firstName
+        lastName     = user.lastName
+        emailAddress = user.emailAddress
+        isAdmin      = match user.isAdmin with true -> Some true | false -> None
+      }
 
 
 /// Form for the small group log on page
@@ -476,8 +484,9 @@ type GroupLogOn =
     /// Whether to remember the login
     rememberMe   : bool option
     }
-with
-  static member empty =
+module GroupLogOn =
+  /// An empty instance
+  let empty =
     { smallGroupId   = Guid.Empty
       password       = ""
       rememberMe     = None
@@ -498,8 +507,9 @@ type MaintainRequests =
     /// The page number of the results
     pageNbr    : int option
     }
-with
-  static member empty =
+module MaintainRequests =
+  /// An empty instance
+  let empty =
     { requests   = Seq.empty
       smallGroup = SmallGroup.empty 
       onlyActive = None
@@ -536,8 +546,9 @@ type UserLogOn =
     /// The URL to which the user should be redirected once login is successful
     redirectUrl  : string option
     }
-with
-  static member empty =
+module UserLogOn =
+  /// An empty instance
+  let empty =
     { emailAddress   = ""
       password       = ""
       smallGroupId   = Guid.Empty

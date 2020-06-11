@@ -13,9 +13,8 @@ open System.Threading.Tasks
 /// Retrieve a prayer request, and ensure that it belongs to the current class
 let private findRequest (ctx : HttpContext) reqId =
   task {
-    let! req = ctx.dbContext().TryRequestById reqId
-    match req with
-    | Some pr when pr.smallGroupId = (currentGroup ctx).smallGroupId -> return Ok pr
+    match! ctx.dbContext().TryRequestById reqId with
+    | Some req when req.smallGroupId = (currentGroup ctx).smallGroupId -> return Ok req
     | Some _ ->
         let s = Views.I18N.localizer.Force ()
         addError ctx s.["The prayer request you tried to access is not assigned to your group"]
@@ -62,13 +61,12 @@ let edit (reqId : PrayerRequestId) : HttpHandler =
             |> Views.PrayerRequest.edit EditRequest.empty (now.ToString "yyyy-MM-dd") ctx
             |> renderHtml next ctx
       | false ->
-          let! result = findRequest ctx reqId
-          match result with
+          match! findRequest ctx reqId with
           | Ok req ->
               let s = Views.I18N.localizer.Force ()
               match req.isExpired now grp.preferences.daysToExpire with
               | true ->
-                  { UserMessage.Warning with
+                  { UserMessage.warning with
                       text        = htmlLocString s.["This request is expired."]
                       description =
                         s.["To make it active again, update it as necessary, leave “{0}” and “{1}” unchecked, and it will return as an active request.",
@@ -113,12 +111,11 @@ let delete reqId : HttpHandler =
   >=> validateCSRF
   >=> fun next ctx ->
     task {
-      let! result = findRequest ctx reqId
-      match result with
-      | Ok r ->
+      match! findRequest ctx reqId with
+      | Ok req ->
           let db = ctx.dbContext ()
           let s  = Views.I18N.localizer.Force ()
-          db.PrayerRequests.Remove r |> ignore
+          db.PrayerRequests.Remove req |> ignore
           let! _ = db.SaveChangesAsync ()
           addInfo ctx s.["The prayer request was deleted successfully"]
           return! redirectTo false "/web/prayer-requests" next ctx
@@ -131,12 +128,11 @@ let expire reqId : HttpHandler =
   requireAccess [ User ]
   >=> fun next ctx ->
     task {
-      let! result = findRequest ctx reqId
-      match result with
-      | Ok r ->
+      match! findRequest ctx reqId with
+      | Ok req ->
           let db = ctx.dbContext ()
           let s  = Views.I18N.localizer.Force ()
-          db.UpdateEntry { r with expiration = Forced }
+          db.UpdateEntry { req with expiration = Forced }
           let! _ = db.SaveChangesAsync ()
           addInfo ctx s.["Successfully {0} prayer request", s.["Expired"].Value.ToLower ()]
           return! redirectTo false "/web/prayer-requests" next ctx
@@ -151,17 +147,16 @@ let list groupId : HttpHandler =
     let startTicks = DateTime.Now.Ticks
     let db         = ctx.dbContext ()
     task {
-      let! grp = db.TryGroupById groupId
-      match grp with
-      | Some g when g.preferences.isPublic ->
+      match! db.TryGroupById groupId with
+      | Some grp when grp.preferences.isPublic ->
           let clock = ctx.GetService<IClock> ()
-          let reqs  = db.AllRequestsForSmallGroup g clock None true 0
+          let reqs  = db.AllRequestsForSmallGroup grp clock None true 0
           return!
             viewInfo ctx startTicks
             |> Views.PrayerRequest.list
                 { requests   = List.ofSeq reqs
-                  date       = g.localDateNow clock
-                  listGroup  = g
+                  date       = grp.localDateNow clock
+                  listGroup  = grp
                   showHeader = true
                   canEmail   = (tryCurrentUser >> Option.isSome) ctx
                   recipients = []
@@ -242,12 +237,11 @@ let restore reqId : HttpHandler =
   requireAccess [ User ]
   >=> fun next ctx ->
     task {
-      let! result = findRequest ctx reqId
-      match result with
-      | Ok r ->
+      match! findRequest ctx reqId with
+      | Ok req ->
           let db = ctx.dbContext ()
           let s  = Views.I18N.localizer.Force ()
-          db.UpdateEntry { r with expiration = Automatic; updatedDate = DateTime.Now }
+          db.UpdateEntry { req with expiration = Automatic; updatedDate = DateTime.Now }
           let! _ = db.SaveChangesAsync ()
           addInfo ctx s.["Successfully {0} prayer request", s.["Restored"].Value.ToLower ()]
           return! redirectTo false "/web/prayer-requests" next ctx

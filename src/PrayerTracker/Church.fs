@@ -26,16 +26,15 @@ let delete churchId : HttpHandler =
   >=> fun next ctx ->
     let db = ctx.dbContext ()
     task {
-      let! church = db.TryChurchById churchId
-      match church with
-      | Some ch ->
+      match! db.TryChurchById churchId with
+      | Some church ->
           let! _, stats = findStats db churchId
-          db.RemoveEntry ch
+          db.RemoveEntry church
           let! _ = db.SaveChangesAsync ()
           let  s = Views.I18N.localizer.Force ()
           addInfo ctx
             s.["The church {0} and its {1} small groups (with {2} prayer request(s)) were deleted successfully; revoked access from {3} user(s)",
-                ch.name, stats.smallGroups, stats.prayerRequests, stats.users]
+                church.name, stats.smallGroups, stats.prayerRequests, stats.users]
           return! redirectTo false "/web/churches" next ctx
       | None -> return! fourOhFour next ctx
       }
@@ -54,13 +53,12 @@ let edit churchId : HttpHandler =
             |> Views.Church.edit EditChurch.empty ctx
             |> renderHtml next ctx
       | _ ->
-          let  db     = ctx.dbContext ()
-          let! church = db.TryChurchById churchId
-          match church with
-          | Some ch -> 
+          let db = ctx.dbContext ()
+          match! db.TryChurchById churchId with
+          | Some church -> 
               return!
                 viewInfo ctx startTicks
-                |> Views.Church.edit (EditChurch.fromChurch ch) ctx
+                |> Views.Church.edit (EditChurch.fromChurch church) ctx
                 |> renderHtml next ctx
           | None -> return! fourOhFour next ctx
       }
@@ -89,8 +87,7 @@ let save : HttpHandler =
   >=> validateCSRF
   >=> fun next ctx ->
     task {
-      let! result = ctx.TryBindFormAsync<EditChurch> ()
-      match result with
+      match! ctx.TryBindFormAsync<EditChurch> () with
       | Ok m ->
           let db = ctx.dbContext ()
           let! church =
