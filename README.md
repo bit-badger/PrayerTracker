@@ -1,6 +1,6 @@
 # PrayerTracker
 
-[![Build status](https://ci.appveyor.com/api/projects/status/j5nt9o3pu7er7hyi/branch/master?svg=true)](https://ci.appveyor.com/project/danieljsummers/prayertracker/branch/master)
+[![Build status](https://ci.appveyor.com/api/projects/status/j5nt9o3pu7er7hyi/branch/main?svg=true)](https://ci.appveyor.com/project/danieljsummers/prayertracker/branch/main)
 
 ### Visit the Site
 
