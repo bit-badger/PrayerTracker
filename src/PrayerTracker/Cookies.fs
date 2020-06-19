@@ -58,7 +58,9 @@ let setCrypto c = Crypto.crypto <- c
 
 /// Properties stored in the Small Group cookie
 type GroupCookie =
-  { /// The Id of the small group
+  { /// The token representing the group's claims
+    token : string
+    /// The Id of the small group
     [<JsonProperty "g">]
     GroupId : Guid
     /// The password hash of the small group
@@ -100,8 +102,10 @@ type TimeoutCookie =
 
 /// The payload for the user's "Remember Me" cookie
 type UserCookie =
-  { /// The Id of the group into to which the user is logged
-    [< JsonProperty "g">]
+  { /// The token representing the current user's logged in claims
+    token : string
+    /// The Id of the group into to which the user is logged
+    [<JsonProperty "g">]
     GroupId : Guid
     /// The Id of the user
     [<JsonProperty "i">]

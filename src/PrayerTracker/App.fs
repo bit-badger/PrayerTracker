@@ -2,6 +2,8 @@ namespace PrayerTracker
 
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting
+open Microsoft.AspNetCore.Http
+open Microsoft.IdentityModel.Tokens
 
 /// Module to hold configuration for the web app
 [<RequireQualifiedAccess>]
@@ -20,6 +22,7 @@ module Configure =
   open Microsoft.Extensions.Logging
   open Microsoft.Extensions.Options
   open NodaTime
+  open System
   open System.Globalization
 
   /// Set up the configuration for the app
@@ -51,7 +54,26 @@ module Configure =
       .AddAntiforgery()
       .AddSingleton<IClock>(SystemClock.Instance)
     |> ignore
-    let config = svc.BuildServiceProvider().GetRequiredService<IConfiguration>()
+    let config     = svc.BuildServiceProvider().GetRequiredService<IConfiguration>()
+    let authConfig = config.GetSection "Tokens"
+    let iss        = authConfig.["Issuer"]
+    svc.AddAuthentication()
+      .AddCookie(
+        fun opts ->
+          opts.Cookie.Name       <- "PrayerTrackerAuth"
+          opts.Cookie.HttpOnly   <- false
+          opts.Cookie.SameSite   <- SameSiteMode.Strict
+          opts.SlidingExpiration <- true
+          opts.ClaimsIssuer      <- iss)
+      .AddJwtBearer(
+        fun opts ->
+          opts.SaveToken                 <- true
+          opts.ClaimsIssuer              <- iss
+          opts.TokenValidationParameters <- TokenValidationParameters (
+            ValidIssuer      = iss,
+            ValidAudience    = iss,
+            IssuerSigningKey = SymmetricSecurityKey (Convert.FromBase64String authConfig.["Key"])))
+    |> ignore
     let crypto = config.GetSection "CookieCrypto"
     CookieCrypto (crypto.["Key"], crypto.["IV"]) |> setCrypto
     svc.AddDbContext<AppDbContext>(
@@ -173,6 +195,7 @@ module Configure =
       .UseStaticFiles()
       .UseSession()
       .UseRequestLocalization(app.ApplicationServices.GetService<IOptions<RequestLocalizationOptions>>().Value)
+      .UseSecurityMiddleware()
       .UseGiraffe(webApp)
       |> ignore
     Views.I18N.setUpFactories <| app.ApplicationServices.GetRequiredService<IStringLocalizerFactory> ()
