@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,10 +24,6 @@
     <ProjectReference Include="..\PrayerTracker.Data\PrayerTracker.Data.fsproj" />
     <ProjectReference Include="..\PrayerTracker.UI\PrayerTracker.UI.fsproj" />
     <ProjectReference Include="..\PrayerTracker\PrayerTracker.fsproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Update="FSharp.Core" Version="4.7.0" />
   </ItemGroup>
 
 </Project>

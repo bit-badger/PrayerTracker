@@ -54,9 +54,9 @@ let stripTags allowedTags input =
       |> List.fold
           (fun acc t ->
               acc
-                || htmlTag.IndexOf (sprintf "<%s>" t) = 0
-                || htmlTag.IndexOf (sprintf "<%s " t) = 0
-                || htmlTag.IndexOf (sprintf "</%s" t) = 0) false
+                || htmlTag.IndexOf $"<{t}>" = 0
+                || htmlTag.IndexOf $"<{t} " = 0
+                || htmlTag.IndexOf $"</{t}" = 0) false
     match isAllowed with
     | true -> ()
     | false -> output <- String.replaceFirst tag.Value "" output
@@ -200,7 +200,7 @@ module Help =
   /// Help link for user password change page
   let changePassword = "user/password"
   /// Create a full link for a help page
-  let fullLink lang url = sprintf "https://docs.prayer.bitbadger.solutions/%s/%s.html" lang url
+  let fullLink lang url = $"https://docs.prayer.bitbadger.solutions/%s{lang}/%s{url}.html"
 
 /// This class serves as a common anchor for resources
 type Common () =

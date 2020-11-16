@@ -21,7 +21,7 @@ let assignGroups m groups curGroups ctx vi =
         ]
       groups
       |> List.map (fun (grpId, grpName) ->
-          let inputId = sprintf "id-%s" grpId
+          let inputId = $"id-{grpId}"
           tr [] [
             td [] [
               input [ _type "checkbox"
@@ -49,7 +49,7 @@ let changePassword ctx vi =
       ]
     form [ _action "/web/user/password/change"
            _method "post"
-           _onsubmit (sprintf "return PT.compareValidation('newPassword','newPasswordConfirm','%A')" s.["The passwords do not match"]) ] [
+           _onsubmit $"""return PT.compareValidation('newPassword','newPasswordConfirm','%A{s.["The passwords do not match"]}')""" ] [
       style [ _scoped ] [ rawText "#oldPassword, #newPassword, #newPasswordConfirm { width: 10rem; } "]
       csrfToken ctx
       div [ _class "pt-field-row" ] [
@@ -84,7 +84,7 @@ let edit (m : EditUser) ctx vi =
   let pageTitle     = match m.isNew () with true -> "Add a New User" | false -> "Edit User"
   let pwPlaceholder = s.[match m.isNew () with true -> "" | false -> "No change"].Value
   [ form [ _action "/web/user/edit/save"; _method "post"; _class "pt-center-columns"
-           _onsubmit (sprintf "return PT.compareValidation('password','passwordConfirm','%A')" s.["The passwords do not match"]) ] [
+           _onsubmit $"""return PT.compareValidation('password','passwordConfirm','%A{s.["The passwords do not match"]}')""" ] [
       style [ _scoped ]
         [ rawText "#firstName, #lastName, #password, #passwordConfirm { width: 10rem; } #emailAddress { width: 20rem; } " ]
       csrfToken ctx
@@ -123,7 +123,7 @@ let edit (m : EditUser) ctx vi =
         ]
       div [ _class "pt-field-row" ] [ submit [] "save" s.["Save User"] ]
       ]
-    script [] [ rawText (sprintf "PT.onLoad(PT.user.edit.onPageLoad(%s))" ((string (m.isNew ())).ToLower ())) ]
+    script [] [ rawText $"PT.onLoad(PT.user.edit.onPageLoad({(string (m.isNew ())).ToLower ()}))" ]
     ]
   |> Layout.Content.standard
   |> Layout.standard vi pageTitle
@@ -189,17 +189,17 @@ let maintain (users : User list) ctx vi =
           users
           |> List.map (fun user ->
               let userId    = flatGuid user.userId
-              let delAction = sprintf "/web/user/%s/delete" userId
+              let delAction = $"/web/user/{userId}/delete"
               let delPrompt = s.["Are you sure you want to delete this {0}?  This action cannot be undone.",
-                                  (sprintf "%s (%s)" (s.["User"].Value.ToLower()) user.fullName)].Value
+                                  $"""{s.["User"].Value.ToLower ()} ({user.fullName})"""].Value
               tr [] [
                 td [] [
-                  a [ _href (sprintf "/web/user/%s/edit" userId); _title s.["Edit This User"].Value ] [ icon "edit" ]
-                  a [ _href (sprintf "/web/user/%s/small-groups" userId); _title s.["Assign Groups to This User"].Value ]
+                  a [ _href $"/web/user/{userId}/edit"; _title s.["Edit This User"].Value ] [ icon "edit" ]
+                  a [ _href $"/web/user/{userId}/small-groups"; _title s.["Assign Groups to This User"].Value ]
                     [ icon "group" ]
                   a [ _href delAction
                       _title s.["Delete This User"].Value
-                      _onclick (sprintf "return PT.confirmDelete('%s','%s')" delAction delPrompt) ]
+                      _onclick $"return PT.confirmDelete('{delAction}','{delPrompt}')" ]
                     [ icon "delete_forever" ]
                   ]
                 td [] [ str user.fullName ]
@@ -213,7 +213,7 @@ let maintain (users : User list) ctx vi =
           ]
   [ div [ _class "pt-center-text" ] [
       br []
-      a [ _href (sprintf "/web/user/%s/edit" emptyGuid); _title s.["Add a New User"].Value ]
+      a [ _href $"/web/user/{emptyGuid}/edit"; _title s.["Add a New User"].Value ]
         [ icon "add_circle"; rawText " &nbsp;"; locStr s.["Add a New User"] ]
       br []
       br []

@@ -28,7 +28,7 @@ let space = rawText " "
 let icon name = i [ _class "material-icons" ] [ rawText name ]
 
 /// Generate a Material Design icon, specifying the point size (must be defined in CSS)
-let iconSized size name = i [ _class (sprintf "material-icons md-%i" size) ] [ rawText name ]
+let iconSized size name = i [ _class $"material-icons md-{size}" ] [ rawText name ]
 
 /// Generate a CSRF prevention token
 let csrfToken (ctx : HttpContext) =
@@ -72,7 +72,7 @@ let namedColorList name selected attrs (s : IStringLocalizer) =
   |> Seq.map (fun color ->
       let (colorName, dispText, txtColor) = color
       option [ yield _value colorName
-               yield _style (sprintf "background-color:%s;color:%s;" colorName txtColor)
+               yield _style $"background-color:{colorName};color:{txtColor};"
                match colorName = selected with true -> yield _selected | false -> () ] [
         encodedText (dispText.Value.ToLower ())
         ])
@@ -97,7 +97,7 @@ let selectList name selected attrs items =
   |> select (List.concat [ [ _name name; _id name ]; attrs ])
 
 /// Generate the text for a default entry at the top of a select list
-let selectDefault text = sprintf "— %s —" text
+let selectDefault text = $"— {text} —"
 
 /// Generate a standard submit button with icon and text
 let submit attrs ico text = button (_type "submit" :: attrs) [ icon ico; rawText " &nbsp;"; locStr text ]
@@ -115,7 +115,7 @@ let blockquote = tag "blockquote"
 /// role attribute
 let _role = attr "role"
 /// aria-* attribute
-let _aria typ = attr (sprintf "aria-%s" typ)
+let _aria typ = attr $"aria-{typ}"
 /// onclick attribute
 let _onclick = attr "onclick"
 /// onsubmit attribute

@@ -239,7 +239,7 @@ type AppDbContext with
           }
       let! grps = q.ToListAsync ()
       return grps
-        |> Seq.map (fun grp -> grp.smallGroupId.ToString "N", sprintf "%s | %s" grp.church.name grp.name)
+        |> Seq.map (fun grp -> grp.smallGroupId.ToString "N", $"{grp.church.name} | {grp.name}")
         |> List.ofSeq
       }
 

@@ -121,7 +121,7 @@ type UserCookie =
 
 /// Create a salted hash to use to validate the idle timeout key
 let saltedTimeoutHash (c : TimeoutCookie) =
-  sha1Hash (sprintf "Prayer%ATracker%AIdle%dTimeout" c.Id c.GroupId c.Until)
+  sha1Hash $"Prayer%A{c.Id}Tracker%A{c.GroupId}Idle%d{c.Until}Timeout"
 
 /// Cookie options to push an expiration out by 100 days
 let autoRefresh =

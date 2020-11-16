@@ -24,7 +24,7 @@ let toSelectList<'T> valFunc textFunc withDefault emptyText (items : 'T seq) =
   [ match withDefault with
     | true ->
         let s = PrayerTracker.Views.I18N.localizer.Force ()
-        yield SelectListItem (sprintf "&mdash; %A &mdash;" s.[emptyText], "")
+        yield SelectListItem ($"""&mdash; %A{s.[emptyText]} &mdash;""", "")
     | _ -> ()
     yield! items |> Seq.map (fun x -> SelectListItem (textFunc x, valFunc x))
     ]
@@ -41,15 +41,15 @@ let toSelectListWithDefault<'T> valFunc textFunc (items : 'T seq) =
 let appVersion =
   let v = Assembly.GetExecutingAssembly().GetName().Version
 #if (DEBUG)
-  sprintf "v%A" v
+  $"v{v}"
 #else
   seq {
-    sprintf "v%d" v.Major
+    $"v%d{v.Major}"
     match v.Minor with
-    | 0 -> match v.Build with 0 -> () | _ -> sprintf ".0.%d" v.Build
+    | 0 -> match v.Build with 0 -> () | _ -> $".0.%d{v.Build}"
     | _ ->
-        sprintf ".%d" v.Minor
-        match v.Build with 0 -> () | _ -> sprintf ".%d" v.Build
+        $".%d{v.Minor}"
+        match v.Build with 0 -> () | _ -> $".%d{v.Build}"
     }
   |> String.concat ""
 #endif

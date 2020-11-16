@@ -25,7 +25,7 @@ module ReferenceList =
       | HtmlFormat -> s.["HTML Format"].Value
       | PlainTextFormat -> s.["Plain-Text Format"].Value
     seq {
-      "", LocalizedString ("", sprintf "%s (%s)" s.["Group Default"].Value defaultType)
+      "", LocalizedString ("", $"""{s.["Group Default"].Value} ({defaultType})""")
       HtmlFormat.code, s.["HTML Format"]
       PlainTextFormat.code, s.["Plain-Text Format"]
       }
@@ -594,12 +594,12 @@ with
     let asOfSize = Math.Round (float prefs.textFontSize * 0.8, 2)
     [ match this.showHeader with
       | true ->
-          div [ _style (sprintf "text-align:center;font-family:%s" prefs.listFonts) ] [
-            span [ _style (sprintf "font-size:%ipt;" prefs.headingFontSize) ] [
+          div [ _style $"text-align:center;font-family:{prefs.listFonts}" ] [
+            span [ _style $"font-size:%i{prefs.headingFontSize}pt;" ] [
               strong [] [ str s.["Prayer Requests"].Value ]
               ]
             br []
-            span [ _style (sprintf "font-size:%ipt;" prefs.textFontSize) ] [
+            span [ _style $"font-size:%i{prefs.textFontSize}pt;" ] [
               strong [] [ str this.listGroup.name ]
               br []
               str (this.date.ToString s.["MMMM d, yyyy"].Value)
@@ -616,10 +616,9 @@ with
         let reqs    = this.requestsInCategory cat
         let catName = typs |> List.filter (fun t -> fst t = cat) |> List.head |> snd
         div [ _style "padding-left:10px;padding-bottom:.5em;" ] [
-          table [ _style (sprintf "font-family:%s;page-break-inside:avoid;" prefs.listFonts) ] [
+          table [ _style $"font-family:{prefs.listFonts};page-break-inside:avoid;" ] [
             tr [] [
-              td [ _style (sprintf "font-size:%ipt;color:%s;padding:3px 0;border-top:solid 3px %s;border-bottom:solid 3px %s;font-weight:bold;"
-                                      prefs.headingFontSize prefs.headingColor prefs.lineColor prefs.lineColor) ] [
+              td [ _style $"font-size:%i{prefs.headingFontSize}pt;color:{prefs.headingColor};padding:3px 0;border-top:solid 3px {prefs.lineColor};border-bottom:solid 3px {prefs.lineColor};font-weight:bold;" ] [
                 rawText "&nbsp; &nbsp; "; str catName.Value; rawText "&nbsp; &nbsp; "
                 ]
               ]
@@ -628,8 +627,7 @@ with
         reqs
         |> List.map (fun req ->
             let bullet = match this.isNew req with true -> "circle" | false -> "disc"
-            li [ _style (sprintf "list-style-type:%s;font-family:%s;font-size:%ipt;padding-bottom:.25em;"
-                                    bullet prefs.listFonts prefs.textFontSize) ] [
+            li [ _style $"list-style-type:{bullet};font-family:{prefs.listFonts};font-size:%i{prefs.textFontSize}pt;padding-bottom:.25em;" ] [
               match req.requestor with
               | Some rqstr when rqstr <> "" ->
                   strong [] [ str rqstr ]
@@ -646,7 +644,7 @@ with
                     | ShortDate -> req.updatedDate.ToShortDateString ()
                     | LongDate -> req.updatedDate.ToLongDateString ()
                     | _ -> ""
-                  i [ _style (sprintf "font-size:%.2fpt" asOfSize) ] [
+                  i [ _style $"font-size:%.2f{asOfSize}pt" ] [
                     rawText "&nbsp; ("; str s.["as of"].Value; str " "; str dt; rawText ")"
                     ]
               ])
@@ -672,7 +670,7 @@ with
         let typ    = (typs |> List.filter (fun t -> fst t = cat) |> List.head |> snd).Value
         let dashes = String.replicate (typ.Length + 4) "-"
         dashes
-        sprintf @"  %s" (typ.ToUpper ())
+        $"  {typ.ToUpper ()}"
         dashes
         for req in reqs do
           let bullet = match this.isNew req with true -> "+" | false -> "-"
@@ -685,7 +683,7 @@ with
                 | ShortDate -> req.updatedDate.ToShortDateString ()
                 | LongDate -> req.updatedDate.ToLongDateString ()
                 | _ -> ""
-              sprintf "  (%s %s)" s.["as of"].Value dt
+              $"""  ({s.["as of"].Value} {dt})"""
           |> sprintf "  %s %s%s%s" bullet requestor (htmlToPlainText req.text)
         " "
       }

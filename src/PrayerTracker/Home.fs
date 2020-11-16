@@ -35,7 +35,7 @@ let language culture : HttpHandler =
       | ""
       | "en" -> "en-US"
       | "es" -> "es-MX"
-      | _ -> sprintf "%s-%s" culture (culture.ToUpper ())
+      | _ -> $"{culture}-{culture.ToUpper ()}"
       |> (CultureInfo >> Option.ofObj)
     with
     | :? CultureNotFoundException

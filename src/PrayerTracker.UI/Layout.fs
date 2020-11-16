@@ -76,7 +76,7 @@ module Navigation =
                   [ icon "list"; space; locStr s.["View Request List"] ]
                 ]
       li [] [
-        a [ _href   (sprintf "https://docs.prayer.bitbadger.solutions/%s" <| langCode ())
+        a [ _href   $"https://docs.prayer.bitbadger.solutions/{langCode ()}"
             _aria   "label" s.["Help"].Value;
             _title  s.["View Help"].Value
             _target "_blank"
@@ -183,9 +183,9 @@ let private htmlHead m pageTitle =
     title [] [ locStr pageTitle; titleSep; locStr s.["PrayerTracker"] ]
     yield! commonHead
     for cssFile in m.style do
-      link [ _rel "stylesheet"; _href (sprintf "/css/%s.css" cssFile); _type "text/css" ]
+      link [ _rel "stylesheet"; _href $"/css/{cssFile}.css"; _type "text/css" ]
     for jsFile in m.script do
-      script [ _src (sprintf "/js/%s.js" jsFile) ] []
+      script [ _src $"/js/{jsFile}.js" ] []
     ]
   
 /// Render a link to the help page for the current page
@@ -194,7 +194,7 @@ let private helpLink link =
   sup [] [
     a [ _href link
         _title s.["Click for Help on This Page"].Value
-        _onclick (sprintf "return PT.showHelp('%s')" link) ] [
+        _onclick $"return PT.showHelp('{link}')" ] [
       icon "help_outline"
       ]
     ]
@@ -211,7 +211,7 @@ let private messages m =
   let s = I18N.localizer.Force ()
   m.messages
   |> List.map (fun msg ->
-      table [ _class (sprintf "pt-msg %s" (msg.level.ToLower ())) ] [
+      table [ _class $"pt-msg {msg.level.ToLower ()}" ] [
         tr [] [
           td [] [
             match msg.level with
@@ -249,7 +249,7 @@ let private htmlFooter m =
       ]
     div [ _id "pt-footer" ] [
       a [ _href "/web/"; _style "line-height:28px;" ] [
-        img [ _src (sprintf "/img/%O.png" s.["footer_en"]); _alt imgText; _title imgText ]
+        img [ _src $"""/img/%O{s.["footer_en"]}.png"""; _alt imgText; _title imgText ]
         ]
       str m.version
       space

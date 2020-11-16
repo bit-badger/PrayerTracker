@@ -26,7 +26,7 @@ module Configure =
   let configuration (ctx : WebHostBuilderContext) (cfg : IConfigurationBuilder) =
     cfg.SetBasePath(ctx.HostingEnvironment.ContentRootPath)
       .AddJsonFile("appsettings.json", optional = true, reloadOnChange = true)
-      .AddJsonFile(sprintf "appsettings.%s.json" ctx.HostingEnvironment.EnvironmentName, optional = true)
+      .AddJsonFile($"appsettings.{ctx.HostingEnvironment.EnvironmentName}.json", optional = true)
       .AddEnvironmentVariables()
     |> ignore
 

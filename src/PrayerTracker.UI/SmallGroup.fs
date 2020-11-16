@@ -147,7 +147,7 @@ let logOn (grps : SmallGroup list) grpId ctx vi =
             | _ ->
                 "", selectDefault s.["Select Group"].Value
                 yield! grps
-                  |> List.map (fun grp -> flatGuid grp.smallGroupId, sprintf "%s | %s" grp.church.name grp.name)
+                  |> List.map (fun grp -> flatGuid grp.smallGroupId, $"{grp.church.name} | {grp.name}")
             }
           |> selectList "smallGroupId" grpId [ _required ]
           ]
@@ -190,15 +190,15 @@ let maintain (grps : SmallGroup list) ctx vi =
           grps
           |> List.map (fun g ->
               let grpId     = flatGuid g.smallGroupId
-              let delAction = sprintf "/web/small-group/%s/delete" grpId
+              let delAction = $"/web/small-group/{grpId}/delete"
               let delPrompt = s.["Are you sure you want to delete this {0}?  This action cannot be undone.",
-                                   sprintf "%s (%s)" (s.["Small Group"].Value.ToLower ()) g.name].Value
+                                   $"""{s.["Small Group"].Value.ToLower ()} ({g.name})""" ].Value
               tr [] [
                 td [] [
-                  a [ _href (sprintf "/web/small-group/%s/edit" grpId); _title s.["Edit This Group"].Value ] [ icon "edit" ]
+                  a [ _href $"/web/small-group/{grpId}/edit"; _title s.["Edit This Group"].Value ] [ icon "edit" ]
                   a [ _href delAction
                       _title s.["Delete This Group"].Value
-                      _onclick (sprintf "return PT.confirmDelete('%s','%s')" delAction delPrompt) ]
+                      _onclick $"return PT.confirmDelete('{delAction}','{delPrompt}')" ]
                     [ icon "delete_forever" ]
                   ]
                 td [] [ str g.name ]
@@ -209,7 +209,7 @@ let maintain (grps : SmallGroup list) ctx vi =
           ]
   [ div [ _class "pt-center-text" ] [
       br []
-      a [ _href (sprintf "/web/small-group/%s/edit" emptyGuid); _title s.["Add a New Group"].Value ] [
+      a [ _href $"/web/small-group/{emptyGuid}/edit"; _title s.["Add a New Group"].Value ] [
         icon "add_circle"
         rawText " &nbsp;"
         locStr s.["Add a New Group"]
@@ -244,18 +244,18 @@ let members (mbrs : Member list) (emailTyps : Map<string, LocalizedString>) ctx 
           mbrs
           |> List.map (fun mbr ->
               let mbrId     = flatGuid mbr.memberId
-              let delAction = sprintf "/web/small-group/member/%s/delete" mbrId
+              let delAction = $"/web/small-group/member/{mbrId}/delete"
               let delPrompt =
                 s.["Are you sure you want to delete this {0}?  This action cannot be undone.", s.["group member"]]
                   .Value
-                  .Replace("?", sprintf " (%s)?" mbr.memberName)
+                  .Replace("?", $" ({mbr.memberName})?")
               tr [] [
                 td [] [
-                  a [ _href (sprintf "/web/small-group/member/%s/edit" mbrId); _title s.["Edit This Group Member"].Value ]
+                  a [ _href $"/web/small-group/member/{mbrId}/edit"; _title s.["Edit This Group Member"].Value ]
                     [ icon "edit" ]
                   a [ _href delAction
                       _title s.["Delete This Group Member"].Value
-                      _onclick (sprintf "return PT.confirmDelete('%s','%s')" delAction delPrompt) ]
+                      _onclick $"return PT.confirmDelete('{delAction}','{delPrompt}')" ]
                     [ icon "delete_forever" ]
                   ]
                 td [] [ str mbr.memberName ]
@@ -266,7 +266,7 @@ let members (mbrs : Member list) (emailTyps : Map<string, LocalizedString>) ctx 
           ]
   [ div [ _class"pt-center-text" ] [
       br []
-      a [ _href (sprintf "/web/small-group/member/%s/edit" emptyGuid); _title s.["Add a New Group Member"].Value ]
+      a [ _href $"/web/small-group/member/{emptyGuid}/edit"; _title s.["Add a New Group Member"].Value ]
         [ icon "add_circle"; rawText " &nbsp;"; locStr s.["Add a New Group Member"] ]
       br []
       br []

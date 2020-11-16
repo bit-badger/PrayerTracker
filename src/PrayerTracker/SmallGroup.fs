@@ -157,7 +157,7 @@ let logOnSubmit : HttpHandler =
             return! redirectTo false "/web/prayer-requests/view" next ctx
         | None ->
             addError ctx s.["Password incorrect - login unsuccessful"]
-            return! redirectTo false (sprintf "/web/small-group/log-on/%s" (flatGuid m.smallGroupId)) next ctx
+            return! redirectTo false $"/web/small-group/log-on/{flatGuid m.smallGroupId}" next ctx
       | Error e -> return! bindError e next ctx
       }
 
@@ -352,7 +352,7 @@ let sendAnnouncement : HttpHandler =
           // Reformat the text to use the class's font stylings
           let requestText = ckEditorToText m.text
           let htmlText =
-            p [ _style (sprintf "font-family:%s;font-size:%dpt;" grp.preferences.listFonts grp.preferences.textFontSize) ]
+            p [ _style $"font-family:{grp.preferences.listFonts};font-size:%d{grp.preferences.textFontSize}pt;" ]
               [ rawText requestText ]
             |> renderHtmlNode
           let plainText = (htmlToPlainText >> wordWrap 74) htmlText

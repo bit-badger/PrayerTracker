@@ -262,7 +262,7 @@ let save : HttpHandler =
                         |> Some
                     }
                   |> addUserMessage ctx
-                  return! redirectTo false (sprintf "/web/user/%s/small-groups" (flatGuid u.userId)) next ctx
+                  return! redirectTo false $"/web/user/{flatGuid u.userId}/small-groups" next ctx
               | false ->
                   addInfo ctx s.["Successfully {0} user", s.["Updated"].Value.ToLower ()]
                   return! redirectTo false "/web/users" next ctx
@@ -283,7 +283,7 @@ let saveGroups : HttpHandler =
           match Seq.length m.smallGroups with
           | 0 ->
               addError ctx s.["You must select at least one group to assign"]
-              return! redirectTo false (sprintf "/web/user/%s/small-groups" (flatGuid m.userId)) next ctx
+              return! redirectTo false $"/web/user/{flatGuid m.userId}/small-groups" next ctx
           | _ ->
               let db = ctx.dbContext ()
               match! db.TryUserByIdWithGroups m.userId with

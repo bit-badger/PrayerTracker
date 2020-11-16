@@ -35,9 +35,9 @@ let error code vi =
     br []
     hr []
     div [ _style "font-size:70%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen-Sans,Ubuntu,Cantarell,'Helvetica Neue',sans-serif" ] [
-      img [ _src (sprintf "/img/%A.png" s.["footer_en"])
-            _alt (sprintf "%A %A" s.["PrayerTracker"] s.["from Bit Badger Solutions"])
-            _title (sprintf "%A %A" s.["PrayerTracker"] s.["from Bit Badger Solutions"])
+      img [ _src $"""/img/%A{s.["footer_en"]}.png"""
+            _alt $"""%A{s.["PrayerTracker"]} %A{s.["from Bit Badger Solutions"]}"""
+            _title $"""%A{s.["PrayerTracker"]} %A{s.["from Bit Badger Solutions"]}"""
             _style "vertical-align:text-bottom;" ]
       str vi.version
       ]

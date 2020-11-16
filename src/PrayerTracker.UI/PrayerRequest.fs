@@ -55,7 +55,7 @@ let edit (m : EditRequest) today ctx vi =
           label [] [ locStr s.["Expiration"] ]
           ReferenceList.expirationList s ((m.isNew >> not) ())
           |> List.map (fun exp ->
-              let radioId = sprintf "expiration_%s" (fst exp)
+              let radioId = $"expiration_{fst exp}"
               span [ _class "text-nowrap" ] [
                 radio "expiration" radioId (fst exp) m.expiration
                 label [ _for radioId ] [ locStr (snd exp) ]
@@ -80,13 +80,13 @@ let edit (m : EditRequest) today ctx vi =
 /// View for the request e-mail results page
 let email m vi =
   let s         = I18N.localizer.Force ()
-  let pageTitle = sprintf "%s • %s" s.["Prayer Requests"].Value m.listGroup.name
+  let pageTitle = $"""{s.["Prayer Requests"].Value} • {m.listGroup.name}"""
   let prefs     = m.listGroup.preferences
   let addresses =
     m.recipients
     |> List.fold (fun (acc : StringBuilder) mbr -> acc.AppendFormat(", {0} <{1}>", mbr.memberName, mbr.email))
                  (StringBuilder ())
-  [ p [ _style (sprintf "font-family:%s;font-size:%ipt;" prefs.listFonts prefs.textFontSize) ] [
+  [ p [ _style $"font-family:{prefs.listFonts};font-size:%i{prefs.textFontSize}pt;" ] [
       locStr s.["The request list was sent to the following people, via individual e-mails"]
       rawText ":"
       br []
@@ -143,9 +143,9 @@ let lists (grps : SmallGroup list) vi =
               tr [] [
                 match grp.preferences.isPublic with
                 | true ->
-                    a [ _href (sprintf "/web/prayer-requests/%s/list" grpId); _title s.["View"].Value ] [ icon "list" ]
+                    a [ _href $"/web/prayer-requests/{grpId}/list"; _title s.["View"].Value ] [ icon "list" ]
                 | false ->
-                    a [ _href (sprintf "/web/small-group/log-on/%s" grpId); _title s.["Log On"].Value ]
+                    a [ _href $"/web/small-group/log-on/{grpId}"; _title s.["Log On"].Value ]
                       [ icon "verified_user" ]
                 |> List.singleton
                 |> td []
@@ -179,8 +179,8 @@ let maintain m (ctx : HttpContext) vi =
     m.requests
     |> Seq.map (fun req ->
         let reqId     = flatGuid req.prayerRequestId
-        let reqText   = Utils.htmlToPlainText req.text
-        let delAction = sprintf "/web/prayer-request/%s/delete" reqId
+        let reqText   = htmlToPlainText req.text
+        let delAction = $"/web/prayer-request/{reqId}/delete"
         let delPrompt =
           [ s.["Are you sure you want to delete this {0}?  This action cannot be undone.",
                 s.["Prayer Request"].Value.ToLower() ]
@@ -192,36 +192,36 @@ let maintain m (ctx : HttpContext) vi =
           |> String.concat ""
         tr [] [
           td [] [
-            a [ _href (sprintf "/web/prayer-request/%s/edit" reqId); _title l.["Edit This Prayer Request"].Value ]
+            a [ _href $"/web/prayer-request/{reqId}/edit"; _title l.["Edit This Prayer Request"].Value ]
               [ icon "edit" ]
             match req.isExpired now m.smallGroup.preferences.daysToExpire with
             | true ->
-                a [ _href (sprintf "/web/prayer-request/%s/restore" reqId)
+                a [ _href $"/web/prayer-request/{reqId}/restore"
                     _title l.["Restore This Inactive Request"].Value ]
                   [ icon "visibility" ]
             | false ->
-                a [ _href (sprintf "/web/prayer-request/%s/expire" reqId)
+                a [ _href $"/web/prayer-request/{reqId}/expire"
                     _title l.["Expire This Request Immediately"].Value ]
                   [ icon "visibility_off" ]
             a [ _href delAction; _title l.["Delete This Request"].Value;
-                _onclick (sprintf "return PT.confirmDelete('%s','%s')" delAction delPrompt) ]
+                _onclick $"return PT.confirmDelete('{delAction}','{delPrompt}')" ]
               [ icon "delete_forever" ]
             ]
           td [ updReq req ] [
-            str (req.updatedDate.ToString(s.["MMMM d, yyyy"].Value, System.Globalization.CultureInfo.CurrentUICulture))
+            str (req.updatedDate.ToString(s.["MMMM d, yyyy"].Value, Globalization.CultureInfo.CurrentUICulture))
             ]
           td [] [ locStr typs.[req.requestType] ]
           td [ reqExp req ] [ str (match req.requestor with Some r -> r | None -> " ") ]
           td [] [
             match reqText.Length with
             | len when len < 60 -> rawText reqText
-            | _ -> rawText (sprintf "%s&hellip;" reqText.[0..59])
+            | _ -> rawText $"{reqText.[0..59]}&hellip;"
             ]
           ])
     |> List.ofSeq
   [ div [ _class "pt-center-text" ] [
       br []
-      a [ _href (sprintf "/web/prayer-request/%s/edit" emptyGuid); _title s.["Add a New Request"].Value ]
+      a [ _href $"/web/prayer-request/{emptyGuid}/edit"; _title s.["Add a New Request"].Value ]
         [ icon "add_circle"; rawText " &nbsp;"; locStr s.["Add a New Request"] ]
       rawText " &nbsp; &nbsp; &nbsp; "
       a [ _href "/web/prayer-requests/view"; _title s.["View Prayer Request List"].Value ]
@@ -302,14 +302,14 @@ let maintain m (ctx : HttpContext) vi =
 /// View for the printable prayer request list
 let print m version =
   let s         = I18N.localizer.Force ()
-  let pageTitle = sprintf "%s • %s" s.["Prayer Requests"].Value m.listGroup.name
-  let imgAlt    = sprintf "%s %s" s.["PrayerTracker"].Value s.["from Bit Badger Solutions"].Value
+  let pageTitle = $"""{s.["Prayer Requests"].Value} • {m.listGroup.name}"""
+  let imgAlt    = $"""{s.["PrayerTracker"].Value} {s.["from Bit Badger Solutions"].Value}"""
   article [] [
     rawText (m.asHtml s)
     br []
     hr []
-    div [ _style "font-size:70%;font-family:@Model.ListGroup.preferences.listFonts;" ] [
-      img [ _src (sprintf "/img/%s.png" s.["footer_en"].Value)
+    div [ _style $"font-size:70%%;font-family:{m.listGroup.preferences.listFonts};" ] [
+      img [ _src $"""/img/{s.["footer_en"].Value}.png"""
             _style "vertical-align:text-bottom;"
             _alt imgAlt
             _title imgAlt ]
@@ -323,13 +323,13 @@ let print m version =
 /// View for the prayer request list
 let view m vi =
   let s         = I18N.localizer.Force ()
-  let pageTitle = sprintf "%s • %s" s.["Prayer Requests"].Value m.listGroup.name
+  let pageTitle = $"""{s.["Prayer Requests"].Value} • {m.listGroup.name}"""
   let spacer    = rawText " &nbsp; &nbsp; &nbsp; "
   let dtString  = m.date.ToString "yyyy-MM-dd"
   [ div [ _class "pt-center-text" ] [
       br []
       a [ _class "pt-icon-link"
-          _href (sprintf "/web/prayer-requests/print/%s" dtString)
+          _href $"/web/prayer-requests/print/{dtString}"
           _title s.["View Printable"].Value ] [
         icon "print"; rawText " &nbsp;"; locStr s.["View Printable"]
         ]
@@ -345,16 +345,16 @@ let view m vi =
                 | false -> findSunday (date.AddDays 1.)
               let sunday = findSunday m.date
               a [ _class "pt-icon-link"
-                  _href (sprintf "/web/prayer-requests/view/%s" (sunday.ToString "yyyy-MM-dd"))
+                  _href $"""/web/prayer-requests/view/{sunday.ToString "yyyy-MM-dd"}"""
                   _title s.["List for Next Sunday"].Value ] [
                 icon "update"; rawText " &nbsp;"; locStr s.["List for Next Sunday"]
                 ]
               spacer
           let emailPrompt = s.["This will e-mail the current list to every member of your group, without further prompting.  Are you sure this is what you are ready to do?"].Value
           a [ _class "pt-icon-link"
-              _href (sprintf "/web/prayer-requests/email/%s" dtString)
+              _href $"/web/prayer-requests/email/{dtString}"
               _title s.["Send via E-mail"].Value
-              _onclick (sprintf "return PT.requests.view.promptBeforeEmail('%s')" emailPrompt) ] [
+              _onclick $"return PT.requests.view.promptBeforeEmail('{emailPrompt}')" ] [
             icon "mail_outline"; rawText " &nbsp;"; locStr s.["Send via E-mail"]
             ]
           spacer

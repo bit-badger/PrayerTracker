@@ -74,15 +74,15 @@ let maintain (churches : Church list) (stats : Map<string, ChurchStats>) ctx vi 
           churches
           |> List.map (fun ch ->
               let chId      = flatGuid ch.churchId
-              let delAction = sprintf "/web/church/%s/delete" chId
+              let delAction = $"/web/church/{chId}/delete"
               let delPrompt = s.["Are you sure you want to delete this {0}?  This action cannot be undone.",
-                                  sprintf "%s (%s)" (s.["Church"].Value.ToLower ()) ch.name]
+                                  $"""{s.["Church"].Value.ToLower ()} ({ch.name})"""]
               tr [] [
                 td [] [
-                  a [ _href (sprintf "/web/church/%s/edit" chId); _title s.["Edit This Church"].Value ] [ icon "edit" ]
+                  a [ _href $"/web/church/{chId}/edit"; _title s.["Edit This Church"].Value ] [ icon "edit" ]
                   a [ _href delAction
                       _title s.["Delete This Church"].Value
-                      _onclick (sprintf "return PT.confirmDelete('%s','%A')" delAction delPrompt) ]
+                      _onclick $"return PT.confirmDelete('{delAction}','{delPrompt}')" ]
                     [ icon "delete_forever" ]
                   ]
                 td [] [ str ch.name ]
@@ -96,7 +96,7 @@ let maintain (churches : Church list) (stats : Map<string, ChurchStats>) ctx vi 
           ]
   [ div [ _class "pt-center-text" ] [
       br []
-      a [ _href (sprintf "/web/church/%s/edit" emptyGuid); _title s.["Add a New Church"].Value ]
+      a [ _href $"/web/church/{emptyGuid}/edit"; _title s.["Add a New Church"].Value ]
         [ icon "add_circle"; rawText " &nbsp;"; locStr s.["Add a New Church"] ]
       br []
       br []
