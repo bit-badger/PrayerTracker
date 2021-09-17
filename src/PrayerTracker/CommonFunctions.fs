@@ -2,7 +2,6 @@
 [<AutoOpen>]
 module PrayerTracker.Handlers.CommonFunctions
 
-open FSharp.Control.Tasks.V2.ContextInsensitive
 open Giraffe
 open Microsoft.AspNetCore.Antiforgery
 open Microsoft.AspNetCore.Html
@@ -234,7 +233,7 @@ let requireAccess level : HttpHandler =
     }
     
   fun next ctx ->
-    task {
+    FSharp.Control.Tasks.Affine.task {
       // Auto-logon user or class, if required
       match isUserLoggedOn ctx with
       | true -> ()

@@ -557,7 +557,7 @@ module UserLogOn =
       }
 
 
-open Giraffe.GiraffeViewEngine
+open Giraffe.ViewEngine
 
 /// This represents a list of requests
 type RequestList =
@@ -651,7 +651,7 @@ with
           |> ul []
         br []
       ]
-    |> renderHtmlNodes
+    |> RenderView.AsString.htmlNodes
 
   /// Generate this list as plain text
   member this.asText (s : IStringLocalizer) =

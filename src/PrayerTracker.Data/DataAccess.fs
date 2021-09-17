@@ -1,7 +1,6 @@
 ﻿[<AutoOpen>]
 module PrayerTracker.DataAccess
 
-open FSharp.Control.Tasks.ContextInsensitive
 open Microsoft.EntityFrameworkCore
 open PrayerTracker.Entities
 open System.Collections.Generic

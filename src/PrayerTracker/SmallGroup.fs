@@ -1,8 +1,7 @@
 ﻿module PrayerTracker.Handlers.SmallGroup
 
-open FSharp.Control.Tasks.V2.ContextInsensitive
 open Giraffe
-open Giraffe.GiraffeViewEngine
+open Giraffe.ViewEngine
 open Microsoft.AspNetCore.Http
 open NodaTime
 open PrayerTracker

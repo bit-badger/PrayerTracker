@@ -1,7 +1,6 @@
 ﻿/// Methods for sending e-mails
 module PrayerTracker.Email
 
-open FSharp.Control.Tasks.ContextInsensitive
 open MailKit.Net.Smtp
 open MailKit.Security
 open Microsoft.Extensions.Localization
@@ -62,7 +61,7 @@ let createTextMessage grp subj body (s : IStringLocalizer) =
 /// Send e-mails to a class
 let sendEmails (client : SmtpClient) (recipients : Member list) grp subj html text s =
   task {
-    let htmlMsg = createHtmlMessage grp subj html s
+    let htmlMsg      = createHtmlMessage grp subj html s
     let plainTextMsg = createTextMessage grp subj text s
 
     for mbr in recipients do

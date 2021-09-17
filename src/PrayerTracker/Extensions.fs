@@ -7,6 +7,7 @@ open Newtonsoft.Json
 open PrayerTracker.Entities
 open PrayerTracker.ViewModels
 
+// fsharplint:disable MemberNames
 
 type ISession with
   /// Set an object in the session

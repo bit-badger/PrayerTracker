@@ -6,6 +6,8 @@ open NodaTime
 open System
 open System.Collections.Generic
 
+// fsharplint:disable RecordFieldNames MemberNames
+
 (*-- SUPPORT TYPES --*)
 
 /// How as-of dates should (or should not) be displayed with requests

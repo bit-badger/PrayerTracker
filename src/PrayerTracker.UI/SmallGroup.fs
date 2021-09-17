@@ -1,6 +1,6 @@
 ﻿module PrayerTracker.Views.SmallGroup
 
-open Giraffe.GiraffeViewEngine
+open Giraffe.ViewEngine
 open Microsoft.Extensions.Localization
 open PrayerTracker
 open PrayerTracker.Entities

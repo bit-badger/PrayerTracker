@@ -1,6 +1,5 @@
 ﻿module PrayerTracker.Handlers.User
 
-open FSharp.Control.Tasks.V2.ContextInsensitive
 open Giraffe
 open Microsoft.AspNetCore.Html
 open Microsoft.AspNetCore.Http

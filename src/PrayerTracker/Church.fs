@@ -1,6 +1,5 @@
 ﻿module PrayerTracker.Handlers.Church
 
-open FSharp.Control.Tasks.V2.ContextInsensitive
 open Giraffe
 open PrayerTracker
 open PrayerTracker.Entities

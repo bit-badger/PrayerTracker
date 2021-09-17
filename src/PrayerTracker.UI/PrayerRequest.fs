@@ -1,7 +1,7 @@
 ﻿module PrayerTracker.Views.PrayerRequest
 
 open Giraffe
-open Giraffe.GiraffeViewEngine
+open Giraffe.ViewEngine
 open Microsoft.AspNetCore.Http
 open NodaTime
 open PrayerTracker
