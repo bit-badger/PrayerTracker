@@ -1,6 +1,6 @@
 ﻿module PrayerTracker.Views.Church
 
-open Giraffe.GiraffeViewEngine
+open Giraffe.ViewEngine
 open PrayerTracker.Entities
 open PrayerTracker.ViewModels
 

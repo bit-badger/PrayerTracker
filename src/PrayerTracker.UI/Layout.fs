@@ -1,7 +1,7 @@
 ﻿/// Layout items for PrayerTracker
 module PrayerTracker.Views.Layout
 
-open Giraffe.GiraffeViewEngine
+open Giraffe.ViewEngine
 open PrayerTracker
 open PrayerTracker.ViewModels
 open System

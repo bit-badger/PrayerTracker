@@ -6,6 +6,7 @@ open System
 open System.Security.Cryptography
 open System.IO
 
+// fsharplint:disable MemberNames
 
 /// Cryptography settings to use for encrypting cookies
 type CookieCrypto (key : string, iv : string) =
@@ -24,7 +25,7 @@ module private Crypto =
 
   /// Encrypt a cookie payload
   let encrypt (payload : string) =
-    use aes = new AesManaged ()
+    use aes = Aes.Create ()
     use enc = aes.CreateEncryptor (crypto.Key, crypto.IV)
     use ms  = new MemoryStream ()
     use cs  = new CryptoStream (ms, enc, CryptoStreamMode.Write)
@@ -35,7 +36,7 @@ module private Crypto =
   
   /// Decrypt a cookie payload
   let decrypt payload =
-    use aes = new AesManaged ()
+    use aes = Aes.Create ()
     use dec = aes.CreateDecryptor (crypto.Key, crypto.IV)
     use ms  = new MemoryStream (Convert.FromBase64String payload)
     use cs  = new CryptoStream (ms, dec, CryptoStreamMode.Read)

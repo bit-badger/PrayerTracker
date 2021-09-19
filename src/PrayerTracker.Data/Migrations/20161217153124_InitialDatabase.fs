@@ -10,6 +10,7 @@ open PrayerTracker
 open PrayerTracker.Entities
 open System
 
+// fsharplint:disable RecordFieldNames
 
 type ChurchTable =
   { churchId         : OperationBuilder<AddColumnOperation>

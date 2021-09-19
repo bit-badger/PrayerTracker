@@ -2,7 +2,6 @@
 [<AutoOpen>]
 module PrayerTracker.Handlers.CommonFunctions
 
-open FSharp.Control.Tasks.V2.ContextInsensitive
 open Giraffe
 open Microsoft.AspNetCore.Antiforgery
 open Microsoft.AspNetCore.Html
@@ -54,31 +53,23 @@ let appVersion =
   |> String.concat ""
 #endif
 
-/// An option of the currently signed-in user
-let tryCurrentUser (ctx : HttpContext) =
-  ctx.Session.GetUser ()
-
 /// The currently signed-in user (will raise if none exists)
-let currentUser ctx =
-  match tryCurrentUser ctx with Some u -> u | None -> nullArg "User"
-
-/// An option of the currently signed-in small group
-let tryCurrentGroup (ctx : HttpContext) =
-  ctx.Session.GetSmallGroup ()
+let currentUser (ctx : HttpContext) =
+  match ctx.Session.user with Some u -> u | None -> nullArg "User"
 
 /// The currently signed-in small group (will raise if none exists)
-let currentGroup ctx =
-  match tryCurrentGroup ctx with Some g -> g | None -> nullArg "SmallGroup"
+let currentGroup (ctx : HttpContext) =
+  match ctx.Session.smallGroup with Some g -> g | None -> nullArg "SmallGroup"
 
 /// Create the common view information heading
 let viewInfo (ctx : HttpContext) startTicks =
   let msg =
-    match ctx.Session.GetMessages () with
+    match ctx.Session.messages with
     | [] -> []
     | x ->
-        ctx.Session.SetMessages []
+        ctx.Session.messages <- []
         x
-  match tryCurrentUser ctx with
+  match ctx.Session.user with
   | Some u ->
       // The idle timeout is 2 hours; if the app pool is recycled or the actual session goes away, we will log the
       // user back in transparently using this cookie.  Every request resets the timer.
@@ -96,8 +87,8 @@ let viewInfo (ctx : HttpContext) startTicks =
       version      = appVersion
       messages     = msg
       requestStart = startTicks
-      user         = ctx.Session.GetUser ()
-      group        = ctx.Session.GetSmallGroup ()
+      user         = ctx.Session.user
+      group        = ctx.Session.smallGroup
       }
 
 /// The view is the last parameter, so it can be composed
@@ -118,20 +109,17 @@ let fourOhFour next (ctx : HttpContext) =
 
 /// Handler to validate CSRF prevention token
 let validateCSRF : HttpHandler =
-  fun next ctx ->
-    let antiForgery = ctx.GetService<IAntiforgery> ()
-    task {
-      let! isValid = antiForgery.IsRequestValidAsync ctx
-      match isValid with
-      | true -> return! next ctx
-      | false ->
-          return! (clearResponse >=> setStatusCode 400 >=> text "Quit hacking...") (fun _ -> Task.FromResult None) ctx
-      }
+  fun next ctx -> task {
+    match! (ctx.GetService<IAntiforgery> ()).IsRequestValidAsync ctx with
+    | true -> return! next ctx
+    | false ->
+        return! (clearResponse >=> setStatusCode 400 >=> text "Quit hacking...") (fun _ -> Task.FromResult None) ctx
+    }
 
 
 /// Add a message to the session
 let addUserMessage (ctx : HttpContext) msg =
-  msg :: ctx.Session.GetMessages () |> ctx.Session.SetMessages
+  ctx.Session.messages <- msg :: ctx.Session.messages
 
 /// Convert a localized string to an HTML string
 let htmlLocString (x : LocalizedString) =
@@ -174,99 +162,94 @@ let requireAccess level : HttpHandler =
   
   /// Is there currently a user logged on?
   let isUserLoggedOn (ctx : HttpContext) =
-    ctx.Session.GetUser () |> Option.isSome
+    ctx.Session.user |> Option.isSome
 
   /// Log a user on from the timeout cookie
-  let logOnUserFromTimeoutCookie (ctx : HttpContext) =
-    task {
-      // Make sure the cookie hasn't been tampered with
-      try
-        match TimeoutCookie.fromPayload ctx.Request.Cookies.[Key.Cookie.timeout] with
-        | Some c when c.Password = saltedTimeoutHash c ->
-            let  db   = ctx.dbContext ()
-            let! user = db.TryUserById c.Id
-            match user with
-            | Some _ ->
-                ctx.Session.SetUser user
-                let! grp = db.TryGroupById c.GroupId
-                ctx.Session.SetSmallGroup grp
-            | _ -> ()
-        | _ -> ()
-      // If something above doesn't work, the user doesn't get logged in
-      with _ -> ()
+  let logOnUserFromTimeoutCookie (ctx : HttpContext) = task {
+    // Make sure the cookie hasn't been tampered with
+    try
+      match TimeoutCookie.fromPayload ctx.Request.Cookies.[Key.Cookie.timeout] with
+      | Some c when c.Password = saltedTimeoutHash c ->
+          let! user = ctx.db.TryUserById c.Id
+          match user with
+          | Some _ ->
+              ctx.Session.user <- user
+              let! grp = ctx.db.TryGroupById c.GroupId
+              ctx.Session.smallGroup <- grp
+          | _ -> ()
+      | _ -> ()
+    // If something above doesn't work, the user doesn't get logged in
+    with _ -> ()
     }
   
   /// Attempt to log the user on from their stored cookie
-  let logOnUserFromCookie (ctx : HttpContext) =
-    task {
-      match UserCookie.fromPayload ctx.Request.Cookies.[Key.Cookie.user] with
-      | Some c ->
-          let  db   = ctx.dbContext ()
-          let! user = db.TryUserLogOnByCookie c.Id c.GroupId c.PasswordHash
-          match user with
-          | Some _ ->
-              ctx.Session.SetUser user
-              let! grp = db.TryGroupById c.GroupId
-              ctx.Session.SetSmallGroup grp
-              // Rewrite the cookie to extend the expiration
-              ctx.Response.Cookies.Append (Key.Cookie.user, c.toPayload (), autoRefresh)
-          | _ -> ()
-      | _ -> ()
-      }
+  let logOnUserFromCookie (ctx : HttpContext) = task {
+    match UserCookie.fromPayload ctx.Request.Cookies.[Key.Cookie.user] with
+    | Some c ->
+        let! user = ctx.db.TryUserLogOnByCookie c.Id c.GroupId c.PasswordHash
+        match user with
+        | Some _ ->
+            ctx.Session.user <- user
+            let! grp = ctx.db.TryGroupById c.GroupId
+            ctx.Session.smallGroup <- grp
+            // Rewrite the cookie to extend the expiration
+            ctx.Response.Cookies.Append (Key.Cookie.user, c.toPayload (), autoRefresh)
+        | _ -> ()
+    | _ -> ()
+    }
 
   /// Is there currently a small group (or member thereof) logged on?
   let isGroupLoggedOn (ctx : HttpContext) =
-    ctx.Session.GetSmallGroup () |> Option.isSome
+    ctx.Session.smallGroup |> Option.isSome
     
   /// Attempt to log the small group on from their stored cookie
   let logOnGroupFromCookie (ctx : HttpContext) =
     task {
       match GroupCookie.fromPayload ctx.Request.Cookies.[Key.Cookie.group] with
       | Some c ->
-          let! grp = (ctx.dbContext ()).TryGroupLogOnByCookie c.GroupId c.PasswordHash sha1Hash
+          let! grp = ctx.db.TryGroupLogOnByCookie c.GroupId c.PasswordHash sha1Hash
           match grp with
           | Some _ ->
-              ctx.Session.SetSmallGroup grp
+              ctx.Session.smallGroup <- grp
               // Rewrite the cookie to extend the expiration
               ctx.Response.Cookies.Append (Key.Cookie.group, c.toPayload (), autoRefresh)
           | None -> ()
       | None -> ()
     }
     
-  fun next ctx ->
-    task {
-      // Auto-logon user or class, if required
-      match isUserLoggedOn ctx with
-      | true -> ()
-      | false ->
-          do! logOnUserFromTimeoutCookie ctx
-          match isUserLoggedOn ctx with
-          | true -> ()
-          | false ->
-              do! logOnUserFromCookie ctx
-              match isGroupLoggedOn ctx with true -> () | false -> do! logOnGroupFromCookie ctx
+  fun next ctx -> FSharp.Control.Tasks.Affine.task {
+    // Auto-logon user or class, if required
+    match isUserLoggedOn ctx with
+    | true -> ()
+    | false ->
+        do! logOnUserFromTimeoutCookie ctx
+        match isUserLoggedOn ctx with
+        | true -> ()
+        | false ->
+            do! logOnUserFromCookie ctx
+            match isGroupLoggedOn ctx with true -> () | false -> do! logOnGroupFromCookie ctx
 
-      match true with
-      | _ when level |> List.contains Public -> return! next ctx
-      | _ when level |> List.contains User  && isUserLoggedOn  ctx -> return! next ctx
-      | _ when level |> List.contains Group && isGroupLoggedOn ctx -> return! next ctx
-      | _ when level |> List.contains Admin && isUserLoggedOn  ctx ->
-          match (currentUser ctx).isAdmin with
-          | true -> return! next ctx
-          | false ->
-              let s = Views.I18N.localizer.Force ()
-              addError ctx s.["You are not authorized to view the requested page."]
-              return! redirectTo false "/web/unauthorized" next ctx
-      | _ when level |> List.contains User ->
-          // Redirect to the user log on page
-          ctx.Session.SetString (Key.Session.redirectUrl, ctx.Request.GetEncodedUrl ())
-          return! redirectTo false "/web/user/log-on" next ctx
-      | _ when level |> List.contains Group ->
-          // Redirect to the small group log on page
-          ctx.Session.SetString (Key.Session.redirectUrl, ctx.Request.GetEncodedUrl ())
-          return! redirectTo false "/web/small-group/log-on" next ctx
-      | _ ->
-          let s = Views.I18N.localizer.Force ()
-          addError ctx s.["You are not authorized to view the requested page."]
-          return! redirectTo false "/web/unauthorized" next ctx
-      }
+    match true with
+    | _ when level |> List.contains Public                       -> return! next ctx
+    | _ when level |> List.contains User  && isUserLoggedOn  ctx -> return! next ctx
+    | _ when level |> List.contains Group && isGroupLoggedOn ctx -> return! next ctx
+    | _ when level |> List.contains Admin && isUserLoggedOn  ctx ->
+        match (currentUser ctx).isAdmin with
+        | true -> return! next ctx
+        | false ->
+            let s = Views.I18N.localizer.Force ()
+            addError ctx s.["You are not authorized to view the requested page."]
+            return! redirectTo false "/web/unauthorized" next ctx
+    | _ when level |> List.contains User ->
+        // Redirect to the user log on page
+        ctx.Session.SetString (Key.Session.redirectUrl, ctx.Request.GetEncodedUrl ())
+        return! redirectTo false "/web/user/log-on" next ctx
+    | _ when level |> List.contains Group ->
+        // Redirect to the small group log on page
+        ctx.Session.SetString (Key.Session.redirectUrl, ctx.Request.GetEncodedUrl ())
+        return! redirectTo false "/web/small-group/log-on" next ctx
+    | _ ->
+        let s = Views.I18N.localizer.Force ()
+        addError ctx s.["You are not authorized to view the requested page."]
+        return! redirectTo false "/web/unauthorized" next ctx
+    }

@@ -2,11 +2,13 @@
 module PrayerTracker.Extensions
 
 open Microsoft.AspNetCore.Http
+open Microsoft.Extensions.DependencyInjection
 open Microsoft.FSharpLu
 open Newtonsoft.Json
 open PrayerTracker.Entities
 open PrayerTracker.ViewModels
 
+// fsharplint:disable MemberNames
 
 type ISession with
   /// Set an object in the session
@@ -19,28 +21,32 @@ type ISession with
     | null -> Unchecked.defaultof<'T>
     | v -> JsonConvert.DeserializeObject<'T> v
 
-  member this.GetSmallGroup () =
-    this.GetObject<SmallGroup> Key.Session.currentGroup |> Option.fromObject
-  member this.SetSmallGroup (group : SmallGroup option) =
-    match group with
-    | Some g -> this.SetObject Key.Session.currentGroup g
-    | None -> this.Remove Key.Session.currentGroup
+  /// The current small group for the session
+  member this.smallGroup
+    with get () = this.GetObject<SmallGroup> Key.Session.currentGroup |> Option.fromObject
+     and set (v : SmallGroup option) = 
+        match v with
+        | Some group -> this.SetObject Key.Session.currentGroup group
+        | None -> this.Remove Key.Session.currentGroup
 
-  member this.GetUser () =
-    this.GetObject<User> Key.Session.currentUser |> Option.fromObject
-  member this.SetUser (user: User option) =
-    match user with
-    | Some u -> this.SetObject Key.Session.currentUser u
-    | None -> this.Remove Key.Session.currentUser
+  /// The current user for the session
+  member this.user
+    with get () = this.GetObject<User> Key.Session.currentUser |> Option.fromObject
+     and set (v : User option) =
+        match v with
+        | Some user -> this.SetObject Key.Session.currentUser user
+        | None -> this.Remove Key.Session.currentUser
 
-  member this.GetMessages () =
-    match box (this.GetObject<UserMessage list> Key.Session.userMessages) with
-    | null -> List.empty<UserMessage>
-    | msgs -> unbox msgs
-  member this.SetMessages (messages : UserMessage list) =
-    this.SetObject Key.Session.userMessages messages
+  /// Current messages for the session
+  member this.messages
+    with get () =
+        match box (this.GetObject<UserMessage list> Key.Session.userMessages) with
+        | null -> List.empty<UserMessage>
+        | msgs -> unbox msgs
+     and set (v : UserMessage list) = this.SetObject Key.Session.userMessages v
 
 
 type HttpContext with
-  /// Get the EF database context from DI
-  member this.dbContext () : AppDbContext = downcast this.RequestServices.GetService typeof<AppDbContext>
+  /// The EF Core database context (via DI)
+  member this.db
+    with get () = this.RequestServices.GetRequiredService<AppDbContext> ()

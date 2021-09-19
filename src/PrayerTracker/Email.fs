@@ -1,7 +1,6 @@
 ﻿/// Methods for sending e-mails
 module PrayerTracker.Email
 
-open FSharp.Control.Tasks.ContextInsensitive
 open MailKit.Net.Smtp
 open MailKit.Security
 open Microsoft.Extensions.Localization
@@ -14,12 +13,11 @@ let private fromAddress = "prayer@bitbadger.solutions"
 
 /// Get an SMTP client connection
 // FIXME: make host configurable
-let getConnection () =
-  task {
-    let client = new SmtpClient ()
-    do! client.ConnectAsync ("127.0.0.1", 25, SecureSocketOptions.None)
-    return client
-    }
+let getConnection () = task {
+  let client = new SmtpClient ()
+  do! client.ConnectAsync ("127.0.0.1", 25, SecureSocketOptions.None)
+  return client
+  }
       
 /// Create a mail message object, filled with everything but the body content
 let createMessage (grp : SmallGroup) subj =
@@ -60,21 +58,20 @@ let createTextMessage grp subj body (s : IStringLocalizer) =
   msg
 
 /// Send e-mails to a class
-let sendEmails (client : SmtpClient) (recipients : Member list) grp subj html text s =
-  task {
-    let htmlMsg = createHtmlMessage grp subj html s
-    let plainTextMsg = createTextMessage grp subj text s
+let sendEmails (client : SmtpClient) (recipients : Member list) grp subj html text s = task {
+  let htmlMsg      = createHtmlMessage grp subj html s
+  let plainTextMsg = createTextMessage grp subj text s
 
-    for mbr in recipients do
-      let emailType = match mbr.format with Some f -> EmailFormat.fromCode f | None -> grp.preferences.defaultEmailType
-      let emailTo   = MailboxAddress (mbr.memberName, mbr.email)
-      match emailType with
-      | HtmlFormat ->
-          htmlMsg.To.Add emailTo
-          do! client.SendAsync htmlMsg
-          htmlMsg.To.Clear ()
-      | PlainTextFormat ->
-          plainTextMsg.To.Add emailTo
-          do! client.SendAsync plainTextMsg
-          plainTextMsg.To.Clear ()
-    }
+  for mbr in recipients do
+    let emailType = match mbr.format with Some f -> EmailFormat.fromCode f | None -> grp.preferences.defaultEmailType
+    let emailTo   = MailboxAddress (mbr.memberName, mbr.email)
+    match emailType with
+    | HtmlFormat ->
+        htmlMsg.To.Add emailTo
+        do! client.SendAsync htmlMsg
+        htmlMsg.To.Clear ()
+    | PlainTextFormat ->
+        plainTextMsg.To.Add emailTo
+        do! client.SendAsync plainTextMsg
+        plainTextMsg.To.Clear ()
+  }

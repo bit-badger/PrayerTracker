@@ -2,8 +2,9 @@
 module PrayerTracker.Views.CommonFunctions
 
 open Giraffe
-open Giraffe.GiraffeViewEngine
+open Giraffe.ViewEngine
 open Microsoft.AspNetCore.Antiforgery
+open Microsoft.AspNetCore.Html
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Mvc.Localization
 open Microsoft.Extensions.Localization
@@ -123,6 +124,13 @@ let _onsubmit = attr "onsubmit"
 
 /// scoped flag (used for <style> tag)
 let _scoped = flag "scoped"
+
+
+/// The name this function used to have when the view engine was part of Giraffe
+let renderHtmlNode = RenderView.AsString.htmlNode
+
+/// Render an HTML node, then return the value as an HTML string
+let renderHtmlString = renderHtmlNode >> HtmlString
 
 
 /// Utility methods to help with time zones (and localization of their names)

@@ -1,7 +1,7 @@
 ﻿/// Views associated with the home page, or those that don't fit anywhere else
 module PrayerTracker.Views.Home
 
-open Giraffe.GiraffeViewEngine
+open Giraffe.ViewEngine
 open Microsoft.AspNetCore.Html
 open PrayerTracker.ViewModels
 open System.IO
@@ -204,7 +204,7 @@ let termsOfService vi =
   let raw    = rawLocText sw
   let ppLink =
     a [ _href "/web/legal/privacy-policy" ] [ str (s.["Privacy Policy"].Value.ToLower ()) ]
-    |> (renderHtmlNode >> HtmlString)
+    |> renderHtmlString
 
   [ p [ _class "pt-right-text" ] [ small [] [ em [] [ raw l.["(as of May 24, 2018)"] ] ] ]
     h3 [] [ str "1. "; raw l.["Acceptance of Terms"] ]

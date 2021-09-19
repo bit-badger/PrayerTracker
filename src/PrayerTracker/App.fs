@@ -9,7 +9,7 @@ module Configure =
   
   open Cookies
   open Giraffe
-  open Giraffe.TokenRouter
+  open Giraffe.EndpointRouting
   open Microsoft.AspNetCore.Localization
   open Microsoft.AspNetCore.Server.Kestrel.Core
   open Microsoft.EntityFrameworkCore
@@ -49,22 +49,22 @@ module Configure =
       .AddDistributedMemoryCache()
       .AddSession()
       .AddAntiforgery()
+      .AddRouting()
       .AddSingleton<IClock>(SystemClock.Instance)
     |> ignore
     let config = svc.BuildServiceProvider().GetRequiredService<IConfiguration>()
     let crypto = config.GetSection "CookieCrypto"
     CookieCrypto (crypto.["Key"], crypto.["IV"]) |> setCrypto
     svc.AddDbContext<AppDbContext>(
-        fun options ->
-          options.UseNpgsql (config.GetConnectionString "PrayerTracker") |> ignore)
+        (fun options ->
+          options.UseNpgsql (config.GetConnectionString "PrayerTracker") |> ignore),
+        ServiceLifetime.Scoped, ServiceLifetime.Singleton)
     |> ignore
 
   /// Routes for PrayerTracker
-  let webApp =
-    router Handlers.CommonFunctions.fourOhFour [
-      // Traditional web app routes
-      subRoute"/web" [
-        GET [
+  let routes =
+    [ subRoute "/web" [
+        GET_HEAD [
           subRoute "/church" [
             route  "es"       Handlers.Church.maintain
             routef "/%O/edit" Handlers.Church.edit
@@ -144,7 +144,8 @@ module Configure =
       // Temp redirect to new URLs
       route "/" (redirectTo false "/web/")
       ]
-        
+
+  /// Giraffe error handler
   let errorHandler (ex : exn) (logger : ILogger) =
     logger.LogError(EventId(), ex, "An unhandled exception has occurred while executing the request.")
     clearResponse >=> setStatusCode 500 >=> text ex.Message
@@ -171,9 +172,10 @@ module Configure =
         app.UseGiraffeErrorHandler errorHandler)
       .UseStatusCodePagesWithReExecute("/error/{0}")
       .UseStaticFiles()
+      .UseRouting()
       .UseSession()
       .UseRequestLocalization(app.ApplicationServices.GetService<IOptions<RequestLocalizationOptions>>().Value)
-      .UseGiraffe(webApp)
+      .UseEndpoints (fun e -> e.MapGiraffeEndpoints routes)
       |> ignore
     Views.I18N.setUpFactories <| app.ApplicationServices.GetRequiredService<IStringLocalizerFactory> ()
 

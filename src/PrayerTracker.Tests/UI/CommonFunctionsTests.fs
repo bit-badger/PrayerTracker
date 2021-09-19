@@ -1,7 +1,7 @@
 ﻿module PrayerTracker.UI.CommonFunctionsTests
 
 open Expecto
-open Giraffe.GiraffeViewEngine
+open Giraffe.ViewEngine
 open Microsoft.AspNetCore.Mvc.Localization
 open Microsoft.Extensions.Localization
 open PrayerTracker.Tests.TestLocalization
