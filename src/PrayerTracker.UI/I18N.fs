@@ -11,12 +11,12 @@ let private resAsmName = typeof<Common>.Assembly.GetName().Name
   
 /// Set up the string and HTML localizer factories
 let setUpFactories fac =
-  stringLocFactory <- fac
-  htmlLocFactory <- HtmlLocalizerFactory stringLocFactory
+    stringLocFactory <- fac
+    htmlLocFactory <- HtmlLocalizerFactory stringLocFactory
 
 /// An instance of the common string localizer
 let localizer = lazy (stringLocFactory.Create ("Common", resAsmName))
   
 /// Get a view localizer
 let forView (view : string) =
-  htmlLocFactory.Create ($"""Views.{view.Replace ('/', '.')}""", resAsmName)
+    htmlLocFactory.Create ($"""Views.{view.Replace ('/', '.')}""", resAsmName)
