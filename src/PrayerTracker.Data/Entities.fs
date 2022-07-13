@@ -642,18 +642,25 @@ with
 and [<CLIMutable; NoComparison; NoEquality>] SmallGroup =
     {   /// The Id of this small group
         smallGroupId   : SmallGroupId
+        
         /// The church to which this group belongs
         churchId       : ChurchId
+        
         /// The name of the group
         name           : string
+        
         /// The church to which this small group belongs
         church         : Church
+        
         /// The preferences for the request list
         preferences    : ListPreferences
+        
         /// The members of the group
         members        : ICollection<Member>
+        
         /// Prayer requests for this small group
         prayerRequests : ICollection<PrayerRequest>
+        
         /// The users authorized to manage this group
         users          : ICollection<UserSmallGroup>
     }
@@ -699,10 +706,13 @@ with
 and [<CLIMutable; NoComparison; NoEquality>] TimeZone =
     {   /// The Id for this time zone (uses tzdata names)
         timeZoneId  : TimeZoneId
+        
         /// The description of this time zone
         description : string
+        
         /// The order in which this timezone should be displayed
         sortOrder   : int
+        
         /// Whether this timezone is active
         isActive    : bool
     }
@@ -731,18 +741,25 @@ with
 and [<CLIMutable; NoComparison; NoEquality>] User =
     {   /// The Id of this user
         userId       : UserId
+        
         /// The first name of this user
         firstName    : string
+        
         /// The last name of this user
         lastName     : string
+        
         /// The e-mail address of the user
         emailAddress : string
+        
         /// Whether this user is a PrayerTracker system administrator
         isAdmin      : bool
+        
         /// The user's hashed password
         passwordHash : string
+        
         /// The salt for the user's hashed password
         salt         : Guid option
+        
         /// The small groups which this user is authorized
         smallGroups  : ICollection<UserSmallGroup>
     }
@@ -785,10 +802,13 @@ with
 and [<CLIMutable; NoComparison; NoEquality>] UserSmallGroup =
     {   /// The Id of the user who has access to the small group
         userId       : UserId
+        
         /// The Id of the small group to which the user has access
         smallGroupId : SmallGroupId
+        
         /// The user who has access to the small group
         user         : User
+        
         /// The small group to which the user has access
         smallGroup   : SmallGroup
     }

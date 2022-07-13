@@ -20,10 +20,11 @@ module private Helpers =
                 .ThenByDescending (fun req -> req.enteredDate)
     
     /// Paginate a prayer request query
-    let paginate pageNbr pageSize (q : IQueryable<PrayerRequest>) =
-        q.Skip((pageNbr - 1) * pageSize).Take pageSize
+    let paginate (pageNbr : int) pageSize (q : IQueryable<PrayerRequest>) =
+        if pageNbr > 0 then q.Skip((pageNbr - 1) * pageSize).Take pageSize else q
 
 
+open System
 open System.Collections.Generic
 open Microsoft.EntityFrameworkCore
 open Microsoft.FSharpLu
@@ -95,7 +96,7 @@ type AppDbContext with
             this.PrayerRequests.Where(fun req -> req.smallGroupId = grp.smallGroupId)
             |> function
             | q when activeOnly ->
-                let asOf = theDate.AddDays(-(float grp.preferences.daysToExpire)).Date
+                let asOf = DateTime (theDate.AddDays(-(float grp.preferences.daysToExpire)).Date.Ticks, DateTimeKind.Utc)
                 q.Where(fun req ->
                         (   req.updatedDate > asOf
                          || req.expiration  = Manual

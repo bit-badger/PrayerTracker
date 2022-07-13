@@ -10,13 +10,14 @@ open PrayerTracker.ViewModels
 /// View for the announcement page
 let announcement isAdmin ctx vi =
     let s        = I18N.localizer.Force ()
+    let m        = { SendToClass = ""; Text = ""; AddToRequestList = None; RequestType = None }
     let reqTypes = ReferenceList.requestTypeList s
     [ form [ _action "/web/small-group/announcement/send"; _method "post"; _class "pt-center-columns" ] [
         csrfToken ctx
         div [ _class "pt-field-row" ] [
             div [ _class "pt-field pt-editor" ] [
                 label [ _for "text" ] [ locStr s["Announcement Text"] ]
-                textarea [ _name "text"; _id "text"; _autofocus ] []
+                textarea [ _name (nameof m.Text); _id "text"; _autofocus ] []
             ]
         ]
         if isAdmin then
@@ -24,27 +25,27 @@ let announcement isAdmin ctx vi =
                 div [ _class "pt-field" ] [
                     label [] [ locStr s["Send Announcement to"]; rawText ":" ]
                     div [ _class "pt-center-text" ] [
-                        radio "sendToClass" "sendY" "Y" "Y"
+                        radio (nameof m.SendToClass) "sendY" "Y" "Y"
                         label [ _for "sendY" ] [ locStr s["This Group"]; rawText " &nbsp; &nbsp; " ]
-                        radio "sendToClass" "sendN" "N" "Y"
+                        radio (nameof m.SendToClass) "sendN" "N" "Y"
                         label [ _for "sendN" ] [ locStr s["All {0} Users", s["PrayerTracker"]] ]
                     ]
                 ]
             ]
-        else input [ _type "hidden"; _name "sendToClass"; _value "Y" ]
+        else input [ _type "hidden"; _name (nameof m.SendToClass); _value "Y" ]
         div [ _class "pt-field-row pt-fadeable pt-shown"; _id "divAddToList" ] [
             div [ _class "pt-checkbox-field" ] [
-                input [ _type "checkbox"; _name "addToRequestList"; _id "addToRequestList"; _value "True" ]
+                input [ _type "checkbox"; _name (nameof m.AddToRequestList); _id "addToRequestList"; _value "True" ]
                 label [ _for "addToRequestList" ] [ locStr s["Add to Request List"] ]
             ]
         ]
         div [ _class "pt-field-row pt-fadeable"; _id "divCategory" ] [
             div [ _class "pt-field" ] [
-                label [ _for "requestType" ] [ locStr s["Request Type"] ]
+                label [ _for (nameof m.RequestType) ] [ locStr s["Request Type"] ]
                 reqTypes
                 |> Seq.ofList
                 |> Seq.map (fun (typ, desc) -> typ.code, desc.Value)
-                |> selectList "requestType" "Announcement" []
+                |> selectList (nameof m.RequestType) Announcement.code []
             ]
         ]
         div [ _class "pt-field-row" ] [ submit [] "send" s["Send Announcement"] ]
@@ -59,12 +60,12 @@ let announcement isAdmin ctx vi =
 let announcementSent (m : Announcement) vi =
     let s = I18N.localizer.Force ()
     [ span [ _class "pt-email-heading" ] [ locStr s["HTML Format"]; rawText ":" ]
-      div [ _class "pt-email-canvas" ] [ rawText m.text ]
+      div [ _class "pt-email-canvas" ] [ rawText m.Text ]
       br []
       br []
       span [ _class "pt-email-heading" ] [ locStr s["Plain-Text Format"]; rawText ":" ]
-      div [ _class "pt-email-canvas" ] [ pre [] [ str (m.plainText ()) ] ]
-      ]
+      div [ _class "pt-email-canvas" ] [ pre [] [ str m.PlainText ] ]
+    ]
     |> Layout.Content.standard
     |> Layout.standard vi "Announcement Sent"
 
@@ -72,24 +73,24 @@ let announcementSent (m : Announcement) vi =
 /// View for the small group add/edit page
 let edit (m : EditSmallGroup) (churches : Church list) ctx vi =
     let s         = I18N.localizer.Force ()
-    let pageTitle = match m.isNew () with true -> "Add a New Group" | false -> "Edit Group"
+    let pageTitle = if m.IsNew then "Add a New Group" else "Edit Group"
     form [ _action "/web/small-group/save"; _method "post"; _class "pt-center-columns" ] [
         csrfToken ctx
-        input [ _type "hidden"; _name "smallGroupId"; _value (flatGuid m.smallGroupId) ]
+        input [ _type "hidden"; _name (nameof m.SmallGroupId); _value (flatGuid m.SmallGroupId) ]
         div [ _class "pt-field-row" ] [
             div [ _class "pt-field" ] [
                 label [ _for "name" ] [ locStr s["Group Name"] ]
-                input [ _type "text"; _name "name"; _id "name"; _value m.name; _required; _autofocus ]
+                input [ _type "text"; _name (nameof m.Name); _id "name"; _value m.Name; _required; _autofocus ]
             ]
         ]
         div [ _class "pt-field-row" ] [
             div [ _class "pt-field" ] [
-                label [ _for "churchId" ] [ locStr s["Church"] ]
+                label [ _for (nameof m.ChurchId) ] [ locStr s["Church"] ]
                 seq {
                   "", selectDefault s["Select Church"].Value
                   yield! churches |> List.map (fun c -> flatGuid c.churchId, c.name)
                   }
-                |> selectList "churchId" (flatGuid m.churchId) [ _required ] 
+                |> selectList (nameof m.ChurchId) (flatGuid m.ChurchId) [ _required ] 
             ]
         ]
         div [ _class "pt-field-row" ] [ submit [] "save" s["Save Group"] ]
@@ -100,29 +101,29 @@ let edit (m : EditSmallGroup) (churches : Church list) ctx vi =
 
 
 /// View for the member edit page
-let editMember (m : EditMember) (typs : (string * LocalizedString) seq) ctx vi =
+let editMember (m : EditMember) (types : (string * LocalizedString) seq) ctx vi =
     let s         = I18N.localizer.Force ()
-    let pageTitle = match m.isNew () with true -> "Add a New Group Member" | false -> "Edit Group Member"
+    let pageTitle = if m.IsNew then "Add a New Group Member" else "Edit Group Member"
     form [ _action "/web/small-group/member/save"; _method "post"; _class "pt-center-columns" ] [
-        style [ _scoped ] [ rawText "#memberName { width: 15rem; } #emailAddress { width: 20rem; }" ]
+        style [ _scoped ] [ rawText "#name { width: 15rem; } #email { width: 20rem; }" ]
         csrfToken ctx
-        input [ _type "hidden"; _name "memberId"; _value (flatGuid m.memberId) ]
+        input [ _type "hidden"; _name (nameof m.MemberId); _value (flatGuid m.MemberId) ]
         div [ _class "pt-field-row" ] [
             div [ _class "pt-field" ] [
-                label [ _for "memberName" ] [ locStr s["Member Name"] ]
-                input [ _type "text"; _name "memberName"; _id "memberName"; _required; _autofocus; _value m.memberName ]
+                label [ _for "name" ] [ locStr s["Member Name"] ]
+                input [ _type "text"; _name (nameof m.Name); _id "name"; _required; _autofocus; _value m.Name ]
             ]
             div [ _class "pt-field" ] [
-                label [ _for "emailAddress" ] [ locStr s["E-mail Address"] ]
-                input [ _type "email"; _name "emailAddress"; _id "emailAddress"; _required; _value m.emailAddress ]
+                label [ _for "email" ] [ locStr s["E-mail Address"] ]
+                input [ _type "email"; _name (nameof m.Email); _id "email"; _required; _value m.Email ]
             ]
         ]
         div [ _class "pt-field-row" ] [
             div [ _class "pt-field" ] [
-                label [ _for "emailType" ] [ locStr s["E-mail Format"] ]
-                typs
+                label [ _for (nameof m.Format) ] [ locStr s["E-mail Format"] ]
+                types
                 |> Seq.map (fun typ -> fst typ, (snd typ).Value)
-                |> selectList "emailType" m.emailType []
+                |> selectList (nameof m.Format) m.Format []
             ]
         ]
         div [ _class "pt-field-row" ] [ submit [] "save" s["Save"] ]
@@ -133,32 +134,36 @@ let editMember (m : EditMember) (typs : (string * LocalizedString) seq) ctx vi =
 
 
 /// View for the small group log on page
-let logOn (grps : SmallGroup list) grpId ctx vi =
+let logOn (groups : SmallGroup list) grpId ctx vi =
     let s = I18N.localizer.Force ()
+    let m = { SmallGroupId = System.Guid.Empty; Password = ""; RememberMe = None }
     [ form [ _action "/web/small-group/log-on/submit"; _method "post"; _class "pt-center-columns" ] [
         csrfToken ctx
         div [ _class "pt-field-row" ] [
             div [ _class "pt-field" ] [
-                label [ _for "smallGroupId" ] [ locStr s["Group"] ]
+                label [ _for (nameof m.SmallGroupId) ] [ locStr s["Group"] ]
                 seq {
-                  match grps.Length with
+                  match groups.Length with
                   | 0 -> "", s["There are no classes with passwords defined"].Value
                   | _ ->
                       "", selectDefault s["Select Group"].Value
                       yield!
-                          grps
+                          groups
                           |> List.map (fun grp -> flatGuid grp.smallGroupId, $"{grp.church.name} | {grp.name}")
                   }
-                |> selectList "smallGroupId" grpId [ _required ]
+                |> selectList (nameof m.SmallGroupId) grpId [ _required ]
             ]
             div [ _class "pt-field" ] [
                 label [ _for "password" ] [ locStr s["Password"] ]
-                input [ _type "password"; _name "password"; _id "password"; _required;
+                input [ _type "password"
+                        _name (nameof m.Password)
+                        _id "password"
+                        _required;
                         _placeholder (s["Case-Sensitive"].Value.ToLower ()) ]
             ]
         ]
         div [ _class "pt-checkbox-field" ] [
-            input [ _type "checkbox"; _name "rememberMe"; _id "rememberMe"; _value "True" ]
+            input [ _type "checkbox"; _name (nameof m.RememberMe); _id "rememberMe"; _value "True" ]
             label [ _for "rememberMe" ] [ locStr s["Remember Me"] ]
             br []
             small [] [ em [] [ str (s["Requires Cookies"].Value.ToLower ()) ] ]
@@ -172,10 +177,10 @@ let logOn (grps : SmallGroup list) grpId ctx vi =
 
 
 /// View for the small group maintenance page
-let maintain (grps : SmallGroup list) ctx vi =
+let maintain (groups : SmallGroup list) ctx vi =
     let s      = I18N.localizer.Force ()
     let grpTbl =
-        match grps with
+        match groups with
         | [] -> space
         | _ ->
             table [ _class "pt-table pt-action-table" ] [
@@ -187,7 +192,7 @@ let maintain (grps : SmallGroup list) ctx vi =
                         th [] [ locStr s["Time Zone"] ]
                     ]
                 ]
-                grps
+                groups
                 |> List.map (fun g ->
                     let grpId     = flatGuid g.smallGroupId
                     let delAction = $"/web/small-group/{grpId}/delete"
@@ -218,7 +223,7 @@ let maintain (grps : SmallGroup list) ctx vi =
         br []
         br []
       ]
-      tableSummary grps.Length s
+      tableSummary groups.Length s
       grpTbl
       form [ _id "DeleteForm"; _action ""; _method "post" ] [ csrfToken ctx ]
     ]
@@ -227,10 +232,10 @@ let maintain (grps : SmallGroup list) ctx vi =
 
 
 /// View for the member maintenance page
-let members (mbrs : Member list) (emailTyps : Map<string, LocalizedString>) ctx vi =
+let members (members : Member list) (emailTyps : Map<string, LocalizedString>) ctx vi =
     let s      = I18N.localizer.Force ()
     let mbrTbl =
-        match mbrs with
+        match members with
         | [] -> space
         | _ ->
             table [ _class "pt-table pt-action-table" ] [
@@ -242,7 +247,7 @@ let members (mbrs : Member list) (emailTyps : Map<string, LocalizedString>) ctx 
                         th [] [ locStr s["Format"] ]
                     ]
                 ]
-                mbrs
+                members
                 |> List.map (fun mbr ->
                     let mbrId     = flatGuid mbr.memberId
                     let delAction = $"/web/small-group/member/{mbrId}/delete"
@@ -271,7 +276,7 @@ let members (mbrs : Member list) (emailTyps : Map<string, LocalizedString>) ctx 
         br []
         br []
       ]
-      tableSummary mbrs.Length s
+      tableSummary members.Length s
       mbrTbl
       form [ _id "DeleteForm"; _action ""; _method "post" ] [ csrfToken ctx ]
     ]
@@ -283,7 +288,7 @@ let members (mbrs : Member list) (emailTyps : Map<string, LocalizedString>) ctx 
 let overview m vi =
     let s          = I18N.localizer.Force ()
     let linkSpacer = rawText "&nbsp; "
-    let typs       = ReferenceList.requestTypeList s |> dict
+    let types      = ReferenceList.requestTypeList s |> dict
     article [ _class "pt-overview" ] [
         section [] [
             header [ _role "heading" ] [
@@ -306,16 +311,16 @@ let overview m vi =
             ]
             div [] [
                 p [ _class "pt-center-text" ] [
-                      strong [] [ str (m.totalActiveReqs.ToString "N0"); space; locStr s["Active Requests"] ]
+                      strong [] [ str (m.TotalActiveReqs.ToString "N0"); space; locStr s["Active Requests"] ]
                 ]
                 hr []
-                for cat in m.activeReqsByCat do
+                for cat in m.ActiveReqsByType do
                       str (cat.Value.ToString "N0")
                       space
-                      locStr typs[cat.Key]
+                      locStr types[cat.Key]
                       br []
                 br []
-                str (m.allReqs.ToString "N0")
+                str (m.AllReqs.ToString "N0")
                 space
                 locStr s["Total Requests"]
                 hr []
@@ -332,7 +337,7 @@ let overview m vi =
                 locStr s["Group Members"]
             ]
             div [ _class "pt-center-text" ] [
-                strong [] [ str (m.totalMbrs.ToString "N0"); space; locStr s["Members"] ]
+                strong [] [ str (m.TotalMembers.ToString "N0"); space; locStr s["Members"] ]
                 hr []
                 a [ _href "/web/small-group/members" ] [ icon "email"; linkSpacer; locStr s["Maintain Group Members"] ]
             ]
@@ -350,7 +355,8 @@ let preferences (m : EditPreferences) (tzs : TimeZone list) ctx vi =
     use sw  = new StringWriter ()
     let raw = rawLocText sw
     [ form [ _action "/web/small-group/preferences/save"; _method "post"; _class "pt-center-columns" ] [
-        style [ _scoped ] [ rawText "#expireDays, #daysToKeepNew, #longTermUpdateWeeks, #headingFontSize, #listFontSize, #pageSize { width: 3rem; } #emailFromAddress { width: 20rem; } #listFonts { width: 40rem; } @media screen and (max-width: 40rem) { #listFonts { width: 100%; } }" ]
+        style [ _scoped ]
+              [ rawText "#expireDays, #daysToKeepNew, #longTermUpdateWeeks, #headingFontSize, #listFontSize, #pageSize { width: 3rem; } #emailFromAddress { width: 20rem; } #fonts { width: 40rem; } @media screen and (max-width: 40rem) { #fonts { width: 100%; } }" ]
         csrfToken ctx
         fieldset [] [
             legend [] [ strong [] [ icon "date_range"; rawText " &nbsp;"; locStr s["Dates"] ] ]
@@ -358,24 +364,37 @@ let preferences (m : EditPreferences) (tzs : TimeZone list) ctx vi =
                 div [ _class "pt-field" ] [
                     label [ _for "expireDays" ] [ locStr s["Requests Expire After"] ]
                     span [] [
-                        input [ _type "number"; _name "expireDays"; _id "expireDays"; _min "1"; _max "30"; _required
-                                _autofocus; _value (string m.expireDays) ]
+                        input [ _type "number"
+                                _name (nameof m.ExpireDays)
+                                _id "expireDays"
+                                _min "1"; _max "30"
+                                _required
+                                _autofocus
+                                _value (string m.ExpireDays) ]
                         space; str (s["Days"].Value.ToLower ())
                     ]
                 ]
                 div [ _class "pt-field" ] [
                     label [ _for "daysToKeepNew" ] [ locStr s["Requests “New” For"] ]
                     span [] [
-                        input [ _type "number"; _name "daysToKeepNew"; _id "daysToKeepNew"; _min "1"; _max "30"
-                                _required; _value (string m.daysToKeepNew) ]
+                        input [ _type "number"
+                                _name (nameof m.DaysToKeepNew)
+                                _id "daysToKeepNew"
+                                _min "1"; _max "30"
+                                _required
+                                _value (string m.DaysToKeepNew) ]
                         space; str (s["Days"].Value.ToLower ())
                     ]
                 ]
                 div [ _class "pt-field" ] [
                     label [ _for "longTermUpdateWeeks" ] [ locStr s["Long-Term Requests Alerted for Update"] ]
                     span [] [
-                        input [ _type "number"; _name "longTermUpdateWeeks"; _id "longTermUpdateWeeks"; _min "1"
-                                _max "30"; _required; _value (string m.longTermUpdateWeeks) ]
+                        input [ _type "number"
+                                _name (nameof m.LongTermUpdateWeeks)
+                                _id "longTermUpdateWeeks"
+                                _min "1"; _max "30"
+                                _required
+                                _value (string m.LongTermUpdateWeeks) ]
                         space; str (s["Weeks"].Value.ToLower ())
                     ]
                 ]
@@ -383,10 +402,10 @@ let preferences (m : EditPreferences) (tzs : TimeZone list) ctx vi =
         ]
         fieldset [] [
             legend [] [ strong [] [ icon "sort"; rawText " &nbsp;"; locStr s["Request Sorting"] ] ]
-            radio "requestSort" "requestSort_D" "D" m.requestSort
+            radio (nameof m.RequestSort) "requestSort_D" "D" m.RequestSort
             label [ _for "requestSort_D" ] [ locStr s["Sort by Last Updated Date"] ]
             rawText " &nbsp; "
-            radio "requestSort" "requestSort_R" "R" m.requestSort
+            radio (nameof m.RequestSort) "requestSort_R" "R" m.RequestSort
             label [ _for "requestSort_R" ] [ locStr s["Sort by Requestor Name"] ]
         ]
         fieldset [] [
@@ -394,17 +413,24 @@ let preferences (m : EditPreferences) (tzs : TimeZone list) ctx vi =
             div [ _class "pt-field-row" ] [
                 div [ _class "pt-field" ] [
                     label [ _for "emailFromName" ] [ locStr s["From Name"] ]
-                    input [ _type "text"; _name "emailFromName"; _id "emailFromName"; _required; _value m.emailFromName ]
+                    input [ _type "text"
+                            _name (nameof m.EmailFromName)
+                            _id "emailFromName"
+                            _required
+                            _value m.EmailFromName ]
                 ]
                 div [ _class "pt-field" ] [
                     label [ _for "emailFromAddress" ] [ locStr s["From Address"] ]
-                    input [ _type "email"; _name "emailFromAddress"; _id "emailFromAddress"; _required
-                            _value m.emailFromAddress ]
+                    input [ _type "email"
+                            _name (nameof m.EmailFromAddress)
+                            _id "emailFromAddress"
+                            _required
+                            _value m.EmailFromAddress ]
                 ]
             ]
             div [ _class "pt-field-row" ] [
                 div [ _class "pt-field" ] [
-                    label [ _for "defaultEmailType" ] [ locStr s["E-mail Format"] ]
+                    label [ _for (nameof m.DefaultEmailType) ] [ locStr s["E-mail Format"] ]
                     seq {
                         "", selectDefault s["Select"].Value
                         yield!
@@ -412,7 +438,7 @@ let preferences (m : EditPreferences) (tzs : TimeZone list) ctx vi =
                             |> Seq.skip 1
                             |> Seq.map (fun typ -> fst typ, (snd typ).Value)
                     }
-                    |> selectList "defaultEmailType" m.defaultEmailType [ _required ]
+                    |> selectList (nameof m.DefaultEmailType) m.DefaultEmailType [ _required ]
                 ]
             ]
         ]
@@ -422,19 +448,19 @@ let preferences (m : EditPreferences) (tzs : TimeZone list) ctx vi =
                 div [ _class "pt-field" ] [
                     label [ _class "pt-center-text" ] [ locStr s["Color of Heading Lines"] ]
                     span [] [
-                        radio "headingLineType" "headingLineType_Name" "Name" m.headingLineType
-                        label [ _for "headingLineType_Name" ] [ locStr s["Named Color"] ]
-                        namedColorList "headingLineColor" m.headingLineColor
-                            [ _id "headingLineColor_Select"
-                              match m.headingLineColor.StartsWith "#" with true -> _disabled | false -> () ] s
+                        radio (nameof m.LineColorType) "lineColorType_Name" "Name" m.LineColorType
+                        label [ _for "lineColorType_Name" ] [ locStr s["Named Color"] ]
+                        namedColorList (nameof m.LineColor) m.LineColor
+                            [ _id "lineColor_Select"
+                              if m.LineColor.StartsWith "#" then _disabled ] s
                         rawText "&nbsp; &nbsp; "; str (s["or"].Value.ToUpper ())
-                        radio "headingLineType" "headingLineType_RGB" "RGB" m.headingLineType
-                        label [ _for "headingLineType_RGB" ] [ locStr s["Custom Color"] ]
+                        radio (nameof m.LineColorType) "lineColorType_RGB" "RGB" m.LineColorType
+                        label [ _for "lineColorType_RGB" ] [ locStr s["Custom Color"] ]
                         input [ _type "color" 
-                                _name "headingLineColor"
-                                _id "headingLineColor_Color"
-                                _value m.headingLineColor
-                                match m.headingLineColor.StartsWith "#" with true -> () | false -> _disabled ]
+                                _name (nameof m.LineColor)
+                                _id "lineColor_Color"
+                                _value m.LineColor // TODO: convert to hex or skip if named
+                                if not (m.LineColor.StartsWith "#") then _disabled ]
                     ]
                 ]
             ]
@@ -442,19 +468,19 @@ let preferences (m : EditPreferences) (tzs : TimeZone list) ctx vi =
                 div [ _class "pt-field" ] [
                     label [ _class "pt-center-text" ] [ locStr s["Color of Heading Text"] ]
                     span [] [
-                        radio "headingTextType" "headingTextType_Name" "Name" m.headingTextType
-                        label [ _for "headingTextType_Name" ] [ locStr s["Named Color"] ]
-                        namedColorList "headingTextColor" m.headingTextColor
-                            [ _id "headingTextColor_Select"
-                              match m.headingTextColor.StartsWith "#" with true -> _disabled | false -> () ] s
+                        radio (nameof m.HeadingColorType) "headingColorType_Name" "Name" m.HeadingColorType
+                        label [ _for "headingColorType_Name" ] [ locStr s["Named Color"] ]
+                        namedColorList (nameof m.HeadingColor) m.HeadingColor
+                            [ _id "headingColor_Select"
+                              if m.HeadingColor.StartsWith "#" then _disabled ] s
                         rawText "&nbsp; &nbsp; "; str (s["or"].Value.ToUpper ())
-                        radio "headingTextType" "headingTextType_RGB" "RGB" m.headingTextType
-                        label [ _for "headingTextType_RGB" ] [ locStr s["Custom Color"] ]
+                        radio (nameof m.HeadingColorType) "headingColorType_RGB" "RGB" m.HeadingColorType
+                        label [ _for "headingColorType_RGB" ] [ locStr s["Custom Color"] ]
                         input [ _type "color"
-                                _name "headingTextColor"
-                                _id "headingTextColor_Color"
-                                _value m.headingTextColor
-                                match m.headingTextColor.StartsWith "#" with true -> () | false -> _disabled ]
+                                _name (nameof m.HeadingColor)
+                                _id "headingColor_Color"
+                                _value m.HeadingColor // TODO: convert to hex or skip if named
+                                if not (m.HeadingColor.StartsWith "#") then _disabled ]
                       ]
                 ]
             ]
@@ -462,19 +488,27 @@ let preferences (m : EditPreferences) (tzs : TimeZone list) ctx vi =
         fieldset [] [
             legend [] [ strong [] [ icon "font_download"; rawText " &nbsp;"; locStr s["Fonts"] ] ]
             div [ _class "pt-field" ] [
-                label [ _for "listFonts" ] [ locStr s["Fonts** for List"] ]
-                input [ _type "text"; _name "listFonts"; _id "listFonts"; _required; _value m.listFonts ]
+                label [ _for "fonts" ] [ locStr s["Fonts** for List"] ]
+                input [ _type "text"; _name (nameof m.Fonts); _id "fonts"; _required; _value m.Fonts ]
             ]
             div [ _class "pt-field-row" ] [
                 div [ _class "pt-field" ] [
                     label [ _for "headingFontSize" ] [ locStr s["Heading Text Size"] ]
-                    input [ _type "number"; _name "headingFontSize"; _id "headingFontSize"; _min "8"; _max "24"
-                            _required; _value (string m.headingFontSize) ]
+                    input [ _type "number"
+                            _name (nameof m.HeadingFontSize)
+                            _id "headingFontSize"
+                            _min "8"; _max "24"
+                            _required
+                            _value (string m.HeadingFontSize) ]
                 ]
                 div [ _class "pt-field" ] [
                     label [ _for "listFontSize" ] [ locStr s["List Text Size"] ]
-                    input [ _type "number"; _name "listFontSize"; _id "listFontSize"; _min "8"; _max "24"; _required
-                            _value (string m.listFontSize) ]
+                    input [ _type "number"
+                            _name (nameof m.ListFontSize)
+                            _id "listFontSize"
+                            _min "8"; _max "24"
+                            _required
+                            _value (string m.ListFontSize) ]
                 ]
             ]
         ]
@@ -482,48 +516,54 @@ let preferences (m : EditPreferences) (tzs : TimeZone list) ctx vi =
             legend [] [ strong [] [ icon "settings"; rawText " &nbsp;"; locStr s["Other Settings"] ] ]
             div [ _class "pt-field-row" ] [
                 div [ _class "pt-field" ] [
-                    label [ _for "timeZone" ] [ locStr s["Time Zone"] ]
+                    label [ _for (nameof m.TimeZone) ] [ locStr s["Time Zone"] ]
                     seq {
                       "", selectDefault s["Select"].Value
                       yield! tzs |> List.map (fun tz -> tz.timeZoneId, (TimeZones.name tz.timeZoneId s).Value)
                     }
-                    |> selectList "timeZone" m.timeZone [ _required ]
+                    |> selectList (nameof m.TimeZone) m.TimeZone [ _required ]
                 ]
             ]
             div [ _class "pt-field" ] [
                 label [] [ locStr s["Request List Visibility"] ]
                 span [] [
-                    radio "listVisibility" "viz_Public" (string RequestVisibility.``public``) (string m.listVisibility)
+                    radio (nameof m.Visibility) "viz_Public" (string RequestVisibility.``public``) (string m.Visibility)
                     label [ _for "viz_Public" ] [ locStr s["Public"] ]
                     rawText " &nbsp;"
-                    radio "listVisibility" "viz_Private" (string RequestVisibility.``private``)
-                          (string m.listVisibility)
+                    radio (nameof m.Visibility) "viz_Private" (string RequestVisibility.``private``)
+                          (string m.Visibility)
                     label [ _for "viz_Private" ] [ locStr s["Private"] ]
                     rawText " &nbsp;"
-                    radio "listVisibility" "viz_Password" (string RequestVisibility.passwordProtected)
-                          (string m.listVisibility)
+                    radio (nameof m.Visibility) "viz_Password" (string RequestVisibility.passwordProtected)
+                          (string m.Visibility)
                     label [ _for "viz_Password" ] [ locStr s["Password Protected"] ]
                 ]
             ]
-            let classSuffix = if m.listVisibility = RequestVisibility.passwordProtected then " pt-show" else ""
+            let classSuffix = if m.Visibility = RequestVisibility.passwordProtected then " pt-show" else ""
             div [ _id "divClassPassword"; _class $"pt-field-row pt-fadeable{classSuffix}" ] [
                 div [ _class "pt-field" ] [
                     label [ _for "groupPassword" ] [ locStr s["Group Password (Used to Read Online)"] ]
-                    input [ _type "text"; _name "groupPassword"; _id "groupPassword";
-                            _value (match m.groupPassword with Some x -> x | None -> "") ]
+                    input [ _type "text"
+                            _name (nameof m.GroupPassword)
+                            _id "groupPassword"
+                            _value (defaultArg m.GroupPassword "") ]
                 ]
             ]
             div [ _class "pt-field-row" ] [
                 div [ _class "pt-field" ] [
                     label [ _for "pageSize" ] [ locStr s["Page Size"] ]
-                    input [ _type "number"; _name "pageSize"; _id "pageSize"; _min "10"; _max "255"; _required
-                            _value (string m.pageSize) ]
+                    input [ _type "number"
+                            _name (nameof m.PageSize)
+                            _id "pageSize"
+                            _min "10"; _max "255"
+                            _required
+                            _value (string m.PageSize) ]
                 ]
                 div [ _class "pt-field" ] [
-                    label [ _for "asOfDate" ] [ locStr s["“As of” Date Display"] ]
+                    label [ _for (nameof m.AsOfDate) ] [ locStr s["“As of” Date Display"] ]
                     ReferenceList.asOfDateList s
                     |> List.map (fun (code, desc) -> code, desc.Value)
-                    |> selectList "asOfDate" m.asOfDate [ _required ]
+                    |> selectList (nameof m.AsOfDate) m.AsOfDate [ _required ]
                 ]
             ]
         ]

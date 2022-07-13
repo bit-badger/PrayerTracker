@@ -136,7 +136,7 @@ module StringTests =
 
 [<Tests>]
 let stripTagsTests =
-    let testString = "<p class=\"testing\">Here is some text<br> <br />and some more</p>"
+    let testString = """<p class="testing">Here is some text<br> <br />and some more</p>"""
     testList "stripTags" [
         test "does nothing if all tags are allowed" {
             Expect.equal (stripTags [ "p"; "br" ] testString) testString

@@ -85,11 +85,11 @@ let viewInfo (ctx : HttpContext) startTicks =
                            HttpOnly = true))
     | None -> ()
     { AppViewInfo.fresh with
-        version      = appVersion
-        messages     = msg
-        requestStart = startTicks
-        user         = ctx.Session.user
-        group        = ctx.Session.smallGroup
+        Version      = appVersion
+        Messages     = msg
+        RequestStart = startTicks
+        User         = ctx.Session.user
+        Group        = ctx.Session.smallGroup
     }
 
 /// The view is the last parameter, so it can be composed
@@ -130,19 +130,19 @@ let htmlString (x : LocalizedString) =
 
 /// Add an error message to the session
 let addError ctx msg =
-    addUserMessage ctx { UserMessage.error with text = htmlLocString msg }
+    addUserMessage ctx { UserMessage.error with Text = htmlLocString msg }
 
 /// Add an informational message to the session
 let addInfo ctx msg =
-    addUserMessage ctx { UserMessage.info with text = htmlLocString msg }
+    addUserMessage ctx { UserMessage.info with Text = htmlLocString msg }
 
 /// Add an informational HTML message to the session
 let addHtmlInfo ctx msg =
-    addUserMessage ctx { UserMessage.info with text = htmlString msg }
+    addUserMessage ctx { UserMessage.info with Text = htmlString msg }
   
 /// Add a warning message to the session
 let addWarning ctx msg =
-    addUserMessage ctx { UserMessage.warning with text = htmlLocString msg }
+    addUserMessage ctx { UserMessage.warning with Text = htmlLocString msg }
 
 
 /// A level of required access

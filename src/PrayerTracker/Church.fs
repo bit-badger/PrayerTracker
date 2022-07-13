@@ -70,17 +70,17 @@ let save : HttpHandler = requireAccess [ Admin ] >=> validateCSRF >=> fun next c
     match! ctx.TryBindFormAsync<EditChurch> () with
     | Ok m ->
         let! church =
-            if m.isNew () then Task.FromResult (Some { Church.empty with churchId = Guid.NewGuid () })
-            else ctx.db.TryChurchById m.churchId
+            if m.IsNew then Task.FromResult (Some { Church.empty with churchId = Guid.NewGuid () })
+            else ctx.db.TryChurchById m.ChurchId
         match church with
         | Some ch ->
-            m.populateChurch ch
-            |> (if m.isNew () then ctx.db.AddEntry else ctx.db.UpdateEntry)
+            m.PopulateChurch ch
+            |> (if m.IsNew then ctx.db.AddEntry else ctx.db.UpdateEntry)
             let! _   = ctx.db.SaveChangesAsync ()
             let  s   = Views.I18N.localizer.Force ()
-            let  act = s[if m.isNew () then "Added" else "Updated"].Value.ToLower ()
-            addInfo ctx s["Successfully {0} church “{1}”", act, m.name]
+            let  act = s[if m.IsNew then "Added" else "Updated"].Value.ToLower ()
+            addInfo ctx s["Successfully {0} church “{1}”", act, m.Name]
             return! redirectTo false "/web/churches" next ctx
         | None -> return! fourOhFour next ctx
-    | Error e -> return! bindError e next ctx
+    | Result.Error e -> return! bindError e next ctx
 }

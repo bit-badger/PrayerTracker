@@ -21,7 +21,7 @@ let getConnection () = task {
       
 /// Create a mail message object, filled with everything but the body content
 let createMessage (grp : SmallGroup) subj =
-    let msg = MimeMessage ()
+    let msg = new MimeMessage ()
     msg.From.Add (MailboxAddress (grp.preferences.emailFromName, fromAddress))
     msg.Subject <- subj
     msg.ReplyTo.Add (MailboxAddress (grp.preferences.emailFromName, grp.preferences.emailFromAddress))
@@ -40,7 +40,7 @@ let createHtmlMessage grp subj body (s : IStringLocalizer) =
         ]
         |> String.concat ""
     let msg = createMessage grp subj
-    msg.Body <- TextPart (TextFormat.Html, Text = bodyText)
+    msg.Body <- new TextPart (TextFormat.Html, Text = bodyText)
     msg
 
 /// Create a plain-text-format e-mail message
@@ -54,13 +54,13 @@ let createTextMessage grp subj body (s : IStringLocalizer) =
         ]
         |> String.concat ""
     let msg = createMessage grp subj
-    msg.Body <- TextPart (TextFormat.Plain, Text = bodyText)
+    msg.Body <- new TextPart (TextFormat.Plain, Text = bodyText)
     msg
 
 /// Send e-mails to a class
 let sendEmails (client : SmtpClient) (recipients : Member list) grp subj html text s = task {
-    let htmlMsg      = createHtmlMessage grp subj html s
-    let plainTextMsg = createTextMessage grp subj text s
+    use htmlMsg      = createHtmlMessage grp subj html s
+    use plainTextMsg = createTextMessage grp subj text s
 
     for mbr in recipients do
         let emailType =
@@ -71,10 +71,10 @@ let sendEmails (client : SmtpClient) (recipients : Member list) grp subj html te
         match emailType with
         | HtmlFormat ->
             htmlMsg.To.Add emailTo
-            do! client.SendAsync htmlMsg
+            let! _ = client.SendAsync htmlMsg
             htmlMsg.To.Clear ()
         | PlainTextFormat ->
             plainTextMsg.To.Add emailTo
-            do! client.SendAsync plainTextMsg
+            let! _ = client.SendAsync plainTextMsg
             plainTextMsg.To.Clear ()
 }

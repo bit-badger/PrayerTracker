@@ -20,7 +20,7 @@ module Navigation =
         let s = I18N.localizer.Force ()
         let menuSpacer = rawText "&nbsp; "
         let leftLinks = [
-            match m.user with
+            match m.User with
             | Some u ->
                 li [ _class "dropdown" ] [
                     a [ _class "dropbtn"; _role "button"; _aria "label" s["Requests"].Value; _title s["Requests"].Value ]
@@ -56,7 +56,7 @@ module Navigation =
                         ]
                     ]
             | None ->
-                match m.group with
+                match m.Group with
                 | Some _ ->
                     li [] [
                         a [ _href "/web/prayer-requests/view"
@@ -91,9 +91,9 @@ module Navigation =
             ]
         ]
         let rightLinks =
-            match m.group with
+            match m.Group with
             | Some _ -> [
-                match m.user with
+                match m.User with
                 | Some _ ->
                     li [] [
                         a [ _href "/web/user/password"
@@ -137,9 +137,9 @@ module Navigation =
                     rawText " &nbsp; &bull; &nbsp; "
                     a [ _href "/web/language/es" ] [ locStr s["Cambie a Español"] ]
             ]
-            match m.group with
+            match m.Group with
             | Some g ->[
-                match m.user with
+                match m.User with
                 | Some u ->
                     span [ _class "u" ] [ locStr s["Currently Logged On"] ]
                     rawText "&nbsp; &nbsp;"
@@ -151,7 +151,7 @@ module Navigation =
                     rawText "&nbsp; "
                 icon "group"
                 space
-                match m.user with
+                match m.User with
                 | Some _ -> a [ _href "/web/small-group" ] [ strong [] [ str g.name ] ]
                 | None -> strong [] [ str g.name ]
                 rawText " &nbsp;"
@@ -190,9 +190,9 @@ let private htmlHead m pageTitle =
         meta [ _charset "UTF-8" ]
         title [] [ locStr pageTitle; titleSep; locStr s["PrayerTracker"] ]
         yield! commonHead
-        for cssFile in m.style do
+        for cssFile in m.Style do
             link [ _rel "stylesheet"; _href $"/css/{cssFile}.css"; _type "text/css" ]
-        for jsFile in m.script do
+        for jsFile in m.Script do
             script [ _src $"/js/{jsFile}.js" ] []
     ]
   
@@ -207,25 +207,25 @@ let private helpLink link =
 /// Render the page title, and optionally a help link
 let private renderPageTitle m pageTitle =
     h2 [ _id "pt-page-title" ] [
-        match m.helpLink with Some link -> Help.fullLink (langCode ()) link |> helpLink | None -> ()
+        match m.HelpLink with Some link -> Help.fullLink (langCode ()) link |> helpLink | None -> ()
         locStr pageTitle
     ]
 
 /// Render the messages that may need to be displayed to the user
 let private messages m =
     let s = I18N.localizer.Force ()
-    m.messages
+    m.Messages
     |> List.map (fun msg ->
-        table [ _class $"pt-msg {msg.level.ToLower ()}" ] [
+        table [ _class $"pt-msg {MessageLevel.toCssClass msg.Level}" ] [
             tr [] [
                 td [] [
-                    match msg.level with
-                    | "Info" -> ()
+                    match msg.Level with
+                    | Info -> ()
                     | lvl ->
-                        strong [] [ locStr s[lvl] ]
+                        strong [] [ locStr s[MessageLevel.toString lvl] ]
                         rawText " &#xbb; "
-                    rawText msg.text.Value
-                    match msg.description with
+                    rawText msg.Text.Value
+                    match msg.Description with
                     | Some desc ->
                         br []
                         div [ _class "description" ] [ rawText desc.Value ]
@@ -238,7 +238,7 @@ let private messages m =
 let private htmlFooter m =
     let s = I18N.localizer.Force ()
     let imgText = sprintf "%O %O" s["PrayerTracker"] s["from Bit Badger Solutions"]
-    let resultTime = TimeSpan(DateTime.Now.Ticks - m.requestStart).TotalSeconds
+    let resultTime = TimeSpan(DateTime.Now.Ticks - m.RequestStart).TotalSeconds
     footer [] [
         div [ _id "pt-legal" ] [
             a [ _href "/web/legal/privacy-policy" ] [ locStr s["Privacy Policy"] ]
@@ -255,7 +255,7 @@ let private htmlFooter m =
         div [ _id "pt-footer" ] [
             a [ _href "/web/"; _style "line-height:28px;" ]
               [ img [ _src $"""/img/%O{s["footer_en"]}.png"""; _alt imgText; _title imgText ] ]
-            str m.version
+            str m.Version
             space
             i [ _title s["This page loaded in {0:N3} seconds", resultTime].Value; _class "material-icons md-18" ]
               [ str "schedule" ]

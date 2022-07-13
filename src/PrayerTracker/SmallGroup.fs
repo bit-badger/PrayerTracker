@@ -21,7 +21,7 @@ let private setGroupCookie (ctx : HttpContext) pwHash =
 
 /// GET /small-group/announcement
 let announcement : HttpHandler = requireAccess [ User ] >=> fun next ctx ->
-    { viewInfo ctx DateTime.Now.Ticks with helpLink = Some Help.sendAnnouncement; script = [ "ckeditor/ckeditor" ] }
+    { viewInfo ctx DateTime.Now.Ticks with HelpLink = Some Help.sendAnnouncement; Script = [ "ckeditor/ckeditor" ] }
     |> Views.SmallGroup.announcement (currentUser ctx).isAdmin ctx
     |> renderHtml next ctx
 
@@ -31,13 +31,13 @@ let delete groupId : HttpHandler = requireAccess [ Admin ] >=> validateCSRF >=> 
     let s = Views.I18N.localizer.Force ()
     match! ctx.db.TryGroupById groupId with
     | Some grp ->
-        let! reqs = ctx.db.CountRequestsBySmallGroup groupId
-        let! usrs = ctx.db.CountUsersBySmallGroup    groupId
+        let! reqs  = ctx.db.CountRequestsBySmallGroup groupId
+        let! users = ctx.db.CountUsersBySmallGroup    groupId
         ctx.db.RemoveEntry grp
         let! _ = ctx.db.SaveChangesAsync ()
         addInfo ctx
             s["The group {0} and its {1} prayer request(s) were deleted successfully; revoked access from {2} user(s)",
-              grp.name, reqs, usrs]
+              grp.name, reqs, users]
         return! redirectTo false "/web/small-groups" next ctx
     | None -> return! fourOhFour next ctx
 }
@@ -82,18 +82,18 @@ let editMember (memberId : MemberId) : HttpHandler = requireAccess [ User ] >=> 
     let startTicks = DateTime.Now.Ticks
     let s          = Views.I18N.localizer.Force ()
     let grp        = currentGroup ctx
-    let typs       = ReferenceList.emailTypeList grp.preferences.defaultEmailType s
+    let types      = ReferenceList.emailTypeList grp.preferences.defaultEmailType s
     if memberId = Guid.Empty then
         return!
             viewInfo ctx startTicks
-            |> Views.SmallGroup.editMember EditMember.empty typs ctx
+            |> Views.SmallGroup.editMember EditMember.empty types ctx
             |> renderHtml next ctx
     else
         match! ctx.db.TryMemberById memberId with
         | Some mbr when mbr.smallGroupId = grp.smallGroupId ->
             return!
                 viewInfo ctx startTicks
-                |> Views.SmallGroup.editMember (EditMember.fromMember mbr) typs ctx
+                |> Views.SmallGroup.editMember (EditMember.fromMember mbr) types ctx
                 |> renderHtml next ctx
         | Some _
         | None -> return! fourOhFour next ctx
@@ -102,12 +102,12 @@ let editMember (memberId : MemberId) : HttpHandler = requireAccess [ User ] >=> 
 
 /// GET /small-group/log-on/[group-id?]
 let logOn (groupId : SmallGroupId option) : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx -> task {
-    let startTicks = DateTime.Now.Ticks
-    let! grps  = ctx.db.ProtectedGroups ()
-    let  grpId = match groupId with Some gid -> flatGuid gid | None -> ""
+    let  startTicks = DateTime.Now.Ticks
+    let! groups     = ctx.db.ProtectedGroups ()
+    let  grpId      = match groupId with Some gid -> flatGuid gid | None -> ""
     return!
-        { viewInfo ctx startTicks with helpLink = Some Help.logOn }
-        |> Views.SmallGroup.logOn grps grpId ctx
+        { viewInfo ctx startTicks with HelpLink = Some Help.logOn }
+        |> Views.SmallGroup.logOn groups grpId ctx
         |> renderHtml next ctx
 }
 
@@ -117,28 +117,26 @@ let logOnSubmit : HttpHandler = requireAccess [ AccessLevel.Public ] >=> validat
     match! ctx.TryBindFormAsync<GroupLogOn> () with
     | Ok m ->
         let s = Views.I18N.localizer.Force ()
-        match! ctx.db.TryGroupLogOnByPassword m.smallGroupId m.password with
+        match! ctx.db.TryGroupLogOnByPassword m.SmallGroupId m.Password with
         | Some grp ->
             ctx.Session.smallGroup <- Some grp
-            match m.rememberMe with
-            | Some x when x -> (setGroupCookie ctx << sha1Hash) m.password
-            | _ -> ()
+            if defaultArg m.RememberMe false then (setGroupCookie ctx << sha1Hash) m.Password
             addInfo ctx s["Log On Successful • Welcome to {0}", s["PrayerTracker"]]
             return! redirectTo false "/web/prayer-requests/view" next ctx
         | None ->
             addError ctx s["Password incorrect - login unsuccessful"]
-            return! redirectTo false $"/web/small-group/log-on/{flatGuid m.smallGroupId}" next ctx
-    | Error e -> return! bindError e next ctx
+            return! redirectTo false $"/web/small-group/log-on/{flatGuid m.SmallGroupId}" next ctx
+    | Result.Error e -> return! bindError e next ctx
 }
 
 
 /// GET /small-groups
 let maintain : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> task {
     let startTicks = DateTime.Now.Ticks
-    let! grps = ctx.db.AllGroups ()
+    let! groups = ctx.db.AllGroups ()
     return!
         viewInfo ctx startTicks
-        |> Views.SmallGroup.maintain grps ctx
+        |> Views.SmallGroup.maintain groups ctx
         |> renderHtml next ctx
 }
 
@@ -148,11 +146,11 @@ let members : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task {
     let startTicks = DateTime.Now.Ticks
     let grp        = currentGroup ctx
     let s          = Views.I18N.localizer.Force ()
-    let! mbrs = ctx.db.AllMembersForSmallGroup grp.smallGroupId
-    let  typs = ReferenceList.emailTypeList grp.preferences.defaultEmailType s |> Map.ofSeq
+    let! members   = ctx.db.AllMembersForSmallGroup grp.smallGroupId
+    let  types     = ReferenceList.emailTypeList grp.preferences.defaultEmailType s |> Map.ofSeq
     return!
-        { viewInfo ctx startTicks with helpLink = Some Help.maintainGroupMembers }
-        |> Views.SmallGroup.members mbrs typs ctx
+        { viewInfo ctx startTicks with HelpLink = Some Help.maintainGroupMembers }
+        |> Views.SmallGroup.members members types ctx
         |> renderHtml next ctx
 }
 
@@ -165,10 +163,10 @@ let overview : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task {
     let! reqCount   = ctx.db.CountRequestsBySmallGroup (currentGroup ctx).smallGroupId
     let! mbrCount   = ctx.db.CountMembersForSmallGroup (currentGroup ctx).smallGroupId
     let  m          =
-        { totalActiveReqs = List.length reqs
-          allReqs         = reqCount
-          totalMbrs       = mbrCount
-          activeReqsByCat =
+        { TotalActiveReqs  = List.length reqs
+          AllReqs          = reqCount
+          TotalMembers     = mbrCount
+          ActiveReqsByType =
               (reqs
                |> Seq.ofList
                |> Seq.map (fun req -> req.requestType)
@@ -188,7 +186,7 @@ let preferences : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task 
     let  startTicks = DateTime.Now.Ticks
     let! tzs        = ctx.db.AllTimeZones ()
     return!
-        { viewInfo ctx startTicks with helpLink = Some Help.groupPreferences }
+        { viewInfo ctx startTicks with HelpLink = Some Help.groupPreferences }
         |> Views.SmallGroup.preferences (EditPreferences.fromPreferences (currentGroup ctx).preferences) tzs ctx
         |> renderHtml next ctx
 }
@@ -200,22 +198,22 @@ let save : HttpHandler = requireAccess [ Admin ] >=> validateCSRF >=> fun next c
     | Ok m ->
         let s = Views.I18N.localizer.Force ()
         let! group =
-            if m.isNew () then Task.FromResult (Some { SmallGroup.empty with smallGroupId = Guid.NewGuid () })
-            else ctx.db.TryGroupById m.smallGroupId
+            if m.IsNew then Task.FromResult (Some { SmallGroup.empty with smallGroupId = Guid.NewGuid () })
+            else ctx.db.TryGroupById m.SmallGroupId
         match group with
         | Some grp ->
             m.populateGroup grp
             |> function
-            | grp when m.isNew () ->
+            | grp when m.IsNew ->
                 ctx.db.AddEntry grp
                 ctx.db.AddEntry { grp.preferences with smallGroupId = grp.smallGroupId }
             | grp -> ctx.db.UpdateEntry grp
             let! _ = ctx.db.SaveChangesAsync ()
-            let act = s[if m.isNew () then "Added" else "Updated"].Value.ToLower ()
-            addHtmlInfo ctx s["Successfully {0} group “{1}”", act, m.name]
+            let act = s[if m.IsNew then "Added" else "Updated"].Value.ToLower ()
+            addHtmlInfo ctx s["Successfully {0} group “{1}”", act, m.Name]
             return! redirectTo false "/web/small-groups" next ctx
         | None -> return! fourOhFour next ctx
-    | Error e -> return! bindError e next ctx
+    | Result.Error e -> return! bindError e next ctx
 }
 
 
@@ -225,25 +223,25 @@ let saveMember : HttpHandler = requireAccess [ User ] >=> validateCSRF >=> fun n
     | Ok m ->
         let  grp  = currentGroup ctx
         let! mMbr =
-            if m.isNew () then
+            if m.IsNew then
                 Task.FromResult (Some { Member.empty with memberId = Guid.NewGuid (); smallGroupId = grp.smallGroupId })
-            else ctx.db.TryMemberById m.memberId
+            else ctx.db.TryMemberById m.MemberId
         match mMbr with
         | Some mbr when mbr.smallGroupId = grp.smallGroupId ->
             { mbr with
-                memberName = m.memberName
-                email      = m.emailAddress
-                format     = match m.emailType with "" | null -> None | _ -> Some m.emailType
+                memberName = m.Name
+                email      = m.Email
+                format     = match m.Format with "" | null -> None | _ -> Some m.Format
             }
-            |> (if m.isNew () then ctx.db.AddEntry else ctx.db.UpdateEntry)
+            |> if m.IsNew then ctx.db.AddEntry else ctx.db.UpdateEntry
             let! _ = ctx.db.SaveChangesAsync ()
             let s = Views.I18N.localizer.Force ()
-            let act = s[if m.isNew () then "Added" else "Updated"].Value.ToLower ()
+            let act = s[if m.IsNew then "Added" else "Updated"].Value.ToLower ()
             addInfo ctx s["Successfully {0} group member", act]
             return! redirectTo false "/web/small-group/members" next ctx
         | Some _
         | None -> return! fourOhFour next ctx
-    | Error e -> return! bindError e next ctx
+    | Result.Error e -> return! bindError e next ctx
 }
 
 
@@ -256,7 +254,7 @@ let savePreferences : HttpHandler = requireAccess [ User ] >=> validateCSRF >=> 
         // database values, not the then out-of-sync session ones.
         match! ctx.db.TryGroupById (currentGroup ctx).smallGroupId with
         | Some grp ->
-            let prefs = m.populatePreferences grp.preferences
+            let prefs = m.PopulatePreferences grp.preferences
             ctx.db.UpdateEntry prefs
             let! _ = ctx.db.SaveChangesAsync ()
             // Refresh session instance
@@ -265,7 +263,7 @@ let savePreferences : HttpHandler = requireAccess [ User ] >=> validateCSRF >=> 
             addInfo ctx s["Group preferences updated successfully"]
             return! redirectTo false "/web/small-group/preferences" next ctx
         | None -> return! fourOhFour next ctx
-    | Error e -> return! bindError e next ctx
+    | Result.Error e -> return! bindError e next ctx
 }
 
 
@@ -279,7 +277,7 @@ let sendAnnouncement : HttpHandler = requireAccess [ User ] >=> validateCSRF >=>
         let now = grp.localTimeNow (ctx.GetService<IClock> ())
         let s   = Views.I18N.localizer.Force ()
         // Reformat the text to use the class's font stylings
-        let requestText = ckEditorToText m.text
+        let requestText = ckEditorToText m.Text
         let htmlText =
             p [ _style $"font-family:{grp.preferences.listFonts};font-size:%d{grp.preferences.textFontSize}pt;" ]
               [ rawText requestText ]
@@ -287,7 +285,7 @@ let sendAnnouncement : HttpHandler = requireAccess [ User ] >=> validateCSRF >=>
         let plainText = (htmlToPlainText >> wordWrap 74) htmlText
         // Send the e-mails
         let! recipients =
-            match m.sendToClass with
+            match m.SendToClass with
             | "N" when usr.isAdmin -> ctx.db.AllUsersAsMembers ()
             | _ -> ctx.db.AllMembersForSmallGroup grp.smallGroupId
         use! client = Email.getConnection ()
@@ -296,7 +294,7 @@ let sendAnnouncement : HttpHandler = requireAccess [ User ] >=> validateCSRF >=>
                   (now.ToString "h:mm tt").ToLower ()].Value
                 htmlText plainText s
         // Add to the request list if desired
-        match m.sendToClass, m.addToRequestList with
+        match m.SendToClass, m.AddToRequestList with
         | "N", _
         | _, None  -> ()
         | _, Some x when not x -> ()
@@ -305,7 +303,7 @@ let sendAnnouncement : HttpHandler = requireAccess [ User ] >=> validateCSRF >=>
                 prayerRequestId = Guid.NewGuid ()
                 smallGroupId    = grp.smallGroupId
                 userId          = usr.userId
-                requestType     = (Option.get >> PrayerRequestType.fromCode) m.requestType
+                requestType     = (Option.get >> PrayerRequestType.fromCode) m.RequestType
                 text            = requestText
                 enteredDate     = now
                 updatedDate     = now
@@ -315,14 +313,14 @@ let sendAnnouncement : HttpHandler = requireAccess [ User ] >=> validateCSRF >=>
             ()
         // Tell 'em what they've won, Johnny!
         let toWhom =
-            match m.sendToClass with
+            match m.SendToClass with
             | "N" -> s["{0} users", s["PrayerTracker"]].Value
             | _ -> s["Group Members"].Value.ToLower ()
-        let andAdded = match m.addToRequestList with Some x when x -> "and added it to the request list" | _ -> ""
+        let andAdded = match m.AddToRequestList with Some x when x -> "and added it to the request list" | _ -> ""
         addInfo ctx s["Successfully sent announcement to all {0} {1}", toWhom, s[andAdded]]
         return!
             viewInfo ctx startTicks
-            |> Views.SmallGroup.announcementSent { m with text = htmlText }
+            |> Views.SmallGroup.announcementSent { m with Text = htmlText }
             |> renderHtml next ctx
-    | Error e -> return! bindError e next ctx
+    | Result.Error e -> return! bindError e next ctx
 }

@@ -32,12 +32,7 @@ module String =
     let replaceFirst (needle : string) replacement (haystack : string) =
         match haystack.IndexOf needle with
         | -1 -> haystack
-        | idx ->
-            [ haystack[0..idx - 1]
-              replacement
-              haystack[idx + needle.Length..]
-            ]
-            |> String.concat ""
+        | idx -> String.concat "" [ haystack[0..idx - 1]; replacement; haystack[idx + needle.Length..] ]
 
 
 open System.Text.RegularExpressions
@@ -49,14 +44,15 @@ let stripTags allowedTags input =
     let mutable output = input
     for tag in stripHtmlExp.Matches input do
         let htmlTag = tag.Value.ToLower ()
-        let isAllowed =
+        let shouldReplace =
             allowedTags
             |> List.fold (fun acc t ->
                    acc
                 || htmlTag.IndexOf $"<{t}>" = 0
                 || htmlTag.IndexOf $"<{t} " = 0
                 || htmlTag.IndexOf $"</{t}" = 0) false
-        if isAllowed then output <- String.replaceFirst tag.Value "" output
+            |> not
+        if shouldReplace then output <- String.replaceFirst tag.Value "" output
     output
 
 
@@ -88,9 +84,9 @@ let wordWrap charPerLine (input : string) =
                                 remaining <- remaining[spaceIdx + 1..]
                     // Leftovers - yum!
                     match remaining.Length with 0 -> () | _ -> yield remaining
+            yield ""
         }
-        |> Seq.fold (fun (acc : StringBuilder) -> acc.AppendLine) (StringBuilder ())
-        |> string
+        |> String.concat "\n"
 
 /// Modify the text returned by CKEditor into the format we need for request and announcement text
 let ckEditorToText (text : string) =

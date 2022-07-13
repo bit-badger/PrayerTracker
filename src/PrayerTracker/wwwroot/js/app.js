@@ -210,8 +210,8 @@ const PT = {
        */
       toggleType(name) {
         const isNamed = document.getElementById(`${name}Type_Name`)
-        const named = document.getElementById(`${name}Color_Select`)
-        const custom = document.getElementById(`${name}Color_Color`)
+        const named = document.getElementById(`${name}_Select`)
+        const custom = document.getElementById(`${name}_Color`)
         if (isNamed.checked) {
           custom.disabled = true
           named.disabled = false
@@ -244,7 +244,7 @@ const PT = {
             PT.smallGroup.preferences.checkVisibility)
         })
         PT.smallGroup.preferences.checkVisibility()
-        ;['headingLine', 'headingText'].map(name => {
+        ;['lineColor', 'headingColor'].map(name => {
           document.getElementById(`${name}Type_Name`).addEventListener('click', () => {
             PT.smallGroup.preferences.toggleType(name)
           })

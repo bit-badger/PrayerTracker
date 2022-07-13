@@ -37,7 +37,7 @@ let error code vi =
                 _alt $"""%A{s["PrayerTracker"]} %A{s["from Bit Badger Solutions"]}"""
                 _title $"""%A{s["PrayerTracker"]} %A{s["from Bit Badger Solutions"]}"""
                 _style "vertical-align:text-bottom;" ]
-          str vi.version
+          str vi.Version
       ]
     ]
     |> div []

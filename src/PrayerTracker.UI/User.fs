@@ -7,11 +7,11 @@ open PrayerTracker.ViewModels
 /// View for the group assignment page
 let assignGroups m groups curGroups ctx vi =
     let s         = I18N.localizer.Force ()
-    let pageTitle = sprintf "%s • %A" m.userName s["Assign Groups"]
+    let pageTitle = sprintf "%s • %A" m.UserName s["Assign Groups"]
     form [ _action "/web/user/small-groups/save"; _method "post"; _class "pt-center-columns" ] [
         csrfToken ctx
-        input [ _type "hidden"; _name "userId"; _value (flatGuid m.userId) ]
-        input [ _type "hidden"; _name "userName"; _value m.userName ]
+        input [ _type "hidden"; _name (nameof m.UserId); _value (flatGuid m.UserId) ]
+        input [ _type "hidden"; _name (nameof m.UserName); _value m.UserName ]
         table [ _class "pt-table" ] [
             thead [] [
                 tr [] [
@@ -25,10 +25,10 @@ let assignGroups m groups curGroups ctx vi =
                 tr [] [
                     td [] [
                         input [ _type "checkbox"
-                                _name "smallGroups"
+                                _name (nameof m.SmallGroups)
                                 _id inputId
                                 _value grpId
-                                match curGroups |> List.contains grpId with true -> _checked | false -> () ]
+                                if List.contains grpId curGroups then _checked ]
                     ]
                     td [] [ label [ _for inputId ] [ str grpName ] ]
                 ])
@@ -44,6 +44,7 @@ let assignGroups m groups curGroups ctx vi =
 /// View for the password change page
 let changePassword ctx vi =
     let s = I18N.localizer.Force ()
+    let m = { OldPassword = ""; NewPassword = ""; NewPasswordConfirm = "" }
     [ p [ _class "pt-center-text" ] [
           locStr s["To change your password, enter your current password in the specified box below, then enter your new password twice."]
       ]
@@ -55,17 +56,17 @@ let changePassword ctx vi =
           div [ _class "pt-field-row" ] [
               div [ _class "pt-field" ] [
                   label [ _for "oldPassword" ] [ locStr s["Current Password"] ]
-                  input [ _type "password"; _name "oldPassword"; _id "oldPassword"; _required; _autofocus ]
+                  input [ _type "password"; _name (nameof m.OldPassword); _id "oldPassword"; _required; _autofocus ]
               ]
           ]
           div [ _class "pt-field-row" ] [
               div [ _class "pt-field" ] [
                   label [ _for "newPassword" ] [ locStr s["New Password Twice"] ]
-                  input [ _type "password"; _name "newPassword"; _id "newPassword"; _required ]
+                  input [ _type "password"; _name (nameof m.NewPassword); _id "newPassword"; _required ]
               ]
               div [ _class "pt-field" ] [
                   label [] [ rawText "&nbsp;" ]
-                  input [ _type "password"; _name "newPasswordConfirm"; _id "newPasswordConfirm"; _required ]
+                  input [ _type "password"; _name (nameof m.NewPasswordConfirm); _id "newPasswordConfirm"; _required ]
               ]
           ]
           div [ _class "pt-field-row" ] [
@@ -81,49 +82,57 @@ let changePassword ctx vi =
 /// View for the edit user page
 let edit (m : EditUser) ctx vi =
     let s             = I18N.localizer.Force ()
-    let pageTitle     = if m.isNew () then "Add a New User" else "Edit User"
-    let pwPlaceholder = s[if m.isNew () then "" else "No change"].Value
+    let pageTitle     = if m.IsNew then "Add a New User" else "Edit User"
+    let pwPlaceholder = s[if m.IsNew then "" else "No change"].Value
     [ form [ _action "/web/user/edit/save"; _method "post"; _class "pt-center-columns"
              _onsubmit $"""return PT.compareValidation('password','passwordConfirm','%A{s["The passwords do not match"]}')""" ] [
         style [ _scoped ]
-              [ rawText "#firstName, #lastName, #password, #passwordConfirm { width: 10rem; } #emailAddress { width: 20rem; } " ]
+              [ rawText "#firstName, #lastName, #password, #passwordConfirm { width: 10rem; } #email { width: 20rem; } " ]
         csrfToken ctx
-        input [ _type "hidden"; _name "userId"; _value (flatGuid m.userId) ]
+        input [ _type "hidden"; _name (nameof m.UserId); _value (flatGuid m.UserId) ]
         div [ _class "pt-field-row" ] [
             div [ _class "pt-field" ] [
                 label [ _for "firstName" ] [ locStr s["First Name"] ]
-                input [ _type "text"; _name "firstName"; _id "firstName"; _value m.firstName; _required; _autofocus ]
+                input [ _type "text"
+                        _name (nameof m.FirstName)
+                        _id "firstName"
+                        _value m.FirstName
+                        _required
+                        _autofocus ]
             ]
             div [ _class "pt-field" ] [
                 label [ _for "lastName" ] [ locStr s["Last Name"] ]
-                input [ _type "text"; _name "lastName"; _id "lastName"; _value m.lastName; _required ]
+                input [ _type "text"; _name (nameof m.LastName); _id "lastName"; _value m.LastName; _required ]
             ]
             div [ _class "pt-field" ] [
-                label [ _for "emailAddress" ] [ locStr s["E-mail Address"] ]
-                input [ _type "email"; _name "emailAddress"; _id "emailAddress"; _value m.emailAddress; _required ]
+                label [ _for "email" ] [ locStr s["E-mail Address"] ]
+                input [ _type "email"; _name (nameof m.Email); _id "email"; _value m.Email; _required ]
             ]
         ]
         div [ _class "pt-field-row" ] [
             div [ _class "pt-field" ] [
                 label [ _for "password" ] [ locStr s["Password"] ]
-                input [ _type "password"; _name "password"; _id "password"; _placeholder pwPlaceholder ]
+                input [ _type "password"; _name (nameof m.Password); _id "password"; _placeholder pwPlaceholder ]
             ]
             div [ _class "pt-field" ] [
                 label [ _for "passwordConfirm" ] [ locStr s["Password Again"] ]
-                input [ _type "password"; _name "passwordConfirm"; _id "passwordConfirm"; _placeholder pwPlaceholder ]
+                input [ _type "password"
+                        _name (nameof m.PasswordConfirm)
+                        _id "passwordConfirm"
+                        _placeholder pwPlaceholder ]
             ]
         ]
         div [ _class "pt-checkbox-field" ] [
             input [ _type "checkbox"
-                    _name "isAdmin"
+                    _name (nameof m.IsAdmin)
                     _id "isAdmin"
                     _value "True"
-                    match m.isAdmin with Some x when x -> _checked | _ -> () ]
+                    if defaultArg m.IsAdmin false then _checked ]
             label [ _for "isAdmin" ] [ locStr s["This user is a PrayerTracker administrator"] ]
         ]
         div [ _class "pt-field-row" ] [ submit [] "save" s["Save User"] ]
       ]
-      script [] [ rawText $"PT.onLoad(PT.user.edit.onPageLoad({(string (m.isNew ())).ToLower ()}))" ]
+      script [] [ rawText $"PT.onLoad(PT.user.edit.onPageLoad({(string m.IsNew).ToLowerInvariant ()}))" ]
     ]
     |> Layout.Content.standard
     |> Layout.standard vi pageTitle
@@ -133,33 +142,35 @@ let edit (m : EditUser) ctx vi =
 let logOn (m : UserLogOn) groups ctx vi =
     let s = I18N.localizer.Force ()
     form [ _action "/web/user/log-on"; _method "post"; _class "pt-center-columns" ] [
-        style [ _scoped ] [ rawText "#emailAddress { width: 20rem; }" ]
+        style [ _scoped ] [ rawText "#email { width: 20rem; }" ]
         csrfToken ctx
-        input [ _type "hidden"; _name "redirectUrl"; _value (defaultArg m.redirectUrl "") ]
+        input [ _type "hidden"; _name (nameof m.RedirectUrl); _value (defaultArg m.RedirectUrl "") ]
         div [ _class "pt-field-row" ] [
             div [ _class "pt-field" ] [
-                label [ _for "emailAddress"] [ locStr s["E-mail Address"] ]
-                input [ _type "email"; _name "emailAddress"; _id "emailAddress"; _value m.emailAddress; _required
-                        _autofocus ]
+                label [ _for "email"] [ locStr s["E-mail Address"] ]
+                input [ _type "email"; _name (nameof m.Email); _id "email"; _value m.Email; _required; _autofocus ]
             ]
             div [ _class "pt-field" ] [
                 label [ _for "password" ] [ locStr s["Password"] ]
-                input [ _type "password"; _name "password"; _id "password"; _required;
+                input [ _type "password"
+                        _name (nameof m.Password)
+                        _id "password"
+                        _required;
                         _placeholder (sprintf "(%s)" (s["Case-Sensitive"].Value.ToLower ())) ]
             ]
         ]
         div [ _class "pt-field-row" ] [
             div [ _class "pt-field" ] [
-                label [ _for "smallGroupId" ] [ locStr s["Group"] ]
+                label [ _for (nameof m.SmallGroupId) ] [ locStr s["Group"] ]
                 seq {
                   "", selectDefault s["Select Group"].Value
                   yield! groups
                 }
-                |> selectList "smallGroupId" "" [ _required ]
+                |> selectList (nameof m.SmallGroupId) "" [ _required ]
             ]
         ]
         div [ _class "pt-checkbox-field" ] [
-            input [ _type "checkbox"; _name "rememberMe"; _id "rememberMe"; _value "True" ]
+            input [ _type "checkbox"; _name (nameof m.RememberMe); _id "rememberMe"; _value "True" ]
             label [ _for "rememberMe" ] [ locStr s["Remember Me"] ]
             br []
             small [] [ em [] [ rawText "("; str (s["Requires Cookies"].Value.ToLower ()); rawText ")" ] ]

@@ -6,45 +6,50 @@ open PrayerTracker.ViewModels
 
 /// View for the church edit page
 let edit (m : EditChurch) ctx vi =
-    let pageTitle = match m.isNew () with true -> "Add a New Church" | false -> "Edit Church"
+    let pageTitle = match m.IsNew with true -> "Add a New Church" | false -> "Edit Church"
     let s         = I18N.localizer.Force ()
     [ form [ _action "/web/church/save"; _method "post"; _class "pt-center-columns" ] [
         style [ _scoped ] [
             rawText "#name { width: 20rem; } #city { width: 10rem; } #st { width: 3rem; } #interfaceAddress { width: 30rem; }"
         ]
         csrfToken ctx
-        input [ _type "hidden"; _name "churchId"; _value (flatGuid m.churchId) ]
+        input [ _type "hidden"; _name (nameof m.ChurchId); _value (flatGuid m.ChurchId) ]
         div [ _class "pt-field-row" ] [
             div [ _class "pt-field" ] [
                 label [ _for "name" ] [ locStr s["Church Name"] ]
-                input [ _type "text"; _name "name"; _id "name"; _required; _autofocus; _value m.name ]
+                input [ _type "text"; _name (nameof m.Name); _id "name"; _required; _autofocus; _value m.Name ]
             ]
             div [ _class "pt-field" ] [
                 label [ _for "City"] [ locStr s["City"] ]
-                input [ _type "text"; _name "city"; _id "city"; _required; _value m.city ]
+                input [ _type "text"; _name (nameof m.City); _id "city"; _required; _value m.City ]
             ]
             div [ _class "pt-field" ] [
-                label [ _for "ST" ] [ locStr s["State"] ]
-                input [ _type "text"; _name "st"; _id "st"; _required; _minlength "2"; _maxlength "2"; _value m.st ]
+                label [ _for "state" ] [ locStr s["State or Province"] ]
+                input [ _type "text"
+                        _name (nameof m.State)
+                        _id "state"
+                        _required
+                        _minlength "2"; _maxlength "2"
+                        _value m.State ]
             ]
         ]
         div [ _class "pt-field-row" ] [
             div [ _class "pt-checkbox-field" ] [
                 input [ _type "checkbox"
-                        _name "hasInterface"
+                        _name (nameof m.HasInterface)
                         _id "hasInterface"
                         _value "True"
-                        match m.hasInterface with Some x when x -> _checked | _ -> () ]
+                        if defaultArg m.HasInterface false then _checked ]
                 label [ _for "hasInterface" ] [ locStr s["Has an interface with Virtual Prayer Room"] ]
             ]
         ]
         div [ _class "pt-field-row pt-fadeable"; _id "divInterfaceAddress" ] [
             div [ _class "pt-field" ] [
                 label [ _for "interfaceAddress" ] [ locStr s["VPR Interface URL"] ]
-                input
-                    [ _type "url"; _name "interfaceAddress"; _id "interfaceAddress";
-                      _value (match m.interfaceAddress with Some ia -> ia | None -> "")
-                    ]
+                input [ _type "url"
+                        _name (nameof m.InterfaceAddress)
+                        _id "interfaceAddress";
+                        _value (defaultArg m.InterfaceAddress "") ]
             ]
         ]
         div [ _class "pt-field-row" ] [ submit [] "save" s["Save Church"] ]
