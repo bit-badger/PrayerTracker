@@ -12,7 +12,7 @@ let announcement isAdmin ctx vi =
     let s        = I18N.localizer.Force ()
     let m        = { SendToClass = ""; Text = ""; AddToRequestList = None; RequestType = None }
     let reqTypes = ReferenceList.requestTypeList s
-    [ form [ _action "/web/small-group/announcement/send"; _method "post"; _class "pt-center-columns" ] [
+    [ form [ _action "/small-group/announcement/send"; _method "post"; _class "pt-center-columns" ] [
         csrfToken ctx
         div [ _class "pt-field-row" ] [
             div [ _class "pt-field pt-editor" ] [
@@ -74,7 +74,7 @@ let announcementSent (m : Announcement) vi =
 let edit (m : EditSmallGroup) (churches : Church list) ctx vi =
     let s         = I18N.localizer.Force ()
     let pageTitle = if m.IsNew then "Add a New Group" else "Edit Group"
-    form [ _action "/web/small-group/save"; _method "post"; _class "pt-center-columns" ] [
+    form [ _action "/small-group/save"; _method "post"; _class "pt-center-columns" ] [
         csrfToken ctx
         input [ _type "hidden"; _name (nameof m.SmallGroupId); _value (flatGuid m.SmallGroupId) ]
         div [ _class "pt-field-row" ] [
@@ -104,7 +104,7 @@ let edit (m : EditSmallGroup) (churches : Church list) ctx vi =
 let editMember (m : EditMember) (types : (string * LocalizedString) seq) ctx vi =
     let s         = I18N.localizer.Force ()
     let pageTitle = if m.IsNew then "Add a New Group Member" else "Edit Group Member"
-    form [ _action "/web/small-group/member/save"; _method "post"; _class "pt-center-columns" ] [
+    form [ _action "/small-group/member/save"; _method "post"; _class "pt-center-columns" ] [
         style [ _scoped ] [ rawText "#name { width: 15rem; } #email { width: 20rem; }" ]
         csrfToken ctx
         input [ _type "hidden"; _name (nameof m.MemberId); _value (flatGuid m.MemberId) ]
@@ -137,7 +137,7 @@ let editMember (m : EditMember) (types : (string * LocalizedString) seq) ctx vi 
 let logOn (groups : SmallGroup list) grpId ctx vi =
     let s = I18N.localizer.Force ()
     let m = { SmallGroupId = System.Guid.Empty; Password = ""; RememberMe = None }
-    [ form [ _action "/web/small-group/log-on/submit"; _method "post"; _class "pt-center-columns" ] [
+    [ form [ _action "/small-group/log-on/submit"; _method "post"; _class "pt-center-columns" ] [
         csrfToken ctx
         div [ _class "pt-field-row" ] [
             div [ _class "pt-field" ] [
@@ -195,12 +195,12 @@ let maintain (groups : SmallGroup list) ctx vi =
                 groups
                 |> List.map (fun g ->
                     let grpId     = flatGuid g.smallGroupId
-                    let delAction = $"/web/small-group/{grpId}/delete"
+                    let delAction = $"/small-group/{grpId}/delete"
                     let delPrompt = s["Are you sure you want to delete this {0}?  This action cannot be undone.",
                                          $"""{s["Small Group"].Value.ToLower ()} ({g.name})""" ].Value
                     tr [] [
                         td [] [
-                            a [ _href $"/web/small-group/{grpId}/edit"; _title s["Edit This Group"].Value ]
+                            a [ _href $"/small-group/{grpId}/edit"; _title s["Edit This Group"].Value ]
                               [ icon "edit" ]
                             a [ _href delAction
                                 _title s["Delete This Group"].Value
@@ -215,7 +215,7 @@ let maintain (groups : SmallGroup list) ctx vi =
             ]
     [ div [ _class "pt-center-text" ] [
         br []
-        a [ _href $"/web/small-group/{emptyGuid}/edit"; _title s["Add a New Group"].Value ] [
+        a [ _href $"/small-group/{emptyGuid}/edit"; _title s["Add a New Group"].Value ] [
           icon "add_circle"
           rawText " &nbsp;"
           locStr s["Add a New Group"]
@@ -250,13 +250,13 @@ let members (members : Member list) (emailTyps : Map<string, LocalizedString>) c
                 members
                 |> List.map (fun mbr ->
                     let mbrId     = flatGuid mbr.memberId
-                    let delAction = $"/web/small-group/member/{mbrId}/delete"
+                    let delAction = $"/small-group/member/{mbrId}/delete"
                     let delPrompt =
                         s["Are you sure you want to delete this {0}?  This action cannot be undone.", s["group member"]]
                             .Value.Replace("?", $" ({mbr.memberName})?")
                     tr [] [
                         td [] [
-                            a [ _href $"/web/small-group/member/{mbrId}/edit"; _title s["Edit This Group Member"].Value ]
+                            a [ _href $"/small-group/member/{mbrId}/edit"; _title s["Edit This Group Member"].Value ]
                               [ icon "edit" ]
                             a [ _href delAction
                                 _title s["Delete This Group Member"].Value
@@ -271,7 +271,7 @@ let members (members : Member list) (emailTyps : Map<string, LocalizedString>) c
             ]
     [ div [ _class"pt-center-text" ] [
         br []
-        a [ _href $"/web/small-group/member/{emptyGuid}/edit"; _title s["Add a New Group Member"].Value ]
+        a [ _href $"/small-group/member/{emptyGuid}/edit"; _title s["Add a New Group Member"].Value ]
           [ icon "add_circle"; rawText " &nbsp;"; locStr s["Add a New Group Member"] ]
         br []
         br []
@@ -296,12 +296,12 @@ let overview m vi =
                 locStr s["Quick Actions"]
             ]
             div [] [
-                a [ _href "/web/prayer-requests/view" ]
+                a [ _href "/prayer-requests/view" ]
                   [ icon "list"; linkSpacer; locStr s["View Prayer Request List"] ]
                 hr []
-                a [ _href "/web/small-group/announcement" ] [ icon "send"; linkSpacer; locStr s["Send Announcement"] ]
+                a [ _href "/small-group/announcement" ] [ icon "send"; linkSpacer; locStr s["Send Announcement"] ]
                 hr []
-                a [ _href "/web/small-group/preferences" ] [ icon "build"; linkSpacer; locStr s["Change Preferences"] ]
+                a [ _href "/small-group/preferences" ] [ icon "build"; linkSpacer; locStr s["Change Preferences"] ]
             ]
         ]
         section [] [
@@ -324,7 +324,7 @@ let overview m vi =
                 space
                 locStr s["Total Requests"]
                 hr []
-                a [ _href "/web/prayer-requests/maintain" ] [
+                a [ _href "/prayer-requests/maintain" ] [
                     icon "compare_arrows"
                     linkSpacer
                     locStr s["Maintain Prayer Requests"]
@@ -339,7 +339,7 @@ let overview m vi =
             div [ _class "pt-center-text" ] [
                 strong [] [ str (m.TotalMembers.ToString "N0"); space; locStr s["Members"] ]
                 hr []
-                a [ _href "/web/small-group/members" ] [ icon "email"; linkSpacer; locStr s["Maintain Group Members"] ]
+                a [ _href "/small-group/members" ] [ icon "email"; linkSpacer; locStr s["Maintain Group Members"] ]
             ]
         ]
     ]
@@ -354,7 +354,7 @@ let preferences (m : EditPreferences) (tzs : TimeZone list) ctx vi =
     let l   = I18N.forView "SmallGroup/Preferences"
     use sw  = new StringWriter ()
     let raw = rawLocText sw
-    [ form [ _action "/web/small-group/preferences/save"; _method "post"; _class "pt-center-columns" ] [
+    [ form [ _action "/small-group/preferences/save"; _method "post"; _class "pt-center-columns" ] [
         style [ _scoped ]
               [ rawText "#expireDays, #daysToKeepNew, #longTermUpdateWeeks, #headingFontSize, #listFontSize, #pageSize { width: 3rem; } #emailFromAddress { width: 20rem; } #fonts { width: 40rem; } @media screen and (max-width: 40rem) { #fonts { width: 100%; } }" ]
         csrfToken ctx

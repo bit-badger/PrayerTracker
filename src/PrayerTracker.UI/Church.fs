@@ -8,7 +8,7 @@ open PrayerTracker.ViewModels
 let edit (m : EditChurch) ctx vi =
     let pageTitle = match m.IsNew with true -> "Add a New Church" | false -> "Edit Church"
     let s         = I18N.localizer.Force ()
-    [ form [ _action "/web/church/save"; _method "post"; _class "pt-center-columns" ] [
+    [ form [ _action "/church/save"; _method "post"; _class "pt-center-columns" ] [
         style [ _scoped ] [
             rawText "#name { width: 20rem; } #city { width: 10rem; } #st { width: 3rem; } #interfaceAddress { width: 30rem; }"
         ]
@@ -82,12 +82,12 @@ let maintain (churches : Church list) (stats : Map<string, ChurchStats>) ctx vi 
                 churches
                 |> List.map (fun ch ->
                     let chId      = flatGuid ch.churchId
-                    let delAction = $"/web/church/{chId}/delete"
+                    let delAction = $"/church/{chId}/delete"
                     let delPrompt = s["Are you sure you want to delete this {0}?  This action cannot be undone.",
                                       $"""{s["Church"].Value.ToLower ()} ({ch.name})"""]
                     tr [] [
                         td [] [
-                          a [ _href $"/web/church/{chId}/edit"; _title s["Edit This Church"].Value ] [ icon "edit" ]
+                          a [ _href $"/church/{chId}/edit"; _title s["Edit This Church"].Value ] [ icon "edit" ]
                           a [ _href delAction
                               _title s["Delete This Church"].Value
                               _onclick $"return PT.confirmDelete('{delAction}','{delPrompt}')" ]
@@ -104,7 +104,7 @@ let maintain (churches : Church list) (stats : Map<string, ChurchStats>) ctx vi 
             ]
     [ div [ _class "pt-center-text" ] [
         br []
-        a [ _href $"/web/church/{emptyGuid}/edit"; _title s["Add a New Church"].Value ]
+        a [ _href $"/church/{emptyGuid}/edit"; _title s["Add a New Church"].Value ]
           [ icon "add_circle"; rawText " &nbsp;"; locStr s["Add a New Church"] ]
         br []
         br []

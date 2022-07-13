@@ -14,7 +14,7 @@ open PrayerTracker.ViewModels
 let edit (m : EditRequest) today ctx vi =
     let s         = I18N.localizer.Force ()
     let pageTitle = if m.IsNew then "Add a New Request" else "Edit Request"
-    [ form [ _action "/web/prayer-request/save"; _method "post"; _class "pt-center-columns" ] [
+    [ form [ _action "/prayer-request/save"; _method "post"; _class "pt-center-columns" ] [
         csrfToken ctx
         input [ _type "hidden"; _name (nameof m.RequestId); _value (flatGuid m.RequestId) ]
         div [ _class "pt-field-row" ] [
@@ -137,10 +137,9 @@ let lists (groups : SmallGroup list) vi =
                   let grpId = flatGuid grp.smallGroupId
                   tr [] [
                       if grp.preferences.isPublic then
-                          a [ _href $"/web/prayer-requests/{grpId}/list"; _title s["View"].Value ] [ icon "list" ]
+                          a [ _href $"/prayer-requests/{grpId}/list"; _title s["View"].Value ] [ icon "list" ]
                       else
-                          a [ _href $"/web/small-group/log-on/{grpId}"; _title s["Log On"].Value ]
-                            [ icon "verified_user" ]
+                          a [ _href $"/small-group/log-on/{grpId}"; _title s["Log On"].Value ] [ icon "verified_user" ]
                       |> List.singleton
                       |> td []
                       td [] [ str grp.church.name ]
@@ -174,7 +173,7 @@ let maintain (m : MaintainRequests) (ctx : HttpContext) vi =
         |> List.map (fun req ->
             let reqId     = flatGuid req.prayerRequestId
             let reqText   = htmlToPlainText req.text
-            let delAction = $"/web/prayer-request/{reqId}/delete"
+            let delAction = $"/prayer-request/{reqId}/delete"
             let delPrompt =
                 [ s["Are you sure you want to delete this {0}?  This action cannot be undone.",
                     s["Prayer Request"].Value.ToLower() ].Value
@@ -185,14 +184,14 @@ let maintain (m : MaintainRequests) (ctx : HttpContext) vi =
                 |> String.concat ""
             tr [] [
                 td [] [
-                    a [ _href $"/web/prayer-request/{reqId}/edit"; _title l["Edit This Prayer Request"].Value ]
+                    a [ _href $"/prayer-request/{reqId}/edit"; _title l["Edit This Prayer Request"].Value ]
                       [ icon "edit" ]
                     if req.isExpired now m.SmallGroup.preferences.daysToExpire then
-                        a [ _href $"/web/prayer-request/{reqId}/restore"
+                        a [ _href $"/prayer-request/{reqId}/restore"
                             _title l["Restore This Inactive Request"].Value ]
                           [ icon "visibility" ]
                     else
-                        a [ _href $"/web/prayer-request/{reqId}/expire"
+                        a [ _href $"/prayer-request/{reqId}/expire"
                             _title l["Expire This Request Immediately"].Value ]
                           [ icon "visibility_off" ]
                     a [ _href delAction; _title l["Delete This Request"].Value;
@@ -213,19 +212,19 @@ let maintain (m : MaintainRequests) (ctx : HttpContext) vi =
         |> List.ofSeq
     [ div [ _class "pt-center-text" ] [
         br []
-        a [ _href $"/web/prayer-request/{emptyGuid}/edit"; _title s["Add a New Request"].Value ]
+        a [ _href $"/prayer-request/{emptyGuid}/edit"; _title s["Add a New Request"].Value ]
           [ icon "add_circle"; rawText " &nbsp;"; locStr s["Add a New Request"] ]
         rawText " &nbsp; &nbsp; &nbsp; "
-        a [ _href "/web/prayer-requests/view"; _title s["View Prayer Request List"].Value ]
+        a [ _href "/prayer-requests/view"; _title s["View Prayer Request List"].Value ]
           [ icon "list"; rawText " &nbsp;"; locStr s["View Prayer Request List"] ]
         match m.SearchTerm with
         | Some _ ->
             rawText " &nbsp; &nbsp; &nbsp; "
-            a [ _href "/web/prayer-requests"; _title l["Clear Search Criteria"].Value ]
+            a [ _href "/prayer-requests"; _title l["Clear Search Criteria"].Value ]
               [ icon "highlight_off"; rawText " &nbsp;"; raw l["Clear Search Criteria"] ]
         | None -> ()
       ]
-      form [ _action "/web/prayer-requests"; _method "get"; _class "pt-center-text pt-search-form" ] [
+      form [ _action "/prayer-requests"; _method "get"; _class "pt-center-text pt-search-form" ] [
           input [ _type "text"
                   _name "search"
                   _placeholder l["Search requests..."].Value
@@ -257,18 +256,18 @@ let maintain (m : MaintainRequests) (ctx : HttpContext) vi =
           | Some true ->
               raw l["Inactive requests are currently not shown"]
               br []
-              a [ _href "/web/prayer-requests/inactive" ] [ raw l["Show Inactive Requests"] ]
+              a [ _href "/prayer-requests/inactive" ] [ raw l["Show Inactive Requests"] ]
           | _ ->
               if defaultArg m.OnlyActive false then
                   raw l["Inactive requests are currently shown"]
                   br []
-                  a [ _href "/web/prayer-requests" ] [ raw l["Do Not Show Inactive Requests"] ]
+                  a [ _href "/prayer-requests" ] [ raw l["Do Not Show Inactive Requests"] ]
                   br []
                   br []
               let search = [ match m.SearchTerm with Some s -> "search", s | None -> () ]
               let pg     = defaultArg m.PageNbr 1
               let url    =
-                  match m.OnlyActive with Some true | None -> "" | _ -> "/inactive" |> sprintf "/web/prayer-requests%s"
+                  match m.OnlyActive with Some true | None -> "" | _ -> "/inactive" |> sprintf "/prayer-requests%s"
               match pg with
               | 1 -> ()
               | _ ->
@@ -319,7 +318,7 @@ let view m vi =
     [ div [ _class "pt-center-text" ] [
         br []
         a [ _class "pt-icon-link"
-            _href $"/web/prayer-requests/print/{dtString}"
+            _href $"/prayer-requests/print/{dtString}"
             _title s["View Printable"].Value
           ] [ icon "print"; rawText " &nbsp;"; locStr s["View Printable"] ]
         if m.CanEmail then
@@ -329,20 +328,20 @@ let view m vi =
                     if date.DayOfWeek = DayOfWeek.Sunday then date else findSunday (date.AddDays 1.)
                 let sunday = findSunday m.Date
                 a [ _class "pt-icon-link"
-                    _href $"""/web/prayer-requests/view/{sunday.ToString "yyyy-MM-dd"}"""
+                    _href $"""/prayer-requests/view/{sunday.ToString "yyyy-MM-dd"}"""
                     _title s["List for Next Sunday"].Value ] [
                     icon "update"; rawText " &nbsp;"; locStr s["List for Next Sunday"]
                 ]
                 spacer
             let emailPrompt = s["This will e-mail the current list to every member of your group, without further prompting.  Are you sure this is what you are ready to do?"].Value
             a [ _class "pt-icon-link"
-                _href $"/web/prayer-requests/email/{dtString}"
+                _href $"/prayer-requests/email/{dtString}"
                 _title s["Send via E-mail"].Value
                 _onclick $"return PT.requests.view.promptBeforeEmail('{emailPrompt}')" ] [
                 icon "mail_outline"; rawText " &nbsp;"; locStr s["Send via E-mail"]
             ]
         spacer
-        a [ _class "pt-icon-link"; _href "/web/prayer-requests"; _title s["Maintain Prayer Requests"].Value ] [
+        a [ _class "pt-icon-link"; _href "/prayer-requests"; _title s["Maintain Prayer Requests"].Value ] [
            icon "compare_arrows"; rawText " &nbsp;"; locStr s["Maintain Prayer Requests"]
         ]
       ]

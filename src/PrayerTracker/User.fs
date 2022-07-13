@@ -69,13 +69,13 @@ let changePassword : HttpHandler = requireAccess [ User ] >=> validateCSRF >=> f
                 if ctx.Request.Cookies.Keys.Contains Key.Cookie.user then setUserCookie ctx usr.passwordHash
                 addInfo ctx s["Your password was changed successfully"]
             | None -> addError ctx s["Unable to change password"]
-            return! redirectTo false "/web/" next ctx
+            return! redirectTo false "/" next ctx
         | Some _ ->
             addError ctx s["The new passwords did not match - your password was NOT changed"]
-            return! redirectTo false "/web/user/password" next ctx
+            return! redirectTo false "/user/password" next ctx
         | None ->
             addError ctx s["The old password was incorrect - your password was NOT changed"]
-            return! redirectTo false "/web/user/password" next ctx
+            return! redirectTo false "/user/password" next ctx
     | Result.Error e -> return! bindError e next ctx
 }
 
@@ -88,7 +88,7 @@ let delete userId : HttpHandler = requireAccess [ Admin ] >=> validateCSRF >=> f
         let! _ = ctx.db.SaveChangesAsync ()
         let  s = Views.I18N.localizer.Force ()
         addInfo ctx s["Successfully deleted user {0}", user.fullName]
-        return! redirectTo false "/web/users" next ctx
+        return! redirectTo false "/users" next ctx
     | _ -> return! fourOhFour next ctx
 }
 
@@ -108,8 +108,8 @@ let doLogOn : HttpHandler = requireAccess [ AccessLevel.Public ] >=> validateCSR
                 if defaultArg m.RememberMe false then setUserCookie ctx pwHash
                 addHtmlInfo ctx s["Log On Successful • Welcome to {0}", s["PrayerTracker"]]
                 match m.RedirectUrl with
-                | None -> "/web/small-group"
-                | Some x when x = "" -> "/web/small-group"
+                | None -> "/small-group"
+                | Some x when x = "" -> "/small-group"
                 | Some x -> x
             | _ ->
                 let grpName = match grp with Some g -> g.name | _ -> "N/A"
@@ -130,7 +130,7 @@ let doLogOn : HttpHandler = requireAccess [ AccessLevel.Public ] >=> validateCSR
                         |> (HtmlString >> Some)
                 }
                 |> addUserMessage ctx
-                "/web/user/log-on"
+                "/user/log-on"
         return! redirectTo false nextUrl next ctx
     | Result.Error e -> return! bindError e next ctx
 }
@@ -225,10 +225,10 @@ let save : HttpHandler = requireAccess [ Admin ] >=> validateCSRF >=> fun next c
                       |> Some
                 }
                 |> addUserMessage ctx
-                return! redirectTo false $"/web/user/{flatGuid u.userId}/small-groups" next ctx
+                return! redirectTo false $"/user/{flatGuid u.userId}/small-groups" next ctx
             else
                 addInfo ctx s["Successfully {0} user", s["Updated"].Value.ToLower ()]
-                return! redirectTo false "/web/users" next ctx
+                return! redirectTo false "/users" next ctx
         | None -> return! fourOhFour next ctx
     | Result.Error e -> return! bindError e next ctx
 }
@@ -242,7 +242,7 @@ let saveGroups : HttpHandler = requireAccess [ Admin ] >=> validateCSRF >=> fun 
         match Seq.length m.SmallGroups with
         | 0 ->
             addError ctx s["You must select at least one group to assign"]
-            return! redirectTo false $"/web/user/{flatGuid m.UserId}/small-groups" next ctx
+            return! redirectTo false $"/user/{flatGuid m.UserId}/small-groups" next ctx
         | _ ->
             match! ctx.db.TryUserByIdWithGroups m.UserId with
             | Some user ->
@@ -261,7 +261,7 @@ let saveGroups : HttpHandler = requireAccess [ Admin ] >=> validateCSRF >=> fun 
                 |> List.iter ctx.db.AddEntry
                 let! _ = ctx.db.SaveChangesAsync ()
                 addInfo ctx s["Successfully updated group permissions for {0}", m.UserName]
-                return! redirectTo false "/web/users" next ctx
+                return! redirectTo false "/users" next ctx
               | _ -> return! fourOhFour next ctx
     | Result.Error e -> return! bindError e next ctx
 }

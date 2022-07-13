@@ -28,7 +28,7 @@ let delete churchId : HttpHandler = requireAccess [ Admin ] >=> validateCSRF >=>
         addInfo ctx
           s["The church {0} and its {1} small groups (with {2} prayer request(s)) were deleted successfully; revoked access from {3} user(s)",
               church.name, stats.smallGroups, stats.prayerRequests, stats.users]
-        return! redirectTo false "/web/churches" next ctx
+        return! redirectTo false "/churches" next ctx
     | None -> return! fourOhFour next ctx
 }
 
@@ -80,7 +80,7 @@ let save : HttpHandler = requireAccess [ Admin ] >=> validateCSRF >=> fun next c
             let  s   = Views.I18N.localizer.Force ()
             let  act = s[if m.IsNew then "Added" else "Updated"].Value.ToLower ()
             addInfo ctx s["Successfully {0} church “{1}”", act, m.Name]
-            return! redirectTo false "/web/churches" next ctx
+            return! redirectTo false "/churches" next ctx
         | None -> return! fourOhFour next ctx
     | Result.Error e -> return! bindError e next ctx
 }

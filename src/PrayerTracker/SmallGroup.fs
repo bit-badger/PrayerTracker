@@ -38,7 +38,7 @@ let delete groupId : HttpHandler = requireAccess [ Admin ] >=> validateCSRF >=> 
         addInfo ctx
             s["The group {0} and its {1} prayer request(s) were deleted successfully; revoked access from {2} user(s)",
               grp.name, reqs, users]
-        return! redirectTo false "/web/small-groups" next ctx
+        return! redirectTo false "/small-groups" next ctx
     | None -> return! fourOhFour next ctx
 }
 
@@ -51,7 +51,7 @@ let deleteMember memberId : HttpHandler = requireAccess [ User ] >=> validateCSR
         ctx.db.RemoveEntry mbr
         let! _ = ctx.db.SaveChangesAsync ()
         addHtmlInfo ctx s["The group member &ldquo;{0}&rdquo; was deleted successfully", mbr.memberName]
-        return! redirectTo false "/web/small-group/members" next ctx
+        return! redirectTo false "/small-group/members" next ctx
     | Some _
     | None -> return! fourOhFour next ctx
 }
@@ -122,10 +122,10 @@ let logOnSubmit : HttpHandler = requireAccess [ AccessLevel.Public ] >=> validat
             ctx.Session.smallGroup <- Some grp
             if defaultArg m.RememberMe false then (setGroupCookie ctx << sha1Hash) m.Password
             addInfo ctx s["Log On Successful • Welcome to {0}", s["PrayerTracker"]]
-            return! redirectTo false "/web/prayer-requests/view" next ctx
+            return! redirectTo false "/prayer-requests/view" next ctx
         | None ->
             addError ctx s["Password incorrect - login unsuccessful"]
-            return! redirectTo false $"/web/small-group/log-on/{flatGuid m.SmallGroupId}" next ctx
+            return! redirectTo false $"/small-group/log-on/{flatGuid m.SmallGroupId}" next ctx
     | Result.Error e -> return! bindError e next ctx
 }
 
@@ -211,7 +211,7 @@ let save : HttpHandler = requireAccess [ Admin ] >=> validateCSRF >=> fun next c
             let! _ = ctx.db.SaveChangesAsync ()
             let act = s[if m.IsNew then "Added" else "Updated"].Value.ToLower ()
             addHtmlInfo ctx s["Successfully {0} group “{1}”", act, m.Name]
-            return! redirectTo false "/web/small-groups" next ctx
+            return! redirectTo false "/small-groups" next ctx
         | None -> return! fourOhFour next ctx
     | Result.Error e -> return! bindError e next ctx
 }
@@ -238,7 +238,7 @@ let saveMember : HttpHandler = requireAccess [ User ] >=> validateCSRF >=> fun n
             let s = Views.I18N.localizer.Force ()
             let act = s[if m.IsNew then "Added" else "Updated"].Value.ToLower ()
             addInfo ctx s["Successfully {0} group member", act]
-            return! redirectTo false "/web/small-group/members" next ctx
+            return! redirectTo false "/small-group/members" next ctx
         | Some _
         | None -> return! fourOhFour next ctx
     | Result.Error e -> return! bindError e next ctx
@@ -261,7 +261,7 @@ let savePreferences : HttpHandler = requireAccess [ User ] >=> validateCSRF >=> 
             ctx.Session.smallGroup <- Some { grp with preferences = prefs }
             let s = Views.I18N.localizer.Force ()
             addInfo ctx s["Group preferences updated successfully"]
-            return! redirectTo false "/web/small-group/preferences" next ctx
+            return! redirectTo false "/small-group/preferences" next ctx
         | None -> return! fourOhFour next ctx
     | Result.Error e -> return! bindError e next ctx
 }

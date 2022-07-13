@@ -234,17 +234,17 @@ let requireAccess level : HttpHandler =
             | false ->
                 let s = Views.I18N.localizer.Force ()
                 addError ctx s["You are not authorized to view the requested page."]
-                return! redirectTo false "/web/unauthorized" next ctx
+                return! redirectTo false "/unauthorized" next ctx
         | _ when level |> List.contains User ->
             // Redirect to the user log on page
             ctx.Session.SetString (Key.Session.redirectUrl, ctx.Request.GetEncodedUrl ())
-            return! redirectTo false "/web/user/log-on" next ctx
+            return! redirectTo false "/user/log-on" next ctx
         | _ when level |> List.contains Group ->
             // Redirect to the small group log on page
             ctx.Session.SetString (Key.Session.redirectUrl, ctx.Request.GetEncodedUrl ())
-            return! redirectTo false "/web/small-group/log-on" next ctx
+            return! redirectTo false "/small-group/log-on" next ctx
         | _ ->
             let s = Views.I18N.localizer.Force ()
             addError ctx s["You are not authorized to view the requested page."]
-            return! redirectTo false "/web/unauthorized" next ctx
+            return! redirectTo false "/unauthorized" next ctx
     }

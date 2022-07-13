@@ -16,7 +16,7 @@ let private findRequest (ctx : HttpContext) reqId = task {
     | Some _ ->
         let s = Views.I18N.localizer.Force ()
         addError ctx s["The prayer request you tried to access is not assigned to your group"]
-        return Result.Error (redirectTo false "/web/unauthorized")
+        return Result.Error (redirectTo false "/unauthorized")
     | None -> return Result.Error fourOhFour
 }
 
@@ -101,7 +101,7 @@ let delete reqId : HttpHandler = requireAccess [ User ] >=> validateCSRF >=> fun
         ctx.db.PrayerRequests.Remove req |> ignore
         let! _ = ctx.db.SaveChangesAsync ()
         addInfo ctx s["The prayer request was deleted successfully"]
-        return! redirectTo false "/web/prayer-requests" next ctx
+        return! redirectTo false "/prayer-requests" next ctx
     | Result.Error e -> return! e next ctx
 }
 
@@ -114,7 +114,7 @@ let expire reqId : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task
         ctx.db.UpdateEntry { req with expiration = Forced }
         let! _ = ctx.db.SaveChangesAsync ()
         addInfo ctx s["Successfully {0} prayer request", s["Expired"].Value.ToLower ()]
-        return! redirectTo false "/web/prayer-requests" next ctx
+        return! redirectTo false "/prayer-requests" next ctx
     | Result.Error e -> return! e next ctx
 }
 
@@ -140,7 +140,7 @@ let list groupId : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun ne
     | Some _ ->
         let s = Views.I18N.localizer.Force ()
         addError ctx s["The request list for the group you tried to view is not public."]
-        return! redirectTo false "/web/unauthorized" next ctx
+        return! redirectTo false "/unauthorized" next ctx
     | None -> return! fourOhFour next ctx
 }
 
@@ -209,7 +209,7 @@ let restore reqId : HttpHandler = requireAccess [ User ] >=> fun next ctx -> tas
         ctx.db.UpdateEntry { req with expiration = Automatic; updatedDate = DateTime.Now }
         let! _ = ctx.db.SaveChangesAsync ()
         addInfo ctx s["Successfully {0} prayer request", s["Restored"].Value.ToLower ()]
-        return! redirectTo false "/web/prayer-requests" next ctx
+        return! redirectTo false "/prayer-requests" next ctx
     | Result.Error e -> return! e next ctx
 }
 
@@ -248,7 +248,7 @@ let save : HttpHandler = requireAccess [ User ] >=> validateCSRF >=> fun next ct
             let  s   = Views.I18N.localizer.Force ()
             let  act = if m.IsNew then "Added" else "Updated"
             addInfo ctx s["Successfully {0} prayer request", s[act].Value.ToLower ()]
-            return! redirectTo false "/web/prayer-requests" next ctx
+            return! redirectTo false "/prayer-requests" next ctx
         | None -> return! fourOhFour next ctx
     | Result.Error e -> return! bindError e next ctx
 }
