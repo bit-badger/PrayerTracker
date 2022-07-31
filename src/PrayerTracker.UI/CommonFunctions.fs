@@ -27,7 +27,7 @@ let space = rawText " "
 let icon name = i [ _class "material-icons" ] [ rawText name ]
 
 /// Generate a Material Design icon, specifying the point size (must be defined in CSS)
-let iconSized size name = i [ _class $"material-icons md-{size}" ] [ rawText name ]
+let iconSized size name = i [ _class $"material-icons md-%i{size}" ] [ rawText name ]
 
 /// Generate a CSRF prevention token
 let csrfToken (ctx : HttpContext) =
@@ -80,13 +80,11 @@ let namedColorList name selected attrs (s : IStringLocalizer) =
 
 /// Generate an input[type=radio] that is selected if its value is the current value
 let radio name domId value current =
-    input
-        [ _type "radio"
-          _name name
-          _id domId
-          _value value
-          if value = current then _checked
-        ]
+    input [ _type "radio"
+            _name name
+            _id domId
+            _value value
+            if value = current then _checked ]
 
 /// Generate a select list with the current value selected
 let selectList name selected attrs items =
@@ -100,7 +98,7 @@ let selectList name selected attrs items =
     |> select (List.concat [ [ _name name; _id name ]; attrs ])
 
 /// Generate the text for a default entry at the top of a select list
-let selectDefault text = $"— {text} —"
+let selectDefault text = $"— %s{text} —"
 
 /// Generate a standard submit button with icon and text
 let submit attrs ico text = button (_type "submit" :: attrs) [ icon ico; rawText " &nbsp;"; locStr text ]
@@ -108,28 +106,12 @@ let submit attrs ico text = button (_type "submit" :: attrs) [ icon ico; rawText
 
 open System
 
+// TODO: this is where to implement issue #1
 /// Format a GUID with no dashes (used for URLs and forms)
 let flatGuid (x : Guid) = x.ToString "N"
 
 /// An empty GUID string (used for "add" actions)
 let emptyGuid = flatGuid Guid.Empty
-
-
-/// blockquote tag
-let blockquote = tag "blockquote"
-
-/// role attribute
-let _role = attr "role"
-/// aria-* attribute
-let _aria typ = attr $"aria-{typ}"
-/// onclick attribute
-let _onclick = attr "onclick"
-/// onsubmit attribute
-let _onsubmit = attr "onsubmit"
-
-/// scoped flag (used for <style> tag)
-let _scoped = flag "scoped"
-
 
 /// The name this function used to have when the view engine was part of Giraffe
 let renderHtmlNode = RenderView.AsString.htmlNode

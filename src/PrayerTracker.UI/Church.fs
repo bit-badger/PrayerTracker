@@ -6,7 +6,7 @@ open PrayerTracker.ViewModels
 
 /// View for the church edit page
 let edit (m : EditChurch) ctx vi =
-    let pageTitle = match m.IsNew with true -> "Add a New Church" | false -> "Edit Church"
+    let pageTitle = if m.IsNew then "Add a New Church" else "Edit Church"
     let s         = I18N.localizer.Force ()
     [ form [ _action "/church/save"; _method "post"; _class "pt-center-columns" ] [
         style [ _scoped ] [
