@@ -94,7 +94,7 @@ let email date : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task {
 
 
 /// POST /prayer-request/[request-id]/delete
-let delete reqId : HttpHandler = requireAccess [ User ] >=> validateCSRF >=> fun next ctx -> task {
+let delete reqId : HttpHandler = requireAccess [ User ] >=> validateCsrf >=> fun next ctx -> task {
     match! findRequest ctx reqId with
     | Ok req ->
         let s  = Views.I18N.localizer.Force ()
@@ -215,7 +215,7 @@ let restore reqId : HttpHandler = requireAccess [ User ] >=> fun next ctx -> tas
 
 
 /// POST /prayer-request/save
-let save : HttpHandler = requireAccess [ User ] >=> validateCSRF >=> fun next ctx -> task {
+let save : HttpHandler = requireAccess [ User ] >=> validateCsrf >=> fun next ctx -> task {
     match! ctx.TryBindFormAsync<EditRequest> () with
     | Ok m ->
         let! req =

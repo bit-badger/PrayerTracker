@@ -103,6 +103,18 @@ module UserMessage =
           Description = None
         }
 
+/// The template with which the content will be rendered
+type LayoutType =
+    
+    /// A full page load
+    | FullPage
+    
+    /// A response that will provide a new body tag 
+    | PartialPage
+    
+    /// A response that will replace the page content
+    | ContentOnly
+
 
 open System
 
@@ -132,6 +144,9 @@ type AppViewInfo =
         
         /// The currently logged on small group, if there is one
         Group : SmallGroup option
+        
+        /// The layout with which the content will be rendered
+        Layout : LayoutType
     }
 
 /// Support for the AppViewInfo type
@@ -147,6 +162,7 @@ module AppViewInfo =
           RequestStart = DateTime.Now.Ticks
           User         = None
           Group        = None
+          Layout       = FullPage
         }
 
 

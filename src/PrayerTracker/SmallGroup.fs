@@ -27,7 +27,7 @@ let announcement : HttpHandler = requireAccess [ User ] >=> fun next ctx ->
 
 
 /// POST /small-group/[group-id]/delete
-let delete groupId : HttpHandler = requireAccess [ Admin ] >=> validateCSRF >=> fun next ctx -> task {
+let delete groupId : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next ctx -> task {
     let s = Views.I18N.localizer.Force ()
     match! ctx.db.TryGroupById groupId with
     | Some grp ->
@@ -44,7 +44,7 @@ let delete groupId : HttpHandler = requireAccess [ Admin ] >=> validateCSRF >=> 
 
 
 /// POST /small-group/member/[member-id]/delete
-let deleteMember memberId : HttpHandler = requireAccess [ User ] >=> validateCSRF >=> fun next ctx -> task {
+let deleteMember memberId : HttpHandler = requireAccess [ User ] >=> validateCsrf >=> fun next ctx -> task {
     let s  = Views.I18N.localizer.Force ()
     match! ctx.db.TryMemberById memberId with
     | Some mbr when mbr.smallGroupId = (currentGroup ctx).smallGroupId ->
@@ -113,7 +113,7 @@ let logOn (groupId : SmallGroupId option) : HttpHandler = requireAccess [ Access
 
 
 /// POST /small-group/log-on/submit
-let logOnSubmit : HttpHandler = requireAccess [ AccessLevel.Public ] >=> validateCSRF >=> fun next ctx -> task {
+let logOnSubmit : HttpHandler = requireAccess [ AccessLevel.Public ] >=> validateCsrf >=> fun next ctx -> task {
     match! ctx.TryBindFormAsync<GroupLogOn> () with
     | Ok m ->
         let s = Views.I18N.localizer.Force ()
@@ -193,7 +193,7 @@ let preferences : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task 
 
 
 /// POST /small-group/save
-let save : HttpHandler = requireAccess [ Admin ] >=> validateCSRF >=> fun next ctx -> task {
+let save : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next ctx -> task {
     match! ctx.TryBindFormAsync<EditSmallGroup> () with
     | Ok m ->
         let s = Views.I18N.localizer.Force ()
@@ -218,7 +218,7 @@ let save : HttpHandler = requireAccess [ Admin ] >=> validateCSRF >=> fun next c
 
 
 /// POST /small-group/member/save
-let saveMember : HttpHandler = requireAccess [ User ] >=> validateCSRF >=> fun next ctx -> task {
+let saveMember : HttpHandler = requireAccess [ User ] >=> validateCsrf >=> fun next ctx -> task {
     match! ctx.TryBindFormAsync<EditMember> () with
     | Ok m ->
         let  grp  = currentGroup ctx
@@ -246,7 +246,7 @@ let saveMember : HttpHandler = requireAccess [ User ] >=> validateCSRF >=> fun n
 
 
 /// POST /small-group/preferences/save
-let savePreferences : HttpHandler = requireAccess [ User ] >=> validateCSRF >=> fun next ctx -> task {
+let savePreferences : HttpHandler = requireAccess [ User ] >=> validateCsrf >=> fun next ctx -> task {
     match! ctx.TryBindFormAsync<EditPreferences> () with
     | Ok m ->
         // Since the class is stored in the session, we'll use an intermediate instance to persist it; once that works,
@@ -268,7 +268,7 @@ let savePreferences : HttpHandler = requireAccess [ User ] >=> validateCSRF >=> 
 
 
 /// POST /small-group/announcement/send
-let sendAnnouncement : HttpHandler = requireAccess [ User ] >=> validateCSRF >=> fun next ctx -> task {
+let sendAnnouncement : HttpHandler = requireAccess [ User ] >=> validateCsrf >=> fun next ctx -> task {
     let startTicks = DateTime.Now.Ticks
     match! ctx.TryBindFormAsync<Announcement> () with
     | Ok m ->

@@ -50,7 +50,6 @@ let index vi =
     let l   = I18N.forView "Home/Index"
     use sw  = new StringWriter ()
     let raw = rawLocText sw
-
     [   p [] [
             raw l["Welcome to <strong>{0}</strong>!", s["PrayerTracker"]]
             space
@@ -128,7 +127,6 @@ let privacyPolicy vi =
     let l   = I18N.forView "Home/PrivacyPolicy"
     use sw  = new StringWriter ()
     let raw = rawLocText sw
-
     [   p [ _class "pt-right-text" ] [ small [] [ em [] [ raw l["(as of July 31, 2018)"] ] ] ]
         p [] [
             raw l["The nature of the service is one where privacy is a must."]
@@ -150,7 +148,7 @@ let privacyPolicy vi =
                 rawText " &ndash; "
                 raw l["{0} stores the text of prayer requests.", s["PrayerTracker"]]
                 space
-                raw l["It also stores names and e-mail addreses of small group members, and plain-text passwords for small groups with password-protected lists."]
+                raw l["It also stores names and e-mail addresses of small group members, and plain-text passwords for small groups with password-protected lists."]
             ]
         ]
         h3 [] [ raw l["How Your Data Is Accessed / Secured"] ]

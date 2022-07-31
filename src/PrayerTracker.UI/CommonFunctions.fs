@@ -113,6 +113,12 @@ let flatGuid (x : Guid) = x.ToString "N"
 /// An empty GUID string (used for "add" actions)
 let emptyGuid = flatGuid Guid.Empty
 
+/// Create an HTML onsubmit event handler
+let _onsubmit = attr "onsubmit"
+
+/// A "rel='noopener'" attribute
+let _relNoOpener = _rel "noopener"
+
 /// The name this function used to have when the view engine was part of Giraffe
 let renderHtmlNode = RenderView.AsString.htmlNode
 
@@ -143,3 +149,15 @@ module TimeZones =
     let name tzId (s : IStringLocalizer) =
         try s[xref[tzId]]
         with :? KeyNotFoundException -> LocalizedString (tzId, tzId)
+
+
+open Giraffe.ViewEngine.Htmx
+
+/// Known htmx targets
+module Target =
+    
+    /// htmx links target the body element
+    let body = _hxTarget "body"
+    
+    /// htmx links target the #pt-body element
+    let content = _hxTarget "#pt-body"

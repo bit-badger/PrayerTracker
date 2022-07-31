@@ -3,39 +3,26 @@ module PrayerTracker.Views.Layout
 
 open Giraffe.ViewEngine
 open Giraffe.ViewEngine.Accessibility
-open Giraffe.ViewEngine.Htmx
-open PrayerTracker
 open PrayerTracker.ViewModels
-open System
 open System.Globalization
-
 
 /// Get the two-character language code for the current request
 let langCode () = if CultureInfo.CurrentCulture.Name.StartsWith "es" then "es" else "en"
 
 
-/// Known htmx targets
-module Target =
-    
-    /// htmx links target the body element
-    let body = _hxTarget "body"
-    
-    /// htmx links target the #pt-body element
-    let content = _hxTarget "#pt-body"
-
-    
 /// Navigation items
 module Navigation =
   
     /// Top navigation bar
     let top m =
-        let s = I18N.localizer.Force ()
+        let s          = I18N.localizer.Force ()
         let menuSpacer = rawText "&nbsp; "
+        let _dropdown  = _class "dropbtn"
         let leftLinks = [
             match m.User with
             | Some u ->
                 li [ _class "dropdown" ] [
-                    a [ _class "dropbtn"; _ariaLabel s["Requests"].Value; _title s["Requests"].Value; _roleButton ] [
+                    a [ _dropdown; _ariaLabel s["Requests"].Value; _title s["Requests"].Value; _roleButton ] [
                         icon "question_answer"; space; locStr s["Requests"]; space; icon "keyboard_arrow_down"
                     ]
                     div [ _class "dropdown-content"; _roleMenuBar ] [
@@ -48,7 +35,7 @@ module Navigation =
                     ]
                 ]
                 li [ _class "dropdown" ] [
-                    a [ _class "dropbtn"; _ariaLabel s["Group"].Value; _title s["Group"].Value; _roleButton ] [
+                    a [ _dropdown; _ariaLabel s["Group"].Value; _title s["Group"].Value; _roleButton ] [
                         icon "group"; space; locStr s["Group"]; space; icon "keyboard_arrow_down"
                     ]
                     div [ _class "dropdown-content"; _roleMenuBar ] [
@@ -65,7 +52,7 @@ module Navigation =
                 ]
                 if u.isAdmin then
                     li [ _class "dropdown" ] [
-                        a [ _class     "dropbtn"
+                        a [ _dropdown
                             _ariaLabel s["Administration"].Value
                             _title     s["Administration"].Value
                             _roleButton ] [
@@ -89,7 +76,7 @@ module Navigation =
                     ]
                 | None ->
                     li [ _class "dropdown" ] [
-                        a [ _class "dropbtn"; _ariaLabel s["Log On"].Value; _title s["Log On"].Value; _roleButton ] [
+                        a [ _dropdown; _ariaLabel s["Log On"].Value; _title s["Log On"].Value; _roleButton ] [
                             icon "security"; space; locStr s["Log On"]; space; icon "keyboard_arrow_down"
                         ]
                         div [ _class "dropdown-content"; _roleMenuBar ] [
@@ -111,7 +98,7 @@ module Navigation =
                     _ariaLabel s["Help"].Value
                     _title     s["View Help"].Value
                     _target    "_blank"
-                    _rel       "noopener" ] [
+                    _relNoOpener ] [
                     icon "help"; space; locStr s["Help"]
                 ]
             ]
@@ -130,10 +117,7 @@ module Navigation =
                         ]
                     | None -> ()
                     li [] [
-                        a [ _href      "/log-off"
-                            _ariaLabel s["Log Off"].Value
-                            _title     s["Log Off"].Value
-                            _hxTarget  "body" ] [
+                        a [ _href "/log-off"; _ariaLabel s["Log Off"].Value; _title s["Log Off"].Value; Target.body ] [
                             icon "power_settings_new"; space; locStr s["Log Off"]
                         ]
                     ]
@@ -222,10 +206,11 @@ let private htmlHead m pageTitle =
         yield! commonHead
         for cssFile in m.Style do
             link [ _rel "stylesheet"; _href $"/css/{cssFile}.css"; _type "text/css" ]
-        for jsFile in m.Script do
-            script [ _src $"/js/{jsFile}.js" ] []
     ]
-  
+
+
+open Giraffe.ViewEngine.Htmx
+
 /// Render a link to the help page for the current page
 let private helpLink link =
     let s = I18N.localizer.Force ()
@@ -241,7 +226,7 @@ let private helpLink link =
 /// Render the page title, and optionally a help link
 let private renderPageTitle m pageTitle =
     h2 [ _id "pt-page-title" ] [
-        match m.HelpLink with Some link -> Help.fullLink (langCode ()) link |> helpLink | None -> ()
+        match m.HelpLink with Some link -> PrayerTracker.Utils.Help.fullLink (langCode ()) link |> helpLink | None -> ()
         locStr pageTitle
     ]
 
@@ -268,6 +253,9 @@ let private messages m =
             ]
         ])
 
+
+open System
+
 /// Render the <footer> at the bottom of the page
 let private htmlFooter m =
     let s          = I18N.localizer.Force ()
@@ -282,7 +270,7 @@ let private htmlFooter m =
             a [ _href   "https://github.com/bit-badger/PrayerTracker"
                 _title  s["View source code and get technical support"].Value
                 _target "_blank"
-                _rel    "noopener" ] [
+                _relNoOpener ] [
                 locStr s["Source & Support"]
             ]
         ]
@@ -300,32 +288,56 @@ let private htmlFooter m =
         script [ _src "/js/app.js" ] []
     ]
 
-/// The standard layout for PrayerTracker
-let standard m pageTitle (content : XmlNode) =
-    let s   = I18N.localizer.Force ()
-    let ttl = s[pageTitle]
-    html [ _lang (langCode ()) ] [
-        htmlHead m ttl
-        body [ _hxBoost ] [
-            Navigation.top m
-            div [ _id "pt-body" ] [
-                Navigation.identity m
-                renderPageTitle m ttl
-                yield! messages m
-                content
-                htmlFooter m
-            ]
-        ]
+/// The content portion of the PrayerTracker layout
+let private contentSection viewInfo title (content : XmlNode) = [
+    Navigation.identity viewInfo
+    renderPageTitle viewInfo title
+    yield! messages viewInfo
+    content
+    htmlFooter viewInfo
+    for jsFile in viewInfo.Script do
+        script [ _src $"/js/{jsFile}.js" ] []
+]
+
+/// The HTML head element for partial responses
+let private partialHead pgTitle =
+    let s = I18N.localizer.Force ()
+    head [] [
+        meta [ _charset "UTF-8" ]
+        title [] [ locStr pgTitle; titleSep; locStr s["PrayerTracker"] ]
     ]
-  
+
+open Giraffe.Htmx.Common
+
+/// The body of the PrayerTracker layout
+let private pageLayout viewInfo title content =
+    body [ _hxBoost ] [
+        Navigation.top viewInfo
+        div [ _id "pt-body"; Target.content; _hxSwap $"{HxSwap.InnerHtml} show:window:top" ]
+            (contentSection viewInfo title content)
+    ]
+    
+/// The standard layout(s) for PrayerTracker
+let standard viewInfo pageTitle content =
+    let s       = I18N.localizer.Force ()
+    let pgTitle = s[pageTitle]
+    html [ _lang (langCode ()) ] [
+        match viewInfo.Layout with
+        | FullPage ->
+            htmlHead   viewInfo pgTitle
+            pageLayout viewInfo pgTitle content
+        | PartialPage ->
+            partialHead pgTitle
+            pageLayout viewInfo pgTitle content
+        | ContentOnly ->
+            partialHead pgTitle
+            body [] (contentSection viewInfo pgTitle content)
+    ]
+
 /// A layout with nothing but a title and content
 let bare pageTitle content =
-    let s   = I18N.localizer.Force ()
-    let ttl = s[pageTitle]
+    let s = I18N.localizer.Force ()
     html [ _lang (langCode ()) ] [
-        head [] [
-            meta [ _charset "UTF-8" ]
-            title [] [ locStr ttl; titleSep; locStr s["PrayerTracker"] ]
-        ]
+        partialHead s[pageTitle]
         body [] [ content ]
     ]

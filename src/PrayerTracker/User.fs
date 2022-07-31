@@ -44,7 +44,7 @@ let private findUserByPassword m (db : AppDbContext) = task {
 
 
 /// POST /user/password/change
-let changePassword : HttpHandler = requireAccess [ User ] >=> validateCSRF >=> fun next ctx -> task {
+let changePassword : HttpHandler = requireAccess [ User ] >=> validateCsrf >=> fun next ctx -> task {
     match! ctx.TryBindFormAsync<ChangePassword> () with
     | Ok m ->
         let  s      = Views.I18N.localizer.Force ()
@@ -81,7 +81,7 @@ let changePassword : HttpHandler = requireAccess [ User ] >=> validateCSRF >=> f
 
 
 /// POST /user/[user-id]/delete
-let delete userId : HttpHandler = requireAccess [ Admin ] >=> validateCSRF >=> fun next ctx -> task {
+let delete userId : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next ctx -> task {
     match! ctx.db.TryUserById userId with
     | Some user ->
         ctx.db.RemoveEntry user
@@ -94,7 +94,7 @@ let delete userId : HttpHandler = requireAccess [ Admin ] >=> validateCSRF >=> f
 
 
 /// POST /user/log-on
-let doLogOn : HttpHandler = requireAccess [ AccessLevel.Public ] >=> validateCSRF >=> fun next ctx -> task {
+let doLogOn : HttpHandler = requireAccess [ AccessLevel.Public ] >=> validateCsrf >=> fun next ctx -> task {
     match! ctx.TryBindFormAsync<UserLogOn> () with
     | Ok m -> 
         let  s           = Views.I18N.localizer.Force ()
@@ -192,7 +192,7 @@ let password : HttpHandler = requireAccess [ User ] >=> fun next ctx ->
 
 
 /// POST /user/save
-let save : HttpHandler = requireAccess [ Admin ] >=> validateCSRF >=> fun next ctx -> task {
+let save : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next ctx -> task {
     match! ctx.TryBindFormAsync<EditUser> () with
     | Ok m ->
         let! user =
@@ -235,7 +235,7 @@ let save : HttpHandler = requireAccess [ Admin ] >=> validateCSRF >=> fun next c
 
 
 /// POST /user/small-groups/save
-let saveGroups : HttpHandler = requireAccess [ Admin ] >=> validateCSRF >=> fun next ctx -> task {
+let saveGroups : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next ctx -> task {
     match! ctx.TryBindFormAsync<AssignGroups> () with
     | Ok m ->
         let s = Views.I18N.localizer.Force ()

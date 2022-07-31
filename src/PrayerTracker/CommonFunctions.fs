@@ -2,20 +2,7 @@
 [<AutoOpen>]
 module PrayerTracker.Handlers.CommonFunctions
 
-open System
-open System.Net
-open System.Reflection
-open System.Threading.Tasks
-open Giraffe
-open Microsoft.AspNetCore.Antiforgery
-open Microsoft.AspNetCore.Html
-open Microsoft.AspNetCore.Http
-open Microsoft.AspNetCore.Http.Extensions
 open Microsoft.AspNetCore.Mvc.Rendering
-open Microsoft.Extensions.Localization
-open PrayerTracker
-open PrayerTracker.Cookies
-open PrayerTracker.ViewModels
 
 /// Create a select list from an enumeration
 let toSelectList<'T> valFunc textFunc withDefault emptyText (items : 'T seq) =
@@ -38,7 +25,7 @@ let toSelectListWithDefault<'T> valFunc textFunc (items : 'T seq) =
 
 /// The version of PrayerTracker
 let appVersion =
-    let v = Assembly.GetExecutingAssembly().GetName().Version
+    let v = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version
 #if (DEBUG)
     $"v{v}"
 #else
@@ -53,6 +40,10 @@ let appVersion =
     |> String.concat ""
 #endif
 
+
+open Microsoft.AspNetCore.Http
+open PrayerTracker
+
 /// The currently signed-in user (will raise if none exists)
 let currentUser (ctx : HttpContext) =
     match ctx.Session.user with Some u -> u | None -> nullArg "User"
@@ -60,6 +51,12 @@ let currentUser (ctx : HttpContext) =
 /// The currently signed-in small group (will raise if none exists)
 let currentGroup (ctx : HttpContext) =
     match ctx.Session.smallGroup with Some g -> g | None -> nullArg "SmallGroup"
+
+
+open System
+open Giraffe
+open PrayerTracker.Cookies
+open PrayerTracker.ViewModels
 
 /// Create the common view information heading
 let viewInfo (ctx : HttpContext) startTicks =
@@ -84,12 +81,18 @@ let viewInfo (ctx : HttpContext) startTicks =
             CookieOptions (Expires = Nullable<DateTimeOffset> (DateTimeOffset (DateTime timeout.Until)),
                            HttpOnly = true))
     | None -> ()
+    let layout =
+        match ctx.TryGetRequestHeader "X-Target" with
+        | Some hdr when hdr = "#pt-body" -> ContentOnly
+        | Some _ -> PartialPage
+        | None -> FullPage
     { AppViewInfo.fresh with
         Version      = appVersion
         Messages     = msg
         RequestStart = startTicks
         User         = ctx.Session.user
         Group        = ctx.Session.smallGroup
+        Layout       = layout
     }
 
 /// The view is the last parameter, so it can be composed
@@ -107,23 +110,24 @@ let fourOhFour next (ctx : HttpContext) =
     ctx.SetStatusCode 404
     text "Not Found" next ctx
 
-
 /// Handler to validate CSRF prevention token
-let validateCSRF : HttpHandler = fun next ctx -> task {
-    match! (ctx.GetService<IAntiforgery> ()).IsRequestValidAsync ctx with
+let validateCsrf : HttpHandler = fun next ctx -> task {
+    match! (ctx.GetService<Microsoft.AspNetCore.Antiforgery.IAntiforgery> ()).IsRequestValidAsync ctx with
     | true -> return! next ctx
-    | false ->
-        return! (clearResponse >=> setStatusCode 400 >=> text "Quit hacking...") (fun _ -> Task.FromResult None) ctx
+    | false -> return! (clearResponse >=> setStatusCode 400 >=> text "Quit hacking...") earlyReturn ctx
 }
-
 
 /// Add a message to the session
 let addUserMessage (ctx : HttpContext) msg =
     ctx.Session.messages <- msg :: ctx.Session.messages
 
+
+open Microsoft.AspNetCore.Html
+open Microsoft.Extensions.Localization
+
 /// Convert a localized string to an HTML string
 let htmlLocString (x : LocalizedString) =
-    (WebUtility.HtmlEncode >> HtmlString) x.Value
+    (System.Net.WebUtility.HtmlEncode >> HtmlString) x.Value
 
 let htmlString (x : LocalizedString) =
     HtmlString x.Value
@@ -156,6 +160,8 @@ type AccessLevel =
     /// Errbody
     | Public
 
+
+open Microsoft.AspNetCore.Http.Extensions
 
 /// Require the given access role (also refreshes "Remember Me" user and group logons)
 let requireAccess level : HttpHandler =

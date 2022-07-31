@@ -147,7 +147,7 @@
   <data name="If you utilize the “{0}” box on sign in, a second cookie is stored, and transmitted to establish a session; this cookie is removed by clicking the “{1}” link." xml:space="preserve">
     <value>Si utilizas el cuadro "{0}" al iniciar sesión, se almacena una segunda cookie y se transmite para establecer una sesión; esta cookie se elimina haciendo clic en el enlace "{1}".</value>
   </data>
-  <data name="It also stores names and e-mail addreses of small group members, and plain-text passwords for small groups with password-protected lists." xml:space="preserve">
+  <data name="It also stores names and e-mail addresses of small group members, and plain-text passwords for small groups with password-protected lists." xml:space="preserve">
     <value>También almacena nombres y direcciones de correo electrónico de miembros de grupos pequeños, y contraseñas de texto sin formato para grupos pequeños con listas protegidas por contraseña.</value>
   </data>
   <data name="On the server, all data is stored in a controlled-access database." xml:space="preserve">

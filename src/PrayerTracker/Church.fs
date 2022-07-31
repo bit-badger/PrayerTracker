@@ -18,7 +18,7 @@ let private findStats (db : AppDbContext) churchId = task {
 
 
 /// POST /church/[church-id]/delete
-let delete churchId : HttpHandler = requireAccess [ Admin ] >=> validateCSRF >=> fun next ctx -> task {
+let delete churchId : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next ctx -> task {
     match! ctx.db.TryChurchById churchId with
     | Some church ->
         let! _, stats = findStats ctx.db churchId
@@ -66,7 +66,7 @@ let maintain : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> task {
 
 
 /// POST /church/save
-let save : HttpHandler = requireAccess [ Admin ] >=> validateCSRF >=> fun next ctx -> task {
+let save : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next ctx -> task {
     match! ctx.TryBindFormAsync<EditChurch> () with
     | Ok m ->
         let! church =
