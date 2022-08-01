@@ -293,10 +293,16 @@ let private contentSection viewInfo title (content : XmlNode) = [
     Navigation.identity viewInfo
     renderPageTitle viewInfo title
     yield! messages viewInfo
+    match viewInfo.ScopedStyle with
+    | [] -> ()
+    | styles -> style [ _scoped ] (styles |> List.map (fun it -> rawText $"{it};"))
     content
     htmlFooter viewInfo
     for jsFile in viewInfo.Script do
         script [ _src $"/js/{jsFile}.js" ] []
+    match viewInfo.OnLoadScript with
+    | Some onLoad -> script [] [ rawText $"PT.onLoad({onLoad}" ]
+    | None -> ()
 ]
 
 /// The HTML head element for partial responses

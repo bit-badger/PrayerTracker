@@ -5,57 +5,62 @@ open PrayerTracker.Entities
 open PrayerTracker.ViewModels
 
 /// View for the church edit page
-let edit (m : EditChurch) ctx vi =
-    let pageTitle = if m.IsNew then "Add a New Church" else "Edit Church"
+let edit (model : EditChurch) ctx viewInfo =
+    let pageTitle = if model.IsNew then "Add a New Church" else "Edit Church"
     let s         = I18N.localizer.Force ()
-    [   form [ _action "/church/save"; _method "post"; _class "pt-center-columns"; Target.content ] [
-            style [ _scoped ] [
-                rawText "#name { width: 20rem; } #city { width: 10rem; } #st { width: 3rem; } #interfaceAddress { width: 30rem; }"
-            ]
-            csrfToken ctx
-            input [ _type "hidden"; _name (nameof m.ChurchId); _value (flatGuid m.ChurchId) ]
-            div [ _class "pt-field-row" ] [
-                div [ _class "pt-field" ] [
-                    label [ _for "name" ] [ locStr s["Church Name"] ]
-                    input [ _type "text"; _name (nameof m.Name); _id "name"; _required; _autofocus; _value m.Name ]
-                ]
-                div [ _class "pt-field" ] [
-                    label [ _for "City"] [ locStr s["City"] ]
-                    input [ _type "text"; _name (nameof m.City); _id "city"; _required; _value m.City ]
-                ]
-                div [ _class "pt-field" ] [
-                    label [ _for "state" ] [ locStr s["State or Province"] ]
-                    input [ _type      "text"
-                            _name      (nameof m.State)
-                            _id        "state"
-                            _minlength "2"; _maxlength "2"
-                            _value     m.State
-                            _required ]
-                ]
-            ]
-            div [ _class "pt-field-row" ] [
-                div [ _class "pt-checkbox-field" ] [
-                    input [ _type  "checkbox"
-                            _name  (nameof m.HasInterface)
-                            _id    "hasInterface"
-                            _value "True"
-                            if defaultArg m.HasInterface false then _checked ]
-                    label [ _for "hasInterface" ] [ locStr s["Has an interface with Virtual Prayer Room"] ]
-                ]
-            ]
-            div [ _class "pt-field-row pt-fadeable"; _id "divInterfaceAddress" ] [
-                div [ _class "pt-field" ] [
-                    label [ _for "interfaceAddress" ] [ locStr s["VPR Interface URL"] ]
-                    input [ _type  "url"
-                            _name  (nameof m.InterfaceAddress)
-                            _id    "interfaceAddress";
-                            _value (defaultArg m.InterfaceAddress "") ]
-                ]
-            ]
-            div [ _class "pt-field-row" ] [ submit [] "save" s["Save Church"] ]
+    let vi        =
+        viewInfo
+        |> AppViewInfo.withScopedStyles [
+            "#name { width: 20rem; }"
+            "#city { width: 10rem; }"
+            "#st { width: 3rem; }"
+            "#interfaceAddress { width: 30rem; }"
         ]
-        script [] [ rawText "PT.onLoad(PT.church.edit.onPageLoad)" ]
+        |> AppViewInfo.withOnLoadScript "PT.church.edit.onPageLoad"
+    form [ _action "/church/save"; _method "post"; _class "pt-center-columns"; Target.content ] [
+        csrfToken ctx
+        input [ _type "hidden"; _name (nameof model.ChurchId); _value (flatGuid model.ChurchId) ]
+        div [ _fieldRow ] [
+            div [ _inputField ] [
+                label [ _for "name" ] [ locStr s["Church Name"] ]
+                input [ _type "text"; _name (nameof model.Name); _id "name"; _required; _autofocus; _value model.Name ]
+            ]
+            div [ _inputField ] [
+                label [ _for "City"] [ locStr s["City"] ]
+                input [ _type "text"; _name (nameof model.City); _id "city"; _required; _value model.City ]
+            ]
+            div [ _inputField ] [
+                label [ _for "state" ] [ locStr s["State or Province"] ]
+                input [ _type      "text"
+                        _name      (nameof model.State)
+                        _id        "state"
+                        _minlength "2"; _maxlength "2"
+                        _value     model.State
+                        _required ]
+            ]
+        ]
+        div [ _fieldRow ] [
+            div [ _checkboxField ] [
+                input [ _type  "checkbox"
+                        _name  (nameof model.HasInterface)
+                        _id    "hasInterface"
+                        _value "True"
+                        if defaultArg model.HasInterface false then _checked ]
+                label [ _for "hasInterface" ] [ locStr s["Has an interface with Virtual Prayer Room"] ]
+            ]
+        ]
+        div [ _fieldRowWith [ "pt-fadeable" ]; _id "divInterfaceAddress" ] [
+            div [ _inputField ] [
+                label [ _for "interfaceAddress" ] [ locStr s["VPR Interface URL"] ]
+                input [ _type  "url"
+                        _name  (nameof model.InterfaceAddress)
+                        _id    "interfaceAddress";
+                        _value (defaultArg model.InterfaceAddress "") ]
+            ]
+        ]
+        div [ _fieldRow ] [ submit [] "save" s["Save Church"] ]
     ]
+    |> List.singleton
     |> Layout.Content.standard
     |> Layout.standard vi pageTitle
 

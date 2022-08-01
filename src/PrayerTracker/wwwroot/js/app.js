@@ -2,7 +2,7 @@
  * This file contains a library of common functions used throughout the PrayerTracker website, as well as specific
  * functions used on pages throughout the site.
  */
-const PT = {
+this.PT = {
 
   /**
    * Open a window with help

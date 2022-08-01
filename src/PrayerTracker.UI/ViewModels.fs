@@ -147,23 +147,40 @@ type AppViewInfo =
         
         /// The layout with which the content will be rendered
         Layout : LayoutType
+        
+        /// Scoped styles for this view
+        ScopedStyle : string list
+        
+        /// A JavaScript function to run on page load
+        OnLoadScript : string option
     }
+    // TODO: add onload script option to this, modify layout to add it 
 
 /// Support for the AppViewInfo type
 module AppViewInfo =
     
     /// A fresh version that can be populated to process the current request
     let fresh =
-        { Style        = []
-          Script       = []
-          HelpLink     = None
-          Messages     = []
-          Version      = ""
-          RequestStart = DateTime.Now.Ticks
-          User         = None
-          Group        = None
-          Layout       = FullPage
+        {   Style        = []
+            Script       = []
+            HelpLink     = None
+            Messages     = []
+            Version      = ""
+            RequestStart = DateTime.Now.Ticks
+            User         = None
+            Group        = None
+            Layout       = FullPage
+            ScopedStyle  = []
+            OnLoadScript = None
         }
+    
+    /// Add scoped styles to the given view info object
+    let withScopedStyles styles viewInfo =
+        { viewInfo with ScopedStyle = styles }
+    
+    /// Add an onload action to the given view info object
+    let withOnLoadScript script viewInfo =
+        { viewInfo with OnLoadScript = Some script }
 
 
 /// Form for sending a small group or system-wide announcement

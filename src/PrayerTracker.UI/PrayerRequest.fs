@@ -11,79 +11,80 @@ open PrayerTracker.Entities
 open PrayerTracker.ViewModels
 
 /// View for the prayer request edit page
-let edit (m : EditRequest) today ctx vi =
+let edit (model : EditRequest) today ctx viewInfo =
     let s         = I18N.localizer.Force ()
-    let pageTitle = if m.IsNew then "Add a New Request" else "Edit Request"
-    [   form [ _action "/prayer-request/save"; _method "post"; _class "pt-center-columns"; Target.content ] [
-            csrfToken ctx
-            input [ _type "hidden"; _name (nameof m.RequestId); _value (flatGuid m.RequestId) ]
-            div [ _class "pt-field-row" ] [
-                div [ _class "pt-field" ] [
-                    label [ _for (nameof m.RequestType) ] [ locStr s["Request Type"] ]
-                    ReferenceList.requestTypeList s
-                    |> Seq.ofList
-                    |> Seq.map (fun (typ, desc) -> typ.code, desc.Value)
-                    |> selectList (nameof m.RequestType) m.RequestType [ _required; _autofocus ]
+    let pageTitle = if model.IsNew then "Add a New Request" else "Edit Request"
+    let vi        = AppViewInfo.withOnLoadScript "PT.initCKEditor" viewInfo
+    form [ _action "/prayer-request/save"; _method "post"; _class "pt-center-columns"; Target.content ] [
+        csrfToken ctx
+        input [ _type "hidden"; _name (nameof model.RequestId); _value (flatGuid model.RequestId) ]
+        div [ _fieldRow ] [
+            div [ _inputField ] [
+                label [ _for (nameof model.RequestType) ] [ locStr s["Request Type"] ]
+                ReferenceList.requestTypeList s
+                |> Seq.ofList
+                |> Seq.map (fun (typ, desc) -> typ.code, desc.Value)
+                |> selectList (nameof model.RequestType) model.RequestType [ _required; _autofocus ]
+            ]
+            div [ _inputField ] [
+                label [ _for "requestor" ] [ locStr s["Requestor / Subject"] ]
+                input [ _type  "text"
+                        _id    "requestor"
+                        _name  (nameof model.Requestor)
+                        _value (defaultArg model.Requestor "") ]
+            ]
+            if model.IsNew then
+                div [ _inputField ] [
+                    label [ _for "enteredDate" ] [ locStr s["Date"] ]
+                    input [ _type "date"; _name (nameof model.EnteredDate); _id "enteredDate"; _placeholder today ]
                 ]
-                div [ _class "pt-field" ] [
-                    label [ _for "requestor" ] [ locStr s["Requestor / Subject"] ]
-                    input [ _type  "text"
-                            _id    "requestor"
-                            _name  (nameof m.Requestor)
-                            _value (defaultArg m.Requestor "") ]
-                ]
-                if m.IsNew then
-                    div [ _class "pt-field" ] [
-                        label [ _for "enteredDate" ] [ locStr s["Date"] ]
-                        input [ _type "date"; _name (nameof m.EnteredDate); _id "enteredDate"; _placeholder today ]
+            else
+                // TODO: do these need to be nested like this?
+                div [ _inputField ] [
+                    div [ _checkboxField ] [
+                        br []
+                        input [ _type  "checkbox"
+                                _name  (nameof model.SkipDateUpdate)
+                                _id    "skipDateUpdate"
+                                _value "True" ]
+                        label [ _for "skipDateUpdate" ] [ locStr s["Check to not update the date"] ]
+                        br []
+                        small [] [ em [] [ str (s["Typo Corrections"].Value.ToLower ()); rawText ", etc." ] ]
                     ]
-                else
-                    div [ _class "pt-field" ] [
-                        div [ _class "pt-checkbox-field" ] [
-                            br []
-                            input [ _type  "checkbox"
-                                    _name  (nameof m.SkipDateUpdate)
-                                    _id    "skipDateUpdate"
-                                    _value "True" ]
-                            label [ _for "skipDateUpdate" ] [ locStr s["Check to not update the date"] ]
-                            br []
-                            small [] [ em [] [ str (s["Typo Corrections"].Value.ToLower ()); rawText ", etc." ] ]
-                        ]
-                    ]
-            ]
-            div [ _class "pt-field-row" ] [
-                div [ _class "pt-field" ] [
-                    label [] [ locStr s["Expiration"] ]
-                    ReferenceList.expirationList s (not m.IsNew)
-                    |> List.map (fun exp ->
-                        let radioId = $"expiration_{fst exp}"
-                        span [ _class "text-nowrap" ] [
-                            radio (nameof m.Expiration) radioId (fst exp) m.Expiration
-                            label [ _for radioId ] [ locStr (snd exp) ]
-                            rawText " &nbsp; &nbsp; "
-                        ])
-                    |> div [ _class "pt-center-text" ]
                 ]
-            ]
-            div [ _class "pt-field-row" ] [
-                div [ _class "pt-field pt-editor" ] [
-                    label [ _for "text" ] [ locStr s["Request"] ]
-                    textarea [ _name (nameof m.Text); _id "text" ] [ str m.Text ]
-                ]
-            ]
-            div [ _class "pt-field-row" ] [ submit [] "save" s["Save Request"] ]
         ]
-        script [] [ rawText "PT.onLoad(PT.initCKEditor)" ]
+        div [ _fieldRow ] [
+            div [ _inputField ] [
+                label [] [ locStr s["Expiration"] ]
+                ReferenceList.expirationList s (not model.IsNew)
+                |> List.map (fun exp ->
+                    let radioId = $"expiration_{fst exp}"
+                    span [ _class "text-nowrap" ] [
+                        radio (nameof model.Expiration) radioId (fst exp) model.Expiration
+                        label [ _for radioId ] [ locStr (snd exp) ]
+                        rawText " &nbsp; &nbsp; "
+                    ])
+                |> div [ _class "pt-center-text" ]
+            ]
+        ]
+        div [ _fieldRow ] [
+            div [ _inputFieldWith [ "pt-editor" ] ] [
+                label [ _for "text" ] [ locStr s["Request"] ]
+                textarea [ _name (nameof model.Text); _id "text" ] [ str model.Text ]
+            ]
+        ]
+        div [ _fieldRow ] [ submit [] "save" s["Save Request"] ]
     ]
+    |> List.singleton
     |> Layout.Content.standard
     |> Layout.standard vi pageTitle
 
 /// View for the request e-mail results page
-let email m vi =
+let email model viewInfo =
     let s         = I18N.localizer.Force ()
-    let pageTitle = $"""{s["Prayer Requests"].Value} • {m.SmallGroup.name}"""
-    let prefs     = m.SmallGroup.preferences
-    let addresses = m.Recipients |> List.map (fun mbr -> $"{mbr.memberName} <{mbr.email}>") |> String.concat ", "
+    let pageTitle = $"""{s["Prayer Requests"].Value} • {model.SmallGroup.name}"""
+    let prefs     = model.SmallGroup.preferences
+    let addresses = model.Recipients |> List.map (fun mbr -> $"{mbr.memberName} <{mbr.email}>") |> String.concat ", "
     [   p [ _style $"font-family:{prefs.listFonts};font-size:%i{prefs.textFontSize}pt;" ] [
             locStr s["The request list was sent to the following people, via individual e-mails"]
             rawText ":"
@@ -91,27 +92,27 @@ let email m vi =
             small [] [ str addresses ]
         ]
         span [ _class "pt-email-heading" ] [ locStr s["HTML Format"]; rawText ":" ]
-        div [ _class "pt-email-canvas" ] [ rawText (m.AsHtml s) ]
+        div [ _class "pt-email-canvas" ] [ rawText (model.AsHtml s) ]
         br []
         br []
         span [ _class "pt-email-heading" ] [ locStr s["Plain-Text Format"]; rawText ":" ]
-        div [ _class "pt-email-canvas" ] [ pre [] [ str (m.AsText s) ] ]
+        div [ _class "pt-email-canvas" ] [ pre [] [ str (model.AsText s) ] ]
     ]
     |> Layout.Content.standard
-    |> Layout.standard vi pageTitle
+    |> Layout.standard viewInfo pageTitle
 
 
 /// View for a small group's public prayer request list
-let list (m : RequestList) vi =
+let list (model : RequestList) viewInfo =
     [   br []
-        I18N.localizer.Force () |> (m.AsHtml >> rawText) 
+        I18N.localizer.Force () |> (model.AsHtml >> rawText) 
     ]
     |> Layout.Content.standard
-    |> Layout.standard vi "View Request List"
+    |> Layout.standard viewInfo "View Request List"
 
 
 /// View for the prayer request lists page
-let lists (groups : SmallGroup list) vi =
+let lists (groups : SmallGroup list) viewInfo =
     let s   = I18N.localizer.Force ()
     let l   = I18N.forView "Requests/Lists"
     use sw  = new StringWriter ()
@@ -154,17 +155,17 @@ let lists (groups : SmallGroup list) vi =
             ]
     ]
     |> Layout.Content.standard
-    |> Layout.standard vi "Request Lists"
+    |> Layout.standard viewInfo "Request Lists"
 
 
 /// View for the prayer request maintenance page
-let maintain (m : MaintainRequests) (ctx : HttpContext) vi =
+let maintain (model : MaintainRequests) (ctx : HttpContext) viewInfo =
     let s     = I18N.localizer.Force ()
     let l     = I18N.forView "Requests/Maintain"
     use sw    = new StringWriter ()
     let raw   = rawLocText sw
-    let now   = m.SmallGroup.localDateNow (ctx.GetService<IClock> ())
-    let prefs = m.SmallGroup.preferences
+    let now   = model.SmallGroup.localDateNow (ctx.GetService<IClock> ())
+    let prefs = model.SmallGroup.preferences
     let types = ReferenceList.requestTypeList s |> Map.ofList
     let updReq (req : PrayerRequest) =
         if req.updateRequired now prefs.daysToExpire prefs.longTermUpdateWeeks then "pt-request-update" else ""
@@ -173,7 +174,7 @@ let maintain (m : MaintainRequests) (ctx : HttpContext) vi =
         _class (if req.isExpired now prefs.daysToExpire then "pt-request-expired" else "")
     /// Iterate the sequence once, before we render, so we can get the count of it at the top of the table
     let requests =
-        m.Requests
+        model.Requests
         |> List.map (fun req ->
             let reqId     = flatGuid req.prayerRequestId
             let reqText   = htmlToPlainText req.text
@@ -228,7 +229,7 @@ let maintain (m : MaintainRequests) (ctx : HttpContext) vi =
             a [ _href "/prayer-requests/view"; _title s["View Prayer Request List"].Value ] [
                 icon "list"; rawText " &nbsp;"; locStr s["View Prayer Request List"]
             ]
-            match m.SearchTerm with
+            match model.SearchTerm with
             | Some _ ->
                 rawText " &nbsp; &nbsp; &nbsp; "
                 a [ _href "/prayer-requests"; _title l["Clear Search Criteria"].Value ] [
@@ -240,7 +241,7 @@ let maintain (m : MaintainRequests) (ctx : HttpContext) vi =
             input [ _type "text"
                     _name "search"
                     _placeholder l["Search requests..."].Value
-                    _value (defaultArg m.SearchTerm "")
+                    _value (defaultArg model.SearchTerm "")
                   ]
             space
             submit [] "search" s["Search"]
@@ -264,22 +265,22 @@ let maintain (m : MaintainRequests) (ctx : HttpContext) vi =
             ]
         div [ _class "pt-center-text" ] [
             br []
-            match m.OnlyActive with
+            match model.OnlyActive with
             | Some true ->
                 raw l["Inactive requests are currently not shown"]
                 br []
                 a [ _href "/prayer-requests/inactive" ] [ raw l["Show Inactive Requests"] ]
             | _ ->
-                if defaultArg m.OnlyActive false then
+                if defaultArg model.OnlyActive false then
                     raw l["Inactive requests are currently shown"]
                     br []
                     a [ _href "/prayer-requests" ] [ raw l["Do Not Show Inactive Requests"] ]
                     br []
                     br []
-                let search = [ match m.SearchTerm with Some s -> "search", s | None -> () ]
-                let pg     = defaultArg m.PageNbr 1
+                let search = [ match model.SearchTerm with Some s -> "search", s | None -> () ]
+                let pg     = defaultArg model.PageNbr 1
                 let url    =
-                    match m.OnlyActive with Some true | None -> "" | _ -> "/inactive"
+                    match model.OnlyActive with Some true | None -> "" | _ -> "/inactive"
                     |> sprintf "/prayer-requests%s"
                 match pg with
                 | 1 -> ()
@@ -288,7 +289,7 @@ let maintain (m : MaintainRequests) (ctx : HttpContext) vi =
                     let withPage = match pg with 2 -> search | _ -> ("page", string (pg - 1)) :: search
                     a [ _href (makeUrl url withPage) ] [ icon "keyboard_arrow_left"; space; raw l["Previous Page"] ]
                 rawText " &nbsp; &nbsp; "
-                match requests.Length = m.SmallGroup.preferences.pageSize with
+                match requests.Length = model.SmallGroup.preferences.pageSize with
                 | true ->
                     a [ _href (makeUrl url (("page", string (pg + 1)) :: search)) ] [
                         raw l["Next Page"]; space; icon "keyboard_arrow_right"
@@ -298,19 +299,19 @@ let maintain (m : MaintainRequests) (ctx : HttpContext) vi =
         form [ _id "DeleteForm"; _action ""; _method "post" ] [ csrfToken ctx ]
     ]
     |> Layout.Content.wide
-    |> Layout.standard vi (match m.SearchTerm with Some _ -> "Search Results" | None -> "Maintain Requests")
+    |> Layout.standard viewInfo (match model.SearchTerm with Some _ -> "Search Results" | None -> "Maintain Requests")
 
 
 /// View for the printable prayer request list
-let print m version =
+let print model version =
     let s         = I18N.localizer.Force ()
-    let pageTitle = $"""{s["Prayer Requests"].Value} • {m.SmallGroup.name}"""
+    let pageTitle = $"""{s["Prayer Requests"].Value} • {model.SmallGroup.name}"""
     let imgAlt    = $"""{s["PrayerTracker"].Value} {s["from Bit Badger Solutions"].Value}"""
     article [] [
-        rawText (m.AsHtml s)
+        rawText (model.AsHtml s)
         br []
         hr []
-        div [ _style $"font-size:70%%;font-family:{m.SmallGroup.preferences.listFonts};" ] [
+        div [ _style $"font-size:70%%;font-family:{model.SmallGroup.preferences.listFonts};" ] [
             img [ _src $"""/img/{s["footer_en"].Value}.png"""
                   _style "vertical-align:text-bottom;"
                   _alt imgAlt
@@ -323,45 +324,44 @@ let print m version =
 
 
 /// View for the prayer request list
-let view m vi =
+let view model viewInfo =
     let s         = I18N.localizer.Force ()
-    let pageTitle = $"""{s["Prayer Requests"].Value} • {m.SmallGroup.name}"""
+    let pageTitle = $"""{s["Prayer Requests"].Value} • {model.SmallGroup.name}"""
     let spacer    = rawText " &nbsp; &nbsp; &nbsp; "
-    let dtString  = m.Date.ToString "yyyy-MM-dd"
-    [   div [ _class "pt-center-text" ] [
-            br []
-            a [ _class  "pt-icon-link"
-                _href   $"/prayer-requests/print/{dtString}"
-                _target "_blank"
-                _title  s["View Printable"].Value ] [
-                icon "print"; rawText " &nbsp;"; locStr s["View Printable"]
-            ]
-            if m.CanEmail then
-                spacer
-                if m.Date.DayOfWeek <> DayOfWeek.Sunday then
-                    let rec findSunday (date : DateTime) =
-                        if date.DayOfWeek = DayOfWeek.Sunday then date else findSunday (date.AddDays 1.)
-                    let sunday = findSunday m.Date
-                    a [ _class "pt-icon-link"
-                        _href  $"""/prayer-requests/view/{sunday.ToString "yyyy-MM-dd"}"""
-                        _title s["List for Next Sunday"].Value ] [
-                        icon "update"; rawText " &nbsp;"; locStr s["List for Next Sunday"]
-                    ]
-                    spacer
-                let emailPrompt = s["This will e-mail the current list to every member of your group, without further prompting.  Are you sure this is what you are ready to do?"].Value
-                a [ _class   "pt-icon-link"
-                    _href    $"/prayer-requests/email/{dtString}"
-                    _title   s["Send via E-mail"].Value
-                    _onclick $"return PT.requests.view.promptBeforeEmail('{emailPrompt}')" ] [
-                    icon "mail_outline"; rawText " &nbsp;"; locStr s["Send via E-mail"]
-                ]
-            spacer
-            a [ _class "pt-icon-link"; _href "/prayer-requests"; _title s["Maintain Prayer Requests"].Value ] [
-               icon "compare_arrows"; rawText " &nbsp;"; locStr s["Maintain Prayer Requests"]
-            ]
-        ]
+    let dtString  = model.Date.ToString "yyyy-MM-dd"
+    div [ _class "pt-center-text" ] [
         br []
-        rawText (m.AsHtml s)
+        a [ _class  "pt-icon-link"
+            _href   $"/prayer-requests/print/{dtString}"
+            _target "_blank"
+            _title  s["View Printable"].Value ] [
+            icon "print"; rawText " &nbsp;"; locStr s["View Printable"]
+        ]
+        if model.CanEmail then
+            spacer
+            if model.Date.DayOfWeek <> DayOfWeek.Sunday then
+                let rec findSunday (date : DateTime) =
+                    if date.DayOfWeek = DayOfWeek.Sunday then date else findSunday (date.AddDays 1.)
+                let sunday = findSunday model.Date
+                a [ _class "pt-icon-link"
+                    _href  $"""/prayer-requests/view/{sunday.ToString "yyyy-MM-dd"}"""
+                    _title s["List for Next Sunday"].Value ] [
+                    icon "update"; rawText " &nbsp;"; locStr s["List for Next Sunday"]
+                ]
+                spacer
+            let emailPrompt = s["This will e-mail the current list to every member of your group, without further prompting.  Are you sure this is what you are ready to do?"].Value
+            a [ _class   "pt-icon-link"
+                _href    $"/prayer-requests/email/{dtString}"
+                _title   s["Send via E-mail"].Value
+                _onclick $"return PT.requests.view.promptBeforeEmail('{emailPrompt}')" ] [
+                icon "mail_outline"; rawText " &nbsp;"; locStr s["Send via E-mail"]
+            ]
+        spacer
+        a [ _class "pt-icon-link"; _href "/prayer-requests"; _title s["Maintain Prayer Requests"].Value ] [
+            icon "compare_arrows"; rawText " &nbsp;"; locStr s["Maintain Prayer Requests"]
+        ]
     ]
+    |> List.singleton
+    |> List.append [ br []; rawText (model.AsHtml s) ]
     |> Layout.Content.standard
-    |> Layout.standard vi pageTitle
+    |> Layout.standard viewInfo pageTitle

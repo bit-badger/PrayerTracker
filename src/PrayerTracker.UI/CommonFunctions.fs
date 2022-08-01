@@ -119,6 +119,25 @@ let _onsubmit = attr "onsubmit"
 /// A "rel='noopener'" attribute
 let _relNoOpener = _rel "noopener"
 
+/// A class attribute that designates a row of fields, with the additional classes passed
+let _fieldRowWith classes =
+    let extraClasses = if List.isEmpty classes then "" else $""" {classes |> String.concat " "}"""
+    _class $"pt-field-row{extraClasses}"
+
+/// The class that designates a row of fields
+let _fieldRow = _fieldRowWith []
+
+/// A class attribute that designates an input field, with the additional classes passed
+let _inputFieldWith classes =
+    let extraClasses = if List.isEmpty classes then "" else $""" {classes |> String.concat " "}"""
+    _class $"pt-field{extraClasses}"
+
+/// The class that designates an input field / label pair
+let _inputField = _inputFieldWith []
+
+/// The class that designates a checkbox / label pair
+let _checkboxField = _class "pt-checkbox-field"
+
 /// The name this function used to have when the view engine was part of Giraffe
 let renderHtmlNode = RenderView.AsString.htmlNode
 

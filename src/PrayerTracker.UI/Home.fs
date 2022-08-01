@@ -6,7 +6,7 @@ open Giraffe.ViewEngine
 open PrayerTracker.ViewModels
 
 /// The error page
-let error code vi =
+let error code viewInfo =
     let s   = I18N.localizer.Force ()
     let l   = I18N.forView "Home/Error"
     use sw  = new StringWriter ()
@@ -37,7 +37,7 @@ let error code vi =
                   _alt   $"""%A{s["PrayerTracker"]} %A{s["from Bit Badger Solutions"]}"""
                   _title $"""%A{s["PrayerTracker"]} %A{s["from Bit Badger Solutions"]}"""
                   _style "vertical-align:text-bottom;" ]
-            str vi.Version
+            str viewInfo.Version
         ]
     ]
     |> div []
@@ -45,7 +45,7 @@ let error code vi =
 
 
 /// The home page
-let index vi =
+let index viewInfo =
     let s   = I18N.localizer.Force ()
     let l   = I18N.forView "Home/Index"
     use sw  = new StringWriter ()
@@ -118,11 +118,11 @@ let index vi =
         ]
     ]
     |> Layout.Content.standard
-    |> Layout.standard vi "Welcome!"
+    |> Layout.standard viewInfo "Welcome!"
 
 
 /// Privacy Policy page
-let privacyPolicy vi =
+let privacyPolicy viewInfo =
     let s   = I18N.localizer.Force ()
     let l   = I18N.forView "Home/PrivacyPolicy"
     use sw  = new StringWriter ()
@@ -190,11 +190,11 @@ let privacyPolicy vi =
         ]
     ]
     |> Layout.Content.standard
-    |> Layout.standard vi "Privacy Policy"
+    |> Layout.standard viewInfo "Privacy Policy"
 
 
 /// Terms of Service page
-let termsOfService vi =
+let termsOfService viewInfo =
     let s      = I18N.localizer.Force ()
     let l      = I18N.forView "Home/TermsOfService"
     use sw     = new StringWriter ()
@@ -237,11 +237,11 @@ let termsOfService vi =
         p [] [ raw l["You may also wish to review our {0} to learn how we handle your data.", ppLink] ]
     ]
     |> Layout.Content.standard
-    |> Layout.standard vi "Terms of Service"
+    |> Layout.standard viewInfo "Terms of Service"
 
 
 /// View for unauthorized page
-let unauthorized vi =
+let unauthorized viewInfo =
     let s   = I18N.localizer.Force ()
     let l   = I18N.forView "Home/Unauthorized"
     use sw  = new StringWriter ()
@@ -256,4 +256,4 @@ let unauthorized vi =
         ]
     ]
     |> Layout.Content.standard
-    |> Layout.standard vi "Unauthorized Access"
+    |> Layout.standard viewInfo "Unauthorized Access"
