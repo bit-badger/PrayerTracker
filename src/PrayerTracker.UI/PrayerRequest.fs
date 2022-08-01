@@ -17,7 +17,7 @@ let edit (model : EditRequest) today ctx viewInfo =
     let vi        = AppViewInfo.withOnLoadScript "PT.initCKEditor" viewInfo
     form [ _action "/prayer-request/save"; _method "post"; _class "pt-center-columns"; Target.content ] [
         csrfToken ctx
-        input [ _type "hidden"; _name (nameof model.RequestId); _value (flatGuid model.RequestId) ]
+        inputField "hidden" (nameof model.RequestId) (flatGuid model.RequestId) []
         div [ _fieldRow ] [
             div [ _inputField ] [
                 label [ _for (nameof model.RequestType) ] [ locStr s["Request Type"] ]
@@ -27,27 +27,21 @@ let edit (model : EditRequest) today ctx viewInfo =
                 |> selectList (nameof model.RequestType) model.RequestType [ _required; _autofocus ]
             ]
             div [ _inputField ] [
-                label [ _for "requestor" ] [ locStr s["Requestor / Subject"] ]
-                input [ _type  "text"
-                        _id    "requestor"
-                        _name  (nameof model.Requestor)
-                        _value (defaultArg model.Requestor "") ]
+                label [ _for (nameof model.Requestor) ] [ locStr s["Requestor / Subject"] ]
+                inputField "text" (nameof model.Requestor) (defaultArg model.Requestor "") []
             ]
             if model.IsNew then
                 div [ _inputField ] [
-                    label [ _for "enteredDate" ] [ locStr s["Date"] ]
-                    input [ _type "date"; _name (nameof model.EnteredDate); _id "enteredDate"; _placeholder today ]
+                    label [ _for (nameof model.EnteredDate) ] [ locStr s["Date"] ]
+                    inputField "date" (nameof model.EnteredDate) "" [ _placeholder today ]
                 ]
             else
                 // TODO: do these need to be nested like this?
                 div [ _inputField ] [
                     div [ _checkboxField ] [
                         br []
-                        input [ _type  "checkbox"
-                                _name  (nameof model.SkipDateUpdate)
-                                _id    "skipDateUpdate"
-                                _value "True" ]
-                        label [ _for "skipDateUpdate" ] [ locStr s["Check to not update the date"] ]
+                        inputField "checkbox" (nameof model.SkipDateUpdate) "True" []
+                        label [ _for (nameof model.SkipDateUpdate) ] [ locStr s["Check to not update the date"] ]
                         br []
                         small [] [ em [] [ str (s["Typo Corrections"].Value.ToLower ()); rawText ", etc." ] ]
                     ]
@@ -58,7 +52,7 @@ let edit (model : EditRequest) today ctx viewInfo =
                 label [] [ locStr s["Expiration"] ]
                 ReferenceList.expirationList s (not model.IsNew)
                 |> List.map (fun exp ->
-                    let radioId = $"expiration_{fst exp}"
+                    let radioId = String.concat "_" [ nameof model.Expiration; fst exp ] 
                     span [ _class "text-nowrap" ] [
                         radio (nameof model.Expiration) radioId (fst exp) model.Expiration
                         label [ _for radioId ] [ locStr (snd exp) ]
@@ -69,8 +63,8 @@ let edit (model : EditRequest) today ctx viewInfo =
         ]
         div [ _fieldRow ] [
             div [ _inputFieldWith [ "pt-editor" ] ] [
-                label [ _for "text" ] [ locStr s["Request"] ]
-                textarea [ _name (nameof model.Text); _id "text" ] [ str model.Text ]
+                label [ _for (nameof model.Text) ] [ locStr s["Request"] ]
+                textarea [ _name (nameof model.Text); _id (nameof model.Text) ] [ str model.Text ]
             ]
         ]
         div [ _fieldRow ] [ submit [] "save" s["Save Request"] ]
@@ -129,13 +123,7 @@ let lists (groups : SmallGroup list) viewInfo =
         | count ->
             tableSummary count s
             table [ _class "pt-table pt-action-table" ] [
-                thead [] [
-                    tr [] [
-                        th [] [ locStr s["Actions"] ]
-                        th [] [ locStr s["Church"] ]
-                        th [] [ locStr s["Group"] ]
-                    ]
-                ]
+                tableHeadings s [ "Actions"; "Church"; "Group" ]
                 groups
                 |> List.map (fun grp ->
                     let grpId = flatGuid grp.smallGroupId
@@ -238,11 +226,7 @@ let maintain (model : MaintainRequests) (ctx : HttpContext) viewInfo =
             | None -> ()
         ]
         form [ _action "/prayer-requests"; _method "get"; _class "pt-center-text pt-search-form"; Target.content ] [
-            input [ _type "text"
-                    _name "search"
-                    _placeholder l["Search requests..."].Value
-                    _value (defaultArg model.SearchTerm "")
-                  ]
+            inputField "text" "search" (defaultArg model.SearchTerm "") [ _placeholder l["Search requests..."].Value ]
             space
             submit [] "search" s["Search"]
         ]
@@ -252,15 +236,7 @@ let maintain (model : MaintainRequests) (ctx : HttpContext) viewInfo =
         | 0 -> ()
         | _ ->
             table [ _class "pt-table pt-action-table" ] [
-                thead [] [
-                    tr [] [
-                        th [] [ locStr s["Actions"] ]
-                        th [] [ locStr s["Updated Date"] ]
-                        th [] [ locStr s["Type"] ]
-                        th [] [ locStr s["Requestor"] ]
-                        th [] [ locStr s["Request"] ]
-                    ]
-                ]
+                tableHeadings s [ "Actions"; "Updated Date"; "Type"; "Requestor"; "Request"]
                 tbody [] requests
             ]
         div [ _class "pt-center-text" ] [

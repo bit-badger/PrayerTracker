@@ -9,7 +9,7 @@ this.PT = {
    * @param {string} url The URL for the help page.
    */
   showHelp(url) {
-    window.open(url, 'helpWindow', 'height=600px,width=450px,toolbar=0,menubar=0,scrollbars=1')
+    window.open(url, "helpWindow", "height=600px,width=450px,toolbar=0,menubar=0,scrollbars=1")
     return false
   },
 
@@ -20,8 +20,8 @@ this.PT = {
    */
   confirmDelete(action, prompt) {
     if (confirm(prompt)) {
-      let form = document.querySelector('#DeleteForm')
-      form.setAttribute('action', action)
+      let form = document.querySelector("#DeleteForm")
+      form.setAttribute("action", action)
       form.submit()
     }
     return false
@@ -41,7 +41,7 @@ this.PT = {
    * @param {Function} func The function to run once the DOM content is loaded
    */
   onLoad(func) {
-    document.addEventListener('DOMContentLoaded', func)
+    document.addEventListener("DOMContentLoaded", func)
   },
 
   /**
@@ -55,7 +55,7 @@ this.PT = {
     const field1Value = document.getElementById(field1).value
     const field2Element = document.getElementById(field2)
     if (field1Value === field2Element.value) {
-      field2Element.setCustomValidity('')
+      field2Element.setCustomValidity("")
       return true
     }
     field2Element.setCustomValidity(errorMsg)
@@ -67,8 +67,8 @@ this.PT = {
    * @param {HTMLElement} div The div to be shown
    */
   showDiv(div) {
-    if (div.className.indexOf(' pt-shown') === -1) {
-      div.className += ' pt-shown'
+    if (div.className.indexOf(" pt-shown") === -1) {
+      div.className += " pt-shown"
     }
   },
 
@@ -77,7 +77,7 @@ this.PT = {
    * @param {HTMLElement} div The div to be hidden
    */
   hideDiv(div) {
-    div.className = div.className.replace(' pt-shown', '')
+    div.className = div.className.replace(" pt-shown", "")
   },
 
   /**
@@ -85,7 +85,7 @@ this.PT = {
    */
   initCKEditor() {
     ClassicEditor
-      .create(document.querySelector('#text'))
+      .create(document.querySelector("#Text"))
       .catch(console.error)
   },
 
@@ -101,9 +101,9 @@ this.PT = {
        * If the interface box is checked, show and require the interface URL field (if not, well... don't)
        */
       checkInterface() {
-        const div  = document.getElementById('divInterfaceAddress')
-        const addr = document.getElementById('interfaceAddress')
-        if (document.getElementById('hasInterface').checked) {
+        const div  = document.getElementById("divInterfaceAddress")
+        const addr = document.getElementById("InterfaceAddress")
+        if (document.getElementById("HasInterface").checked) {
           PT.showDiv(div)
           addr.required = true
         }
@@ -117,8 +117,8 @@ this.PT = {
        */
       onPageLoad() {
         PT.church.edit.checkInterface()
-        document.getElementById('hasInterface')
-          .addEventListener('click', PT.church.edit.checkInterface)
+        document.getElementById("HasInterface")
+          .addEventListener("click", PT.church.edit.checkInterface)
       }
     }
   },
@@ -154,23 +154,23 @@ this.PT = {
        */
       onPageLoad() {
         PT.initCKEditor()
-        const sendNo = document.getElementById('sendN')
-        const catDiv = document.getElementById('divCategory')
-        const catSel = document.getElementById('requestType')
-        const addChk = document.getElementById('addToRequestList')
-        if (sendNo !== 'undefined') {
-          const addDiv = document.getElementById('divAddToList')
-          sendNo.addEventListener('click', () => {
+        const sendNo = document.getElementById("SendToClass_N")
+        const catDiv = document.getElementById("divCategory")
+        const catSel = document.getElementById("RequestType")
+        const addChk = document.getElementById("AddToRequestList")
+        if (sendNo !== "undefined") {
+          const addDiv = document.getElementById("divAddToList")
+          sendNo.addEventListener("click", () => {
             PT.hideDiv(addDiv)
             PT.hideDiv(catDiv)
             catSel.required = false
             addChk.checked = false
           })
-          document.getElementById('sendY').addEventListener('click', () => {
+          document.getElementById("SendToClass_Y").addEventListener("click", () => {
             PT.showDiv(addDiv)
           })
         }
-        addChk.addEventListener('click', () => {
+        addChk.addEventListener("click", () => {
           if (addChk.checked) {
             PT.showDiv(catDiv)
             catSel.required = true
@@ -190,11 +190,11 @@ this.PT = {
        * Determine which field should have the focus
        */
       onPageLoad() {
-        const grp = document.getElementById('SmallGroupId')
+        const grp = document.getElementById("SmallGroupId")
         if (grp.options[grp.selectedIndex].value === '') {
           grp.focus()
         } else {
-          document.getElementById('Password').focus()
+          document.getElementById("Password").focus()
         }
       }
     },
@@ -225,9 +225,9 @@ this.PT = {
        * Show or hide the class password based on the visibility.
        */
       checkVisibility() {
-        const divPw = document.getElementById('divClassPassword')
-        if (document.getElementById('viz_Public').checked
-            || document.getElementById('viz_Private').checked) {
+        const divPw = document.getElementById("divClassPassword")
+        if (document.getElementById("Visibility_Public").checked
+            || document.getElementById("Visibility_Private").checked) {
           // Disable password
           PT.hideDiv(divPw)
         } else {
@@ -239,16 +239,16 @@ this.PT = {
        * Bind the event handlers
        */
       onPageLoad() {
-        ['Public', 'Private', 'Password'].map(typ => {
-          document.getElementById(`viz_${typ}`).addEventListener('click',
+        ["Public", "Private", "Password"].map(typ => {
+          document.getElementById(`Visibility_${typ}`).addEventListener("click",
             PT.smallGroup.preferences.checkVisibility)
         })
         PT.smallGroup.preferences.checkVisibility()
-        ;['lineColor', 'headingColor'].map(name => {
-          document.getElementById(`${name}Type_Name`).addEventListener('click', () => {
+        ;["LineColor", "HeadingColor"].map(name => {
+          document.getElementById(`${name}Type_Name`).addEventListener("click", () => {
             PT.smallGroup.preferences.toggleType(name)
           })
-          document.getElementById(`${name}Type_RGB`).addEventListener('click', () => {
+          document.getElementById(`${name}Type_RGB`).addEventListener("click", () => {
             PT.smallGroup.preferences.toggleType(name)
           })
           PT.smallGroup.preferences.toggleType(name)
@@ -270,9 +270,13 @@ this.PT = {
        */
       onPageLoad(isNew) {
         if (isNew) {
-          PT.requireFields(['password', 'passwordConfirm'])
+          PT.requireFields(["Password", "PasswordConfirm"])
         }
       }
     }
   },
 }
+
+htmx.on("htmx:configRequest", function (e) {
+  e.detail.headers["X-Target"] = e.detail.target
+})

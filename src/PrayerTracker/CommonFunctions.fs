@@ -55,6 +55,7 @@ let currentGroup (ctx : HttpContext) =
 
 open System
 open Giraffe
+open Giraffe.Htmx
 open PrayerTracker.Cookies
 open PrayerTracker.ViewModels
 
@@ -82,8 +83,8 @@ let viewInfo (ctx : HttpContext) startTicks =
                            HttpOnly = true))
     | None -> ()
     let layout =
-        match ctx.TryGetRequestHeader "X-Target" with
-        | Some hdr when hdr = "#pt-body" -> ContentOnly
+        match ctx.Request.Headers.HxTarget with
+        | Some hdr when hdr = "pt-body" -> ContentOnly
         | Some _ -> PartialPage
         | None -> FullPage
     { AppViewInfo.fresh with

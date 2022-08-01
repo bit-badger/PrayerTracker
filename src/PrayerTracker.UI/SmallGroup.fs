@@ -8,15 +8,15 @@ open PrayerTracker.ViewModels
 /// View for the announcement page
 let announcement isAdmin ctx viewInfo =
     let s        = I18N.localizer.Force ()
-    let model        = { SendToClass = ""; Text = ""; AddToRequestList = None; RequestType = None }
+    let model    = { SendToClass = ""; Text = ""; AddToRequestList = None; RequestType = None }
     let reqTypes = ReferenceList.requestTypeList s
     let vi       = AppViewInfo.withOnLoadScript "PT.smallGroup.announcement.onPageLoad" viewInfo
     form [ _action "/small-group/announcement/send"; _method "post"; _class "pt-center-columns"; Target.content ] [
         csrfToken ctx
         div [ _fieldRow ] [
             div [ _inputFieldWith [ "pt-editor" ] ] [
-                label [ _for "text" ] [ locStr s["Announcement Text"] ]
-                textarea [ _name (nameof model.Text); _id "text"; _autofocus ] []
+                label [ _for (nameof model.Text) ] [ locStr s["Announcement Text"] ]
+                textarea [ _name (nameof model.Text); _id (nameof model.Text); _autofocus ] []
             ]
         ]
         if isAdmin then
@@ -24,18 +24,20 @@ let announcement isAdmin ctx viewInfo =
                 div [ _inputField ] [
                     label [] [ locStr s["Send Announcement to"]; rawText ":" ]
                     div [ _class "pt-center-text" ] [
-                        radio (nameof model.SendToClass) "sendY" "Y" "Y"
-                        label [ _for "sendY" ] [ locStr s["This Group"]; rawText " &nbsp; &nbsp; " ]
-                        radio (nameof model.SendToClass) "sendN" "N" "Y"
-                        label [ _for "sendN" ] [ locStr s["All {0} Users", s["PrayerTracker"]] ]
+                        radio (nameof model.SendToClass) $"{nameof model.SendToClass}_Y" "Y" "Y"
+                        label [ _for $"{nameof model.SendToClass}_Y" ] [
+                            locStr s["This Group"]; rawText " &nbsp; &nbsp; "
+                        ]
+                        radio (nameof model.SendToClass) $"{nameof model.SendToClass}_N" "N" "Y"
+                        label [ _for $"{nameof model.SendToClass}_N" ] [ locStr s["All {0} Users", s["PrayerTracker"]] ]
                     ]
                 ]
             ]
         else input [ _type "hidden"; _name (nameof model.SendToClass); _value "Y" ]
         div [ _fieldRowWith [ "pt-fadeable"; "pt-shown" ]; _id "divAddToList" ] [
             div [ _checkboxField ] [
-                input [ _type "checkbox"; _name (nameof model.AddToRequestList); _id "addToRequestList"; _value "True" ]
-                label [ _for "addToRequestList" ] [ locStr s["Add to Request List"] ]
+                inputField "checkbox" (nameof model.AddToRequestList) "True" []
+                label [ _for (nameof model.AddToRequestList) ] [ locStr s["Add to Request List"] ]
             ]
         ]
         div [ _fieldRowWith [ "pt-fadeable" ]; _id "divCategory" ] [
@@ -74,11 +76,11 @@ let edit (model : EditSmallGroup) (churches : Church list) ctx viewInfo =
     let pageTitle = if model.IsNew then "Add a New Group" else "Edit Group"
     form [ _action "/small-group/save"; _method "post"; _class "pt-center-columns"; Target.content ] [
         csrfToken ctx
-        input [ _type "hidden"; _name (nameof model.SmallGroupId); _value (flatGuid model.SmallGroupId) ]
+        inputField "hidden" (nameof model.SmallGroupId) (flatGuid model.SmallGroupId) []
         div [ _fieldRow ] [
             div [ _inputField ] [
-                label [ _for "name" ] [ locStr s["Group Name"] ]
-                input [ _type "text"; _name (nameof model.Name); _id "name"; _value model.Name; _required; _autofocus ]
+                label [ _for (nameof model.Name) ] [ locStr s["Group Name"] ]
+                inputField "text" (nameof model.Name) model.Name [ _required; _autofocus ]
             ]
         ]
         div [ _fieldRow ] [
@@ -102,18 +104,22 @@ let edit (model : EditSmallGroup) (churches : Church list) ctx viewInfo =
 let editMember (model : EditMember) (types : (string * LocalizedString) seq) ctx viewInfo =
     let s         = I18N.localizer.Force ()
     let pageTitle = if model.IsNew then "Add a New Group Member" else "Edit Group Member"
-    let vi        = AppViewInfo.withScopedStyles [ "#name { width: 15rem; }"; "#email { width: 20rem; }" ] viewInfo
+    let vi        =
+        AppViewInfo.withScopedStyles [
+            $"#{nameof model.Name} {{ width: 15rem; }}"
+            $"#{nameof model.Email} {{ width: 20rem; }}"
+        ] viewInfo
     form [ _action "/small-group/member/save"; _method "post"; _class "pt-center-columns"; Target.content ] [
         csrfToken ctx
-        input [ _type "hidden"; _name (nameof model.MemberId); _value (flatGuid model.MemberId) ]
+        inputField "hidden" (nameof model.MemberId) (flatGuid model.MemberId) []
         div [ _fieldRow ] [
             div [ _inputField ] [
-                label [ _for "name" ] [ locStr s["Member Name"] ]
-                input [ _type "text"; _name (nameof model.Name); _id "name"; _required; _autofocus; _value model.Name ]
+                label [ _for (nameof model.Name) ] [ locStr s["Member Name"] ]
+                inputField "text" (nameof model.Name) model.Name [ _required; _autofocus ]
             ]
             div [ _inputField ] [
-                label [ _for "email" ] [ locStr s["E-mail Address"] ]
-                input [ _type "email"; _name (nameof model.Email); _id "email"; _required; _value model.Email ]
+                label [ _for (nameof model.Email) ] [ locStr s["E-mail Address"] ]
+                inputField "email" (nameof model.Email) model.Email [ _required ]
             ]
         ]
         div [ _fieldRow ] [
@@ -152,17 +158,14 @@ let logOn (groups : SmallGroup list) grpId ctx viewInfo =
                 |> selectList (nameof model.SmallGroupId) grpId [ _required ]
             ]
             div [ _inputField ] [
-                label [ _for "password" ] [ locStr s["Password"] ]
-                input [ _type        "password"
-                        _name        (nameof model.Password)
-                        _id          "password"
-                        _placeholder (s["Case-Sensitive"].Value.ToLower ())
-                        _required ]
+                label [ _for (nameof model.Password) ] [ locStr s["Password"] ]
+                inputField "password" (nameof model.Password) ""
+                           [ _placeholder (s["Case-Sensitive"].Value.ToLower ()); _required ]
             ]
         ]
         div [ _checkboxField ] [
-            input [ _type "checkbox"; _name (nameof model.RememberMe); _id "rememberMe"; _value "True" ]
-            label [ _for "rememberMe" ] [ locStr s["Remember Me"] ]
+            inputField "checkbox" (nameof model.RememberMe) "True" []
+            label [ _for (nameof model.RememberMe) ] [ locStr s["Remember Me"] ]
             br []
             small [] [ em [] [ str (s["Requires Cookies"].Value.ToLower ()) ] ]
         ]
@@ -181,14 +184,7 @@ let maintain (groups : SmallGroup list) ctx viewInfo =
         | [] -> space
         | _ ->
             table [ _class "pt-table pt-action-table" ] [
-                thead [] [
-                    tr [] [
-                        th [] [ locStr s["Actions"] ]
-                        th [] [ locStr s["Name"] ]
-                        th [] [ locStr s["Church"] ]
-                        th [] [ locStr s["Time Zone"] ]
-                    ]
-                ]
+                tableHeadings s [ "Actions"; "Name"; "Church"; "Time Zone"]
                 groups
                 |> List.map (fun g ->
                     let grpId     = flatGuid g.smallGroupId
@@ -234,14 +230,7 @@ let members (members : Member list) (emailTypes : Map<string, LocalizedString>) 
         | [] -> space
         | _ ->
             table [ _class "pt-table pt-action-table" ] [
-                thead [] [
-                    tr [] [
-                        th [] [ locStr s["Actions"] ]
-                        th [] [ locStr s["Name"] ]
-                        th [] [ locStr s["E-mail Address"] ]
-                        th [] [ locStr s["Format"] ]
-                    ]
-                ]
+                tableHeadings s [ "Actions"; "Name"; "E-mail Address"; "Format"]
                 members
                 |> List.map (fun mbr ->
                     let mbrId     = flatGuid mbr.memberId
@@ -348,10 +337,16 @@ let preferences (model : EditPreferences) (tzs : TimeZone list) ctx viewInfo =
     let vi  =
         viewInfo
         |> AppViewInfo.withScopedStyles [
-            "#expireDays, #daysToKeepNew, #longTermUpdateWeeks, #headingFontSize, #listFontSize, #pageSize { width: 3rem; }"
-            "#emailFromAddress { width: 20rem; }"
-            "#fonts { width: 40rem; }"
-            "@media screen and (max-width: 40rem) { #fonts { width: 100%; } }"
+            let numberFields =
+                [   nameof model.ExpireDays;      nameof model.DaysToKeepNew; nameof model.LongTermUpdateWeeks
+                    nameof model.HeadingFontSize; nameof model.ListFontSize;  nameof model.PageSize
+                ]
+                |> toHtmlIds
+            let fontsId = $"#{nameof model.Fonts}"
+            $"{numberFields} {{ width: 3rem; }}"
+            $"#{nameof model.EmailFromAddress} {{ width: 20rem; }}"
+            $"{fontsId} {{ width: 40rem; }}"
+            $"@media screen and (max-width: 40rem) {{ {fontsId} {{ width: 100%%; }} }}"
         ]
         |> AppViewInfo.withOnLoadScript "PT.smallGroup.preferences.onPageLoad"
     form [ _action "/small-group/preferences/save"; _method "post"; _class "pt-center-columns"; Target.content ] [
@@ -360,40 +355,32 @@ let preferences (model : EditPreferences) (tzs : TimeZone list) ctx viewInfo =
             legend [] [ strong [] [ icon "date_range"; rawText " &nbsp;"; locStr s["Dates"] ] ]
             div [ _fieldRow ] [
                 div [ _inputField ] [
-                    label [ _for "expireDays" ] [ locStr s["Requests Expire After"] ]
+                    label [ _for (nameof model.ExpireDays) ] [ locStr s["Requests Expire After"] ]
                     span [] [
-                        input [ _type  "number"
-                                _name  (nameof model.ExpireDays)
-                                _id    "expireDays"
-                                _value (string model.ExpireDays)
-                                _min   "1"; _max "30"
-                                _required
-                                _autofocus ]
+                        inputField "number" (nameof model.ExpireDays) (string model.ExpireDays) [
+                            _min "1"; _max "30"; _required; _autofocus
+                        ]
                         space
                         str (s["Days"].Value.ToLower ())
                     ]
                 ]
                 div [ _inputField ] [
-                    label [ _for "daysToKeepNew" ] [ locStr s["Requests “New” For"] ]
+                    label [ _for (nameof model.DaysToKeepNew) ] [ locStr s["Requests “New” For"] ]
                     span [] [
-                        input [ _type  "number"
-                                _name  (nameof model.DaysToKeepNew)
-                                _id    "daysToKeepNew"
-                                _min   "1"; _max "30"
-                                _value (string model.DaysToKeepNew)
-                                _required ]
+                        inputField "number" (nameof model.DaysToKeepNew) (string model.DaysToKeepNew) [
+                            _min "1"; _max "30"; _required
+                        ]
                         space; str (s["Days"].Value.ToLower ())
                     ]
                 ]
                 div [ _inputField ] [
-                    label [ _for "longTermUpdateWeeks" ] [ locStr s["Long-Term Requests Alerted for Update"] ]
+                    label [ _for (nameof model.LongTermUpdateWeeks) ] [
+                        locStr s["Long-Term Requests Alerted for Update"]
+                    ]
                     span [] [
-                        input [ _type  "number"
-                                _name  (nameof model.LongTermUpdateWeeks)
-                                _id    "longTermUpdateWeeks"
-                                _min   "1"; _max "30"
-                                _value (string model.LongTermUpdateWeeks)
-                                _required ]
+                        inputField "number" (nameof model.LongTermUpdateWeeks) (string model.LongTermUpdateWeeks) [
+                            _min "1"; _max "30"; _required
+                        ]
                         space; str (s["Weeks"].Value.ToLower ())
                     ]
                 ]
@@ -401,30 +388,22 @@ let preferences (model : EditPreferences) (tzs : TimeZone list) ctx viewInfo =
         ]
         fieldset [] [
             legend [] [ strong [] [ icon "sort"; rawText " &nbsp;"; locStr s["Request Sorting"] ] ]
-            radio (nameof model.RequestSort) "requestSort_D" "D" model.RequestSort
-            label [ _for "requestSort_D" ] [ locStr s["Sort by Last Updated Date"] ]
+            radio (nameof model.RequestSort) $"{nameof model.RequestSort}_D" "D" model.RequestSort
+            label [ _for $"{nameof model.RequestSort}_D" ] [ locStr s["Sort by Last Updated Date"] ]
             rawText " &nbsp; "
-            radio (nameof model.RequestSort) "requestSort_R" "R" model.RequestSort
-            label [ _for "requestSort_R" ] [ locStr s["Sort by Requestor Name"] ]
+            radio (nameof model.RequestSort) $"{nameof model.RequestSort}_R" "R" model.RequestSort
+            label [ _for $"{nameof model.RequestSort}_R" ] [ locStr s["Sort by Requestor Name"] ]
         ]
         fieldset [] [
             legend [] [ strong [] [ icon "mail_outline"; rawText " &nbsp;"; locStr s["E-mail"] ] ]
             div [ _fieldRow ] [
                 div [ _inputField ] [
-                    label [ _for "emailFromName" ] [ locStr s["From Name"] ]
-                    input [ _type  "text"
-                            _name  (nameof model.EmailFromName)
-                            _id    "emailFromName"
-                            _value model.EmailFromName
-                            _required ]
+                    label [ _for (nameof model.EmailFromName) ] [ locStr s["From Name"] ]
+                    inputField "text" (nameof model.EmailFromName) model.EmailFromName [ _required ]
                 ]
                 div [ _inputField ] [
-                    label [ _for "emailFromAddress" ] [ locStr s["From Address"] ]
-                    input [ _type  "email"
-                            _name  (nameof model.EmailFromAddress)
-                            _id    "emailFromAddress"
-                            _value model.EmailFromAddress
-                            _required ]
+                    label [ _for (nameof model.EmailFromAddress) ] [ locStr s["From Address"] ]
+                    inputField "email" (nameof model.EmailFromAddress) model.EmailFromAddress [ _required ]
                 ]
             ]
             div [ _fieldRow ] [
@@ -447,17 +426,18 @@ let preferences (model : EditPreferences) (tzs : TimeZone list) ctx viewInfo =
                 div [ _inputField ] [
                     label [ _class "pt-center-text" ] [ locStr s["Color of Heading Lines"] ]
                     span [] [
-                        radio (nameof model.LineColorType) "lineColorType_Name" "Name" model.LineColorType
-                        label [ _for "lineColorType_Name" ] [ locStr s["Named Color"] ]
+                        radio (nameof model.LineColorType) $"{nameof model.LineColorType}_Name" "Name"
+                              model.LineColorType
+                        label [ _for $"{nameof model.LineColorType}_Name" ] [ locStr s["Named Color"] ]
                         namedColorList (nameof model.LineColor) model.LineColor [
-                            _id "lineColor_Select"
+                            _id $"{nameof model.LineColor}_Select"
                             if model.LineColor.StartsWith "#" then _disabled ] s
                         rawText "&nbsp; &nbsp; "; str (s["or"].Value.ToUpper ())
-                        radio (nameof model.LineColorType) "lineColorType_RGB" "RGB" model.LineColorType
-                        label [ _for "lineColorType_RGB" ] [ locStr s["Custom Color"] ]
+                        radio (nameof model.LineColorType) $"{nameof model.LineColorType}_RGB" "RGB" model.LineColorType
+                        label [ _for $"{nameof model.LineColorType}_RGB" ] [ locStr s["Custom Color"] ]
                         input [ _type  "color" 
                                 _name  (nameof model.LineColor)
-                                _id    "lineColor_Color"
+                                _id    $"{nameof model.LineColor}_Color"
                                 _value model.LineColor // TODO: convert to hex or skip if named
                                 if not (model.LineColor.StartsWith "#") then _disabled ]
                     ]
@@ -467,17 +447,19 @@ let preferences (model : EditPreferences) (tzs : TimeZone list) ctx viewInfo =
                 div [ _inputField ] [
                     label [ _class "pt-center-text" ] [ locStr s["Color of Heading Text"] ]
                     span [] [
-                        radio (nameof model.HeadingColorType) "headingColorType_Name" "Name" model.HeadingColorType
-                        label [ _for "headingColorType_Name" ] [ locStr s["Named Color"] ]
+                        radio (nameof model.HeadingColorType) $"{nameof model.HeadingColorType}_Name" "Name"
+                              model.HeadingColorType
+                        label [ _for $"{nameof model.HeadingColorType}_Name" ] [ locStr s["Named Color"] ]
                         namedColorList (nameof model.HeadingColor) model.HeadingColor [
-                            _id "headingColor_Select"
+                            _id $"{nameof model.HeadingColor}_Select"
                             if model.HeadingColor.StartsWith "#" then _disabled ] s
                         rawText "&nbsp; &nbsp; "; str (s["or"].Value.ToUpper ())
-                        radio (nameof model.HeadingColorType) "headingColorType_RGB" "RGB" model.HeadingColorType
-                        label [ _for "headingColorType_RGB" ] [ locStr s["Custom Color"] ]
+                        radio (nameof model.HeadingColorType) $"{nameof model.HeadingColorType}_RGB" "RGB"
+                              model.HeadingColorType
+                        label [ _for $"{nameof model.HeadingColorType}_RGB" ] [ locStr s["Custom Color"] ]
                         input [ _type  "color"
                                 _name  (nameof model.HeadingColor)
-                                _id    "headingColor_Color"
+                                _id    $"{nameof model.HeadingColor}_Color"
                                 _value model.HeadingColor // TODO: convert to hex or skip if named
                                 if not (model.HeadingColor.StartsWith "#") then _disabled ]
                     ]
@@ -487,27 +469,21 @@ let preferences (model : EditPreferences) (tzs : TimeZone list) ctx viewInfo =
         fieldset [] [
             legend [] [ strong [] [ icon "font_download"; rawText " &nbsp;"; locStr s["Fonts"] ] ]
             div [ _inputField ] [
-                label [ _for "fonts" ] [ locStr s["Fonts** for List"] ]
-                input [ _type "text"; _name (nameof model.Fonts); _id "fonts"; _required; _value model.Fonts ]
+                label [ _for (nameof model.Fonts) ] [ locStr s["Fonts** for List"] ]
+                inputField "text" (nameof model.Fonts) model.Fonts [ _required ]
             ]
             div [ _fieldRow ] [
                 div [ _inputField ] [
-                    label [ _for "headingFontSize" ] [ locStr s["Heading Text Size"] ]
-                    input [ _type  "number"
-                            _name  (nameof model.HeadingFontSize)
-                            _id    "headingFontSize"
-                            _min   "8"; _max "24"
-                            _value (string model.HeadingFontSize)
-                            _required ]
+                    label [ _for (nameof model.HeadingFontSize) ] [ locStr s["Heading Text Size"] ]
+                    inputField "number" (nameof model.HeadingFontSize) (string model.HeadingFontSize) [
+                        _min "8"; _max "24"; _required
+                    ]
                 ]
                 div [ _inputField ] [
-                    label [ _for "listFontSize" ] [ locStr s["List Text Size"] ]
-                    input [ _type  "number"
-                            _name  (nameof model.ListFontSize)
-                            _id    "listFontSize"
-                            _min   "8"; _max "24"
-                            _value (string model.ListFontSize)
-                            _required ]
+                    label [ _for (nameof model.ListFontSize) ] [ locStr s["List Text Size"] ]
+                    inputField "number" (nameof model.ListFontSize) (string model.ListFontSize) [
+                        _min "8"; _max "24"; _required
+                    ]
                 ]
             ]
         ]
@@ -526,38 +502,31 @@ let preferences (model : EditPreferences) (tzs : TimeZone list) ctx viewInfo =
             div [ _inputField ] [
                 label [] [ locStr s["Request List Visibility"] ]
                 span [] [
-                    radio (nameof model.Visibility) "viz_Public" (string RequestVisibility.``public``)
-                          (string model.Visibility)
-                    label [ _for "viz_Public" ] [ locStr s["Public"] ]
+                    let name  = nameof model.Visibility
+                    let value = string model.Visibility
+                    radio name $"{name}_Public" (string RequestVisibility.``public``) value
+                    label [ _for $"{name}_Public" ] [ locStr s["Public"] ]
                     rawText " &nbsp;"
-                    radio (nameof model.Visibility) "viz_Private" (string RequestVisibility.``private``)
-                          (string model.Visibility)
-                    label [ _for "viz_Private" ] [ locStr s["Private"] ]
+                    radio name $"{name}_Private" (string RequestVisibility.``private``) value
+                    label [ _for $"{name}_Private" ] [ locStr s["Private"] ]
                     rawText " &nbsp;"
-                    radio (nameof model.Visibility) "viz_Password" (string RequestVisibility.passwordProtected)
-                          (string model.Visibility)
-                    label [ _for "viz_Password" ] [ locStr s["Password Protected"] ]
+                    radio name $"{name}_Password" (string RequestVisibility.passwordProtected) value
+                    label [ _for $"{name}_Password" ] [ locStr s["Password Protected"] ]
                 ]
             ]
             let classSuffix = if model.Visibility = RequestVisibility.passwordProtected then [ "pt-show" ] else []
             div [ _id "divClassPassword"; _fieldRowWith ("pt-fadeable" :: classSuffix) ] [
                 div [ _inputField ] [
-                    label [ _for "groupPassword" ] [ locStr s["Group Password (Used to Read Online)"] ]
-                    input [ _type  "text"
-                            _name  (nameof model.GroupPassword)
-                            _id    "groupPassword"
-                            _value (defaultArg model.GroupPassword "") ]
+                    label [ _for (nameof model.GroupPassword) ] [ locStr s["Group Password (Used to Read Online)"] ]
+                    inputField "text" (nameof model.GroupPassword) (defaultArg model.GroupPassword "") []
                 ]
             ]
             div [ _fieldRow ] [
                 div [ _inputField ] [
-                    label [ _for "pageSize" ] [ locStr s["Page Size"] ]
-                    input [ _type  "number"
-                            _name  (nameof model.PageSize)
-                            _id    "pageSize"
-                            _min   "10"; _max "255"
-                            _value (string model.PageSize)
-                            _required ]
+                    label [ _for (nameof model.PageSize) ] [ locStr s["Page Size"] ]
+                    inputField "number" (nameof model.PageSize) (string model.PageSize) [
+                        _min "10"; _max "255"; _required
+                    ]
                 ]
                 div [ _inputField ] [
                     label [ _for (nameof model.AsOfDate) ] [ locStr s["“As of” Date Display"] ]

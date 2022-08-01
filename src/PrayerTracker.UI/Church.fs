@@ -11,10 +11,10 @@ let edit (model : EditChurch) ctx viewInfo =
     let vi        =
         viewInfo
         |> AppViewInfo.withScopedStyles [
-            "#name { width: 20rem; }"
-            "#city { width: 10rem; }"
-            "#st { width: 3rem; }"
-            "#interfaceAddress { width: 30rem; }"
+            $"#{nameof model.Name} {{ width: 20rem; }}"
+            $"#{nameof model.City} {{ width: 10rem; }}"
+            $"#{nameof model.State} {{ width: 3rem; }}"
+            $"#{nameof model.InterfaceAddress} {{ width: 30rem; }}"
         ]
         |> AppViewInfo.withOnLoadScript "PT.church.edit.onPageLoad"
     form [ _action "/church/save"; _method "post"; _class "pt-center-columns"; Target.content ] [
@@ -22,40 +22,29 @@ let edit (model : EditChurch) ctx viewInfo =
         input [ _type "hidden"; _name (nameof model.ChurchId); _value (flatGuid model.ChurchId) ]
         div [ _fieldRow ] [
             div [ _inputField ] [
-                label [ _for "name" ] [ locStr s["Church Name"] ]
-                input [ _type "text"; _name (nameof model.Name); _id "name"; _required; _autofocus; _value model.Name ]
+                label [ _for (nameof model.Name) ] [ locStr s["Church Name"] ]
+                inputField "text" (nameof model.Name) model.Name [ _required; _autofocus ]
             ]
             div [ _inputField ] [
-                label [ _for "City"] [ locStr s["City"] ]
-                input [ _type "text"; _name (nameof model.City); _id "city"; _required; _value model.City ]
+                label [ _for (nameof model.City) ] [ locStr s["City"] ]
+                inputField "text" (nameof model.City) model.City [ _required ]
             ]
             div [ _inputField ] [
-                label [ _for "state" ] [ locStr s["State or Province"] ]
-                input [ _type      "text"
-                        _name      (nameof model.State)
-                        _id        "state"
-                        _minlength "2"; _maxlength "2"
-                        _value     model.State
-                        _required ]
+                label [ _for (nameof model.State) ] [ locStr s["State or Province"] ]
+                inputField "text" (nameof model.State) model.State [ _minlength "2"; _maxlength "2"; _required ]
             ]
         ]
         div [ _fieldRow ] [
             div [ _checkboxField ] [
-                input [ _type  "checkbox"
-                        _name  (nameof model.HasInterface)
-                        _id    "hasInterface"
-                        _value "True"
-                        if defaultArg model.HasInterface false then _checked ]
-                label [ _for "hasInterface" ] [ locStr s["Has an interface with Virtual Prayer Room"] ]
+                inputField "checkbox" (nameof model.HasInterface) "True"
+                           [ if defaultArg model.HasInterface false then _checked ]
+                label [ _for (nameof model.HasInterface) ] [ locStr s["Has an interface with Virtual Prayer Room"] ]
             ]
         ]
         div [ _fieldRowWith [ "pt-fadeable" ]; _id "divInterfaceAddress" ] [
             div [ _inputField ] [
-                label [ _for "interfaceAddress" ] [ locStr s["VPR Interface URL"] ]
-                input [ _type  "url"
-                        _name  (nameof model.InterfaceAddress)
-                        _id    "interfaceAddress";
-                        _value (defaultArg model.InterfaceAddress "") ]
+                label [ _for (nameof model.InterfaceAddress) ] [ locStr s["VPR Interface URL"] ]
+                inputField "url" (nameof model.InterfaceAddress) (defaultArg model.InterfaceAddress "") []
             ]
         ]
         div [ _fieldRow ] [ submit [] "save" s["Save Church"] ]
@@ -73,17 +62,7 @@ let maintain (churches : Church list) (stats : Map<string, ChurchStats>) ctx vi 
         | [] -> space
         | _ ->
             table [ _class "pt-table pt-action-table" ] [
-                thead [] [
-                    tr [] [
-                        th [] [ locStr s["Actions"] ]
-                        th [] [ locStr s["Name"] ]
-                        th [] [ locStr s["Location"] ]
-                        th [] [ locStr s["Groups"] ]
-                        th [] [ locStr s["Requests"] ]
-                        th [] [ locStr s["Users"] ]
-                        th [] [ locStr s["Interface?"] ]
-                    ]
-                ]
+                tableHeadings s [ "Actions"; "Name"; "Location"; "Groups"; "Requests"; "Users"; "Interface?" ]
                 churches
                 |> List.map (fun ch ->
                     let chId      = flatGuid ch.churchId

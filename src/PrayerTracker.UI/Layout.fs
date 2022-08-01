@@ -198,13 +198,13 @@ let private commonHead = [
 ]
 
 /// Render the <head> portion of the page
-let private htmlHead m pageTitle =
+let private htmlHead viewInfo pgTitle =
     let s = I18N.localizer.Force ()
     head [] [
         meta [ _charset "UTF-8" ]
-        title [] [ locStr pageTitle; titleSep; locStr s["PrayerTracker"] ]
+        title [] [ locStr pgTitle; titleSep; locStr s["PrayerTracker"] ]
         yield! commonHead
-        for cssFile in m.Style do
+        for cssFile in viewInfo.Style do
             link [ _rel "stylesheet"; _href $"/css/{cssFile}.css"; _type "text/css" ]
     ]
 
@@ -224,16 +224,18 @@ let private helpLink link =
     ]
 
 /// Render the page title, and optionally a help link
-let private renderPageTitle m pageTitle =
+let private renderPageTitle viewInfo pgTitle =
     h2 [ _id "pt-page-title" ] [
-        match m.HelpLink with Some link -> PrayerTracker.Utils.Help.fullLink (langCode ()) link |> helpLink | None -> ()
-        locStr pageTitle
+        match viewInfo.HelpLink with
+        | Some link -> PrayerTracker.Utils.Help.fullLink (langCode ()) link |> helpLink
+        | None -> ()
+        locStr pgTitle
     ]
 
 /// Render the messages that may need to be displayed to the user
-let private messages m =
+let private messages viewInfo =
     let s = I18N.localizer.Force ()
-    m.Messages
+    viewInfo.Messages
     |> List.map (fun msg ->
         table [ _class $"pt-msg {MessageLevel.toCssClass msg.Level}" ] [
             tr [] [
@@ -257,10 +259,10 @@ let private messages m =
 open System
 
 /// Render the <footer> at the bottom of the page
-let private htmlFooter m =
+let private htmlFooter viewInfo =
     let s          = I18N.localizer.Force ()
     let imgText    = $"""%O{s["PrayerTracker"]} %O{s["from Bit Badger Solutions"]}"""
-    let resultTime = TimeSpan(DateTime.Now.Ticks - m.RequestStart).TotalSeconds
+    let resultTime = TimeSpan(DateTime.Now.Ticks - viewInfo.RequestStart).TotalSeconds
     footer [] [
         div [ _id "pt-legal" ] [
             a [ _href "/legal/privacy-policy" ] [ locStr s["Privacy Policy"] ]
@@ -278,7 +280,7 @@ let private htmlFooter m =
             a [ _href "/"; _style "line-height:28px;" ] [
                 img [ _src $"""/img/%O{s["footer_en"]}.png"""; _alt imgText; _title imgText ]
             ]
-            str m.Version
+            str viewInfo.Version
             space
             i [ _title s["This page loaded in {0:N3} seconds", resultTime].Value; _class "material-icons md-18" ] [
                 str "schedule"
@@ -289,9 +291,9 @@ let private htmlFooter m =
     ]
 
 /// The content portion of the PrayerTracker layout
-let private contentSection viewInfo title (content : XmlNode) = [
+let private contentSection viewInfo pgTitle (content : XmlNode) = [
     Navigation.identity viewInfo
-    renderPageTitle viewInfo title
+    renderPageTitle viewInfo pgTitle
     yield! messages viewInfo
     match viewInfo.ScopedStyle with
     | [] -> ()
@@ -301,7 +303,7 @@ let private contentSection viewInfo title (content : XmlNode) = [
     for jsFile in viewInfo.Script do
         script [ _src $"/js/{jsFile}.js" ] []
     match viewInfo.OnLoadScript with
-    | Some onLoad -> script [] [ rawText $"PT.onLoad({onLoad}" ]
+    | Some onLoad -> script [] [ rawText $"{onLoad}()" ]
     | None -> ()
 ]
 
@@ -316,11 +318,11 @@ let private partialHead pgTitle =
 open Giraffe.Htmx.Common
 
 /// The body of the PrayerTracker layout
-let private pageLayout viewInfo title content =
+let private pageLayout viewInfo pgTitle content =
     body [ _hxBoost ] [
         Navigation.top viewInfo
         div [ _id "pt-body"; Target.content; _hxSwap $"{HxSwap.InnerHtml} show:window:top" ]
-            (contentSection viewInfo title content)
+            (contentSection viewInfo pgTitle content)
     ]
     
 /// The standard layout(s) for PrayerTracker

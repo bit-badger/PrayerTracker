@@ -73,14 +73,14 @@ module Configure =
                 route  "es"       Handlers.Church.maintain
                 routef "/%O/edit" Handlers.Church.edit
             ]
-            route  "/class/logon" (redirectTo true "/small-group/log-on")
-            routef "/error/%s"    Handlers.Home.error
-            routef "/language/%s" Handlers.Home.language
+            route    "/class/logon" (redirectTo true "/small-group/log-on")
+            routef   "/error/%s"    Handlers.Home.error
+            routef   "/language/%s" Handlers.Home.language
             subRoute "/legal" [
                 route "/privacy-policy"   Handlers.Home.privacyPolicy
                 route "/terms-of-service" Handlers.Home.tos
             ]
-            route "/log-off" Handlers.Home.logOff
+            route    "/log-off" Handlers.Home.logOff
             subRoute "/prayer-request" [
                 route  "s"           (Handlers.PrayerRequest.maintain true)
                 routef "s/email/%s"  Handlers.PrayerRequest.email
@@ -107,7 +107,7 @@ module Configure =
                 route  "/members"        Handlers.SmallGroup.members
                 route  "/preferences"    Handlers.SmallGroup.preferences
             ]
-            route "/unauthorized" Handlers.Home.unauthorized
+            route    "/unauthorized" Handlers.Home.unauthorized
             subRoute "/user" [
                 route  "s"                Handlers.User.maintain
                 routef "/%O/edit"         Handlers.User.edit
@@ -116,7 +116,7 @@ module Configure =
                 route  "/logon"           (redirectTo true "/user/log-on")
                 route  "/password"        Handlers.User.password
             ]
-            route "/" Handlers.Home.homePage
+            route    "/" Handlers.Home.homePage
         ]
         POST [
             subRoute "/church" [

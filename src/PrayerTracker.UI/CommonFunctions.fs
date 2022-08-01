@@ -138,6 +138,21 @@ let _inputField = _inputFieldWith []
 /// The class that designates a checkbox / label pair
 let _checkboxField = _class "pt-checkbox-field"
 
+/// Create an input field of the given type, with matching name and ID and the given value
+let inputField typ name value attrs =
+    List.concat [ [ _type typ; _name name; _id name; if value <> "" then _value value ]; attrs ] |> input
+
+/// Generate a table heading with the given localized column names
+let tableHeadings (s : IStringLocalizer) (headings : string list) =
+    headings
+    |> List.map (fun heading -> th [ _scope "col" ] [ locStr s[heading] ])
+    |> tr []
+    |> List.singleton
+    |> thead []
+
+/// For a list of strings, prepend a pound sign and string them together with commas (CSS selector by ID)
+let toHtmlIds it = it |> List.map (fun x -> $"#%s{x}") |> String.concat ", "
+
 /// The name this function used to have when the view engine was part of Giraffe
 let renderHtmlNode = RenderView.AsString.htmlNode
 
