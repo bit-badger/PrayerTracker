@@ -10,11 +10,11 @@ open PrayerTracker.Entities
 module ReferenceList =
 
     /// A localized list of the AsOfDateDisplay DU cases
-    let asOfDateList (s : IStringLocalizer) =
-        [ NoDisplay.code, s["Do not display the “as of” date"]
-          ShortDate.code, s["Display a short “as of” date"]
-          LongDate.code,  s["Display a full “as of” date"]
-        ]
+    let asOfDateList (s : IStringLocalizer) = [
+        AsOfDateDisplay.toCode NoDisplay, s["Do not display the “as of” date"]
+        AsOfDateDisplay.toCode ShortDate, s["Display a short “as of” date"]
+        AsOfDateDisplay.toCode LongDate,  s["Display a full “as of” date"]
+    ]
 
     /// A list of e-mail type options
     let emailTypeList def (s : IStringLocalizer) =
@@ -22,26 +22,26 @@ module ReferenceList =
         let defaultType =
             s[match def with HtmlFormat -> "HTML Format" | PlainTextFormat -> "Plain-Text Format"].Value
         seq {
-          "", LocalizedString ("", $"""{s["Group Default"].Value} ({defaultType})""")
-          HtmlFormat.code,      s["HTML Format"]
-          PlainTextFormat.code, s["Plain-Text Format"]
+            "", LocalizedString ("", $"""{s["Group Default"].Value} ({defaultType})""")
+            EmailFormat.toCode HtmlFormat,      s["HTML Format"]
+            EmailFormat.toCode PlainTextFormat, s["Plain-Text Format"]
           }
 
     /// A list of expiration options
-    let expirationList (s : IStringLocalizer) includeExpireNow =
-        [ Automatic.code, s["Expire Normally"]
-          Manual.code,    s["Request Never Expires"]
-          if includeExpireNow then Forced.code, s["Expire Immediately"]
-        ]
+    let expirationList (s : IStringLocalizer) includeExpireNow = [
+        Expiration.toCode Automatic, s["Expire Normally"]
+        Expiration.toCode Manual,    s["Request Never Expires"]
+        if includeExpireNow then Expiration.toCode Forced, s["Expire Immediately"]
+    ]
 
     /// A list of request types
-    let requestTypeList (s : IStringLocalizer) =
-        [ CurrentRequest,  s["Current Requests"]
-          LongTermRequest, s["Long-Term Requests"]
-          PraiseReport,    s["Praise Reports"]
-          Expecting,       s["Expecting"]
-          Announcement,    s["Announcements"]
-        ]
+    let requestTypeList (s : IStringLocalizer) = [
+        CurrentRequest,  s["Current Requests"]
+        LongTermRequest, s["Long-Term Requests"]
+        PraiseReport,    s["Praise Reports"]
+        Expecting,       s["Expecting"]
+        Announcement,    s["Announcements"]
+    ]
 
 
 /// A user message level
@@ -209,7 +209,7 @@ with
 [<CLIMutable; NoComparison; NoEquality>]
 type AssignGroups =
     {   /// The Id of the user being assigned
-        UserId : UserId
+        UserId : string
         
         /// The full name of the user being assigned
         UserName : string
@@ -222,10 +222,10 @@ type AssignGroups =
 module AssignGroups =
     
     /// Create an instance of this form from an existing user
-    let fromUser (u : User) =
-        { UserId      = u.userId
-          UserName    = u.fullName
-          SmallGroups = ""
+    let fromUser (user : User) =
+        {   UserId      = shortGuid user.Id.Value
+            UserName    = user.fullName
+            SmallGroups = ""
         }
 
 
@@ -246,8 +246,8 @@ type ChangePassword =
 /// Form for adding or editing a church
 [<CLIMutable; NoComparison; NoEquality>]
 type EditChurch =
-    {   /// The Id of the church
-        ChurchId : ChurchId
+    {   /// The ID of the church
+        ChurchId : string
         
         /// The name of the church
         Name : string
@@ -267,40 +267,39 @@ type EditChurch =
 with
   
     /// Is this a new church?
-    member this.IsNew
-      with get () = Guid.Empty = this.ChurchId
+    member this.IsNew = emptyGuid = this.ChurchId
     
     /// Populate a church from this form
     member this.PopulateChurch (church : Church) =
         { church with
-            name             = this.Name
-            city             = this.City
-            st               = this.State
-            hasInterface     = match this.HasInterface with Some x -> x | None -> false
-            interfaceAddress = match this.HasInterface with Some x when x -> this.InterfaceAddress | _ -> None
+            Name             = this.Name
+            City             = this.City
+            State            = this.State
+            HasInterface     = match this.HasInterface with Some x -> x | None -> false
+            InterfaceAddress = match this.HasInterface with Some x when x -> this.InterfaceAddress | _ -> None
         }
 
 /// Support for the EditChurch type
 module EditChurch =
     
     /// Create an instance from an existing church
-    let fromChurch (ch : Church) =
-        { ChurchId         = ch.churchId
-          Name             = ch.name
-          City             = ch.city
-          State            = ch.st
-          HasInterface     = match ch.hasInterface with true -> Some true | false -> None
-          InterfaceAddress = ch.interfaceAddress
+    let fromChurch (church : Church) =
+        {   ChurchId         = shortGuid church.Id.Value
+            Name             = church.Name
+            City             = church.City
+            State            = church.State
+            HasInterface     = match church.HasInterface with true -> Some true | false -> None
+            InterfaceAddress = church.InterfaceAddress
         }
     
     /// An instance to use for adding churches
     let empty =
-        { ChurchId         = Guid.Empty
-          Name             = ""
-          City             = ""
-          State            = ""
-          HasInterface     = None
-          InterfaceAddress = None
+        {   ChurchId         = emptyGuid
+            Name             = ""
+            City             = ""
+            State            = ""
+            HasInterface     = None
+            InterfaceAddress = None
         }
 
   
@@ -308,7 +307,7 @@ module EditChurch =
 [<CLIMutable; NoComparison; NoEquality>]
 type EditMember =
     {   /// The Id for this small group member (not user-entered)
-        MemberId : MemberId
+        MemberId : string
         
         /// The name of the member
         Name : string
@@ -322,26 +321,25 @@ type EditMember =
 with
   
     /// Is this a new member?
-    member this.IsNew
-      with get () = Guid.Empty = this.MemberId
+    member this.IsNew = emptyGuid = this.MemberId
 
 /// Support for the EditMember type
 module EditMember =
     
     /// Create an instance from an existing member
-    let fromMember (m : Member) =
-        { MemberId = m.memberId
-          Name     = m.memberName
-          Email    = m.email
-          Format   = match m.format with Some f -> f | None -> ""
+    let fromMember (mbr : Member) =
+        {   MemberId = shortGuid mbr.Id.Value
+            Name     = mbr.Name
+            Email    = mbr.Email
+            Format   = match mbr.Format with Some fmt -> EmailFormat.toCode fmt | None -> ""
         }
     
     /// An empty instance
     let empty =
-        { MemberId = Guid.Empty
-          Name     = ""
-          Email    = ""
-          Format   = ""
+        {   MemberId = emptyGuid
+            Name     = ""
+            Email    = ""
+            Format   = ""
         }
 
 
@@ -416,23 +414,23 @@ with
             | RequestVisibility.``private``
             | _ -> false, ""
         { prefs with
-            daysToExpire        = this.ExpireDays
-            daysToKeepNew       = this.DaysToKeepNew
-            longTermUpdateWeeks = this.LongTermUpdateWeeks
-            requestSort         = RequestSort.fromCode this.RequestSort
-            emailFromName       = this.EmailFromName
-            emailFromAddress    = this.EmailFromAddress
-            defaultEmailType    = EmailFormat.fromCode this.DefaultEmailType
-            lineColor           = this.LineColor
-            headingColor        = this.HeadingColor
-            listFonts           = this.Fonts
-            headingFontSize     = this.HeadingFontSize
-            textFontSize        = this.ListFontSize
-            timeZoneId          = this.TimeZone
-            isPublic            = isPublic
-            groupPassword       = grpPw
-            pageSize            = this.PageSize
-            asOfDateDisplay     = AsOfDateDisplay.fromCode this.AsOfDate
+            DaysToExpire        = this.ExpireDays
+            DaysToKeepNew       = this.DaysToKeepNew
+            LongTermUpdateWeeks = this.LongTermUpdateWeeks
+            RequestSort         = RequestSort.fromCode this.RequestSort
+            EmailFromName       = this.EmailFromName
+            EmailFromAddress    = this.EmailFromAddress
+            DefaultEmailType    = EmailFormat.fromCode this.DefaultEmailType
+            LineColor           = this.LineColor
+            HeadingColor        = this.HeadingColor
+            Fonts               = this.Fonts
+            HeadingFontSize     = this.HeadingFontSize
+            TextFontSize        = this.ListFontSize
+            TimeZoneId          = TimeZoneId this.TimeZone
+            IsPublic            = isPublic
+            GroupPassword       = grpPw
+            PageSize            = this.PageSize
+            AsOfDateDisplay     = AsOfDateDisplay.fromCode this.AsOfDate
         }
 
 /// Support for the EditPreferences type
@@ -440,37 +438,37 @@ module EditPreferences =
     /// Populate an edit form from existing preferences
     let fromPreferences (prefs : ListPreferences) =
         let setType (x : string) = match x.StartsWith "#" with true -> "RGB" | false -> "Name"
-        { ExpireDays          = prefs.daysToExpire
-          DaysToKeepNew       = prefs.daysToKeepNew
-          LongTermUpdateWeeks = prefs.longTermUpdateWeeks
-          RequestSort         = prefs.requestSort.code
-          EmailFromName       = prefs.emailFromName
-          EmailFromAddress    = prefs.emailFromAddress
-          DefaultEmailType    = prefs.defaultEmailType.code
-          LineColorType       = setType prefs.lineColor
-          LineColor           = prefs.lineColor
-          HeadingColorType    = setType prefs.headingColor
-          HeadingColor        = prefs.headingColor
-          Fonts               = prefs.listFonts
-          HeadingFontSize     = prefs.headingFontSize
-          ListFontSize        = prefs.textFontSize
-          TimeZone            = prefs.timeZoneId
-          GroupPassword       = Some prefs.groupPassword
-          PageSize            = prefs.pageSize
-          AsOfDate            = prefs.asOfDateDisplay.code
-          Visibility          =
-              match true with 
-              | _ when prefs.isPublic -> RequestVisibility.``public``
-              | _ when prefs.groupPassword = "" -> RequestVisibility.``private``
-              | _ -> RequestVisibility.passwordProtected
+        {   ExpireDays          = prefs.DaysToExpire
+            DaysToKeepNew       = prefs.DaysToKeepNew
+            LongTermUpdateWeeks = prefs.LongTermUpdateWeeks
+            RequestSort         = RequestSort.toCode prefs.RequestSort
+            EmailFromName       = prefs.EmailFromName
+            EmailFromAddress    = prefs.EmailFromAddress
+            DefaultEmailType    = EmailFormat.toCode prefs.DefaultEmailType
+            LineColorType       = setType prefs.LineColor
+            LineColor           = prefs.LineColor
+            HeadingColorType    = setType prefs.HeadingColor
+            HeadingColor        = prefs.HeadingColor
+            Fonts               = prefs.Fonts
+            HeadingFontSize     = prefs.HeadingFontSize
+            ListFontSize        = prefs.TextFontSize
+            TimeZone            = TimeZoneId.toString prefs.TimeZoneId
+            GroupPassword       = Some prefs.GroupPassword
+            PageSize            = prefs.PageSize
+            AsOfDate            = AsOfDateDisplay.toCode prefs.AsOfDateDisplay
+            Visibility          =
+                match true with 
+                | _ when prefs.IsPublic -> RequestVisibility.``public``
+                | _ when prefs.GroupPassword = "" -> RequestVisibility.``private``
+                | _ -> RequestVisibility.passwordProtected
         }
 
 
 /// Form for adding or editing prayer requests
 [<CLIMutable; NoComparison; NoEquality>]
 type EditRequest =
-    {   /// The Id of the request
-        RequestId : PrayerRequestId
+    {   /// The ID of the request
+        RequestId : string
         
         /// The type of the request
         RequestType : string
@@ -493,82 +491,80 @@ type EditRequest =
 with
   
     /// Is this a new request?
-    member this.IsNew
-      with get () = Guid.Empty = this.RequestId
+    member this.IsNew = emptyGuid = this.RequestId
 
 /// Support for the EditRequest type
 module EditRequest =
     
     /// An empty instance to use for new requests
     let empty =
-        { RequestId      = Guid.Empty
-          RequestType    = CurrentRequest.code
-          EnteredDate    = None
-          SkipDateUpdate = None
-          Requestor      = None
-          Expiration     = Automatic.code
-          Text           = ""
+        {   RequestId      = emptyGuid
+            RequestType    = PrayerRequestType.toCode CurrentRequest
+            EnteredDate    = None
+            SkipDateUpdate = None
+            Requestor      = None
+            Expiration     = Expiration.toCode Automatic
+            Text           = ""
         }
     
     /// Create an instance from an existing request
-    let fromRequest req =
+    let fromRequest (req : PrayerRequest) =
         { empty with
-            RequestId   = req.prayerRequestId
-            RequestType = req.requestType.code
-            Requestor   = req.requestor
-            Expiration  = req.expiration.code
-            Text        = req.text
+            RequestId   = shortGuid req.Id.Value
+            RequestType = PrayerRequestType.toCode req.RequestType
+            Requestor   = req.Requestor
+            Expiration  = Expiration.toCode req.Expiration
+            Text        = req.Text
         }
 
 
 /// Form for the admin-level editing of small groups
 [<CLIMutable; NoComparison; NoEquality>]
 type EditSmallGroup =
-    {   /// The Id of the small group
-        SmallGroupId : SmallGroupId
+    {   /// The ID of the small group
+        SmallGroupId : string
         
         /// The name of the small group
         Name : string
         
-        /// The Id of the church to which this small group belongs
-        ChurchId : ChurchId
+        /// The ID of the church to which this small group belongs
+        ChurchId : string
     }
 with
     
     /// Is this a new small group?
-    member this.IsNew
-      with get () = Guid.Empty = this.SmallGroupId
+    member this.IsNew = emptyGuid = this.SmallGroupId
     
     /// Populate a small group from this form
     member this.populateGroup (grp : SmallGroup) =
         { grp with
-            name     = this.Name
-            churchId = this.ChurchId
+            Name     = this.Name
+            ChurchId = idFromShort ChurchId this.ChurchId
         }
 
 /// Support for the EditSmallGroup type
 module EditSmallGroup =
     
     /// Create an instance from an existing small group
-    let fromGroup (g : SmallGroup) =
-        { SmallGroupId = g.smallGroupId
-          Name         = g.name
-          ChurchId     = g.churchId
+    let fromGroup (grp : SmallGroup) =
+        {   SmallGroupId = shortGuid grp.Id.Value
+            Name         = grp.Name
+            ChurchId     = shortGuid grp.ChurchId.Value
         }
     
     /// An empty instance (used when adding a new group)
     let empty =
-        { SmallGroupId = Guid.Empty
-          Name         = ""
-          ChurchId     = Guid.Empty
+        {   SmallGroupId = emptyGuid
+            Name         = ""
+            ChurchId     = emptyGuid
         }
 
 
 /// Form for the user edit page
 [<CLIMutable; NoComparison; NoEquality>]
 type EditUser =
-    {   /// The Id of the user
-        UserId : UserId
+    {   /// The ID of the user
+        UserId : string
         
         /// The first name of the user
         FirstName : string
@@ -591,43 +587,42 @@ type EditUser =
 with
   
     /// Is this a new user?
-    member this.IsNew
-      with get () = Guid.Empty = this.UserId
+    member this.IsNew = emptyGuid = this.UserId
   
     /// Populate a user from the form
     member this.PopulateUser (user : User) hasher =
         { user with
-            firstName    = this.FirstName
-            lastName     = this.LastName
-            emailAddress = this.Email
-            isAdmin      = defaultArg this.IsAdmin false
-          }
+            FirstName = this.FirstName
+            LastName  = this.LastName
+            Email     = this.Email
+            IsAdmin   = defaultArg this.IsAdmin false
+        }
         |> function
         | u when isNull this.Password || this.Password = "" -> u
-        | u -> { u with passwordHash = hasher this.Password }
+        | u -> { u with PasswordHash = hasher this.Password }
 
 /// Support for the EditUser type
 module EditUser =
   
     /// An empty instance
     let empty =
-        { UserId          = Guid.Empty
-          FirstName       = ""
-          LastName        = ""
-          Email           = ""
-          Password        = ""
-          PasswordConfirm = ""
-          IsAdmin         = None
+        {   UserId          = emptyGuid
+            FirstName       = ""
+            LastName        = ""
+            Email           = ""
+            Password        = ""
+            PasswordConfirm = ""
+            IsAdmin         = None
         }
     
     /// Create an instance from an existing user
     let fromUser (user : User) =
         { empty with
-            UserId    = user.userId
-            FirstName = user.firstName
-            LastName  = user.lastName
-            Email     = user.emailAddress
-            IsAdmin   = if user.isAdmin then Some true else None
+            UserId    = shortGuid user.Id.Value
+            FirstName = user.FirstName
+            LastName  = user.LastName
+            Email     = user.Email
+            IsAdmin   = if user.IsAdmin then Some true else None
         }
 
 
@@ -635,7 +630,7 @@ module EditUser =
 [<CLIMutable; NoComparison; NoEquality>]
 type GroupLogOn =
     {   /// The ID of the small group to which the user is logging on
-        SmallGroupId : SmallGroupId
+        SmallGroupId : string
         
         /// The password entered
         Password : string
@@ -649,9 +644,9 @@ module GroupLogOn =
   
     /// An empty instance
     let empty =
-        { SmallGroupId = Guid.Empty
-          Password     = ""
-          RememberMe   = None
+        {   SmallGroupId = emptyGuid
+            Password     = ""
+            RememberMe   = None
         }
 
 
@@ -679,11 +674,11 @@ module MaintainRequests =
     
     /// An empty instance
     let empty =
-        { Requests   = []
-          SmallGroup = SmallGroup.empty 
-          OnlyActive = None
-          SearchTerm = None
-          PageNbr    = None
+        {   Requests   = []
+            SmallGroup = SmallGroup.empty 
+            OnlyActive = None
+            SearchTerm = None
+            PageNbr    = None
         }
 
 
@@ -714,7 +709,7 @@ type UserLogOn =
         Password : string
         
         /// The ID of the small group to which the user is logging on
-        SmallGroupId : SmallGroupId
+        SmallGroupId : string
         
         /// Whether to remember the login
         RememberMe : bool option
@@ -728,11 +723,11 @@ module UserLogOn =
     
     /// An empty instance
     let empty =
-        { Email        = ""
-          Password     = ""
-          SmallGroupId = Guid.Empty
-          RememberMe   = None
-          RedirectUrl  = None
+        {   Email        = ""
+            Password     = ""
+            SmallGroupId = emptyGuid
+            RememberMe   = None
+            RedirectUrl  = None
         }
 
 
@@ -765,13 +760,13 @@ with
         ReferenceList.requestTypeList s
         |> List.map (fun (typ, name) ->
             let sort =
-                match this.SmallGroup.preferences.requestSort with
-                | SortByDate -> Seq.sortByDescending (fun req -> req.updatedDate)
-                | SortByRequestor -> Seq.sortBy (fun req -> req.requestor)
+                match this.SmallGroup.Preferences.RequestSort with
+                | SortByDate -> Seq.sortByDescending (fun req -> req.UpdatedDate)
+                | SortByRequestor -> Seq.sortBy (fun req -> req.Requestor)
             let reqs =
                 this.Requests
                 |> Seq.ofList
-                |> Seq.filter (fun req -> req.requestType = typ)
+                |> Seq.filter (fun req -> req.RequestType = typ)
                 |> sort
                 |> List.ofSeq
             typ, name, reqs)
@@ -779,20 +774,20 @@ with
     
     /// Is this request new?
     member this.IsNew (req : PrayerRequest) =
-        (this.Date - req.updatedDate).Days <= this.SmallGroup.preferences.daysToKeepNew
+        (this.Date - req.UpdatedDate).Days <= this.SmallGroup.Preferences.DaysToKeepNew
     
     /// Generate this list as HTML
     member this.AsHtml (s : IStringLocalizer) =
-        let prefs    = this.SmallGroup.preferences
-        let asOfSize = Math.Round (float prefs.textFontSize * 0.8, 2)
+        let prefs    = this.SmallGroup.Preferences
+        let asOfSize = Math.Round (float prefs.TextFontSize * 0.8, 2)
         [   if this.ShowHeader then
-                div [ _style $"text-align:center;font-family:{prefs.listFonts}" ] [
-                    span [ _style $"font-size:%i{prefs.headingFontSize}pt;" ] [
+                div [ _style $"text-align:center;font-family:{prefs.Fonts}" ] [
+                    span [ _style $"font-size:%i{prefs.HeadingFontSize}pt;" ] [
                         strong [] [ str s["Prayer Requests"].Value ]
                     ]
                     br []
-                    span [ _style $"font-size:%i{prefs.textFontSize}pt;" ] [
-                        strong [] [ str this.SmallGroup.name ]
+                    span [ _style $"font-size:%i{prefs.TextFontSize}pt;" ] [
+                        strong [] [ str this.SmallGroup.Name ]
                         br []
                         str (this.Date.ToString s["MMMM d, yyyy"].Value)
                     ]
@@ -800,9 +795,9 @@ with
                 br []
             for _, name, reqs in this.RequestsByType s do
                 div [ _style "padding-left:10px;padding-bottom:.5em;" ] [
-                    table [ _style $"font-family:{prefs.listFonts};page-break-inside:avoid;" ] [
+                    table [ _style $"font-family:{prefs.Fonts};page-break-inside:avoid;" ] [
                         tr [] [
-                            td [ _style $"font-size:%i{prefs.headingFontSize}pt;color:{prefs.headingColor};padding:3px 0;border-top:solid 3px {prefs.lineColor};border-bottom:solid 3px {prefs.lineColor};font-weight:bold;" ] [
+                            td [ _style $"font-size:%i{prefs.HeadingFontSize}pt;color:{prefs.HeadingColor};padding:3px 0;border-top:solid 3px {prefs.LineColor};border-bottom:solid 3px {prefs.LineColor};font-weight:bold;" ] [
                                 rawText "&nbsp; &nbsp; "; str name.Value; rawText "&nbsp; &nbsp; "
                             ]
                         ]
@@ -811,22 +806,22 @@ with
                 reqs
                 |> List.map (fun req ->
                     let bullet = if this.IsNew req then "circle" else "disc"
-                    li [ _style $"list-style-type:{bullet};font-family:{prefs.listFonts};font-size:%i{prefs.textFontSize}pt;padding-bottom:.25em;" ] [
-                        match req.requestor with
+                    li [ _style $"list-style-type:{bullet};font-family:{prefs.Fonts};font-size:%i{prefs.TextFontSize}pt;padding-bottom:.25em;" ] [
+                        match req.Requestor with
                         | Some r when r <> "" ->
                             strong [] [ str r ]
                             rawText " &mdash; "
                         | Some _ -> ()
                         | None -> ()
-                        rawText req.text
-                        match prefs.asOfDateDisplay with
+                        rawText req.Text
+                        match prefs.AsOfDateDisplay with
                         | NoDisplay -> ()
                         | ShortDate
                         | LongDate ->
                             let dt =
-                                match prefs.asOfDateDisplay with
-                                | ShortDate -> req.updatedDate.ToShortDateString ()
-                                | LongDate -> req.updatedDate.ToLongDateString ()
+                                match prefs.AsOfDateDisplay with
+                                | ShortDate -> req.UpdatedDate.ToShortDateString ()
+                                | LongDate -> req.UpdatedDate.ToLongDateString ()
                                 | _ -> ""
                             i [ _style $"font-size:%.2f{asOfSize}pt" ] [
                                 rawText "&nbsp; ("; str s["as of"].Value; str " "; str dt; rawText ")"
@@ -840,7 +835,7 @@ with
     /// Generate this list as plain text
     member this.AsText (s : IStringLocalizer) =
         seq {
-            this.SmallGroup.name
+            this.SmallGroup.Name
             s["Prayer Requests"].Value
             this.Date.ToString s["MMMM d, yyyy"].Value
             " "
@@ -851,17 +846,17 @@ with
                 dashes
                 for req in reqs do
                     let bullet    = if this.IsNew req then "+" else "-"
-                    let requestor = match req.requestor with Some r -> $"{r} - " | None -> ""
-                    match this.SmallGroup.preferences.asOfDateDisplay with
+                    let requestor = match req.Requestor with Some r -> $"{r} - " | None -> ""
+                    match this.SmallGroup.Preferences.AsOfDateDisplay with
                     | NoDisplay -> ""
                     | _ ->
                         let dt =
-                            match this.SmallGroup.preferences.asOfDateDisplay with
-                            | ShortDate -> req.updatedDate.ToShortDateString ()
-                            | LongDate -> req.updatedDate.ToLongDateString ()
+                            match this.SmallGroup.Preferences.AsOfDateDisplay with
+                            | ShortDate -> req.UpdatedDate.ToShortDateString ()
+                            | LongDate -> req.UpdatedDate.ToLongDateString ()
                             | _ -> ""
                         $"""  ({s["as of"].Value} {dt})"""
-                    |> sprintf "  %s %s%s%s" bullet requestor (htmlToPlainText req.text)
+                    |> sprintf "  %s %s%s%s" bullet requestor (htmlToPlainText req.Text)
                 " "
         }
         |> String.concat "\n"

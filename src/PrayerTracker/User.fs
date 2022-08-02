@@ -1,47 +1,45 @@
 ﻿module PrayerTracker.Handlers.User
 
-open System
-open System.Collections.Generic
-open System.Net
-open System.Threading.Tasks
 open Giraffe
-open Microsoft.AspNetCore.Html
 open Microsoft.AspNetCore.Http
 open PrayerTracker
 open PrayerTracker.Cookies
 open PrayerTracker.Entities
 open PrayerTracker.ViewModels
-open PrayerTracker.Views.CommonFunctions
 
 /// Set the user's "remember me" cookie
 let private setUserCookie (ctx : HttpContext) pwHash =
     ctx.Response.Cookies.Append (
         Key.Cookie.user,
-        { Id = (currentUser ctx).userId; GroupId = (currentGroup ctx).smallGroupId; PasswordHash = pwHash }.toPayload (),
+        { Id = (currentUser ctx).Id.Value; GroupId = (currentGroup ctx).Id.Value; PasswordHash = pwHash }.toPayload (),
         autoRefresh)
+
+open System
+open System.Collections.Generic
 
 /// Retrieve a user from the database by password
 // If the hashes do not match, determine if it matches a previous scheme, and upgrade them if it does
-let private findUserByPassword m (db : AppDbContext) = task {
-    match! db.TryUserByEmailAndGroup m.Email m.SmallGroupId with
-    | Some u when Option.isSome u.salt ->
+let private findUserByPassword model (db : AppDbContext) = task {
+    match! db.TryUserByEmailAndGroup model.Email (idFromShort SmallGroupId model.SmallGroupId) with
+    | Some u when Option.isSome u.Salt ->
         // Already upgraded; match = success
-        let pwHash = pbkdf2Hash (Option.get u.salt) m.Password
-        if u.passwordHash = pwHash then
-            return Some { u with passwordHash = ""; salt = None; smallGroups = List<UserSmallGroup>() }, pwHash
+        let pwHash = pbkdf2Hash (Option.get u.Salt) model.Password
+        if u.PasswordHash = pwHash then
+            return Some { u with PasswordHash = ""; Salt = None; SmallGroups = List<UserSmallGroup>() }, pwHash
         else return None, ""
-    | Some u when u.passwordHash = sha1Hash m.Password ->
+    | Some u when u.PasswordHash = sha1Hash model.Password ->
         // Not upgraded, but password is good; upgrade 'em!
         // Upgrade 'em!
         let salt     = Guid.NewGuid ()
-        let pwHash   = pbkdf2Hash salt m.Password
-        let upgraded = { u with salt = Some salt; passwordHash = pwHash }
+        let pwHash   = pbkdf2Hash salt model.Password
+        let upgraded = { u with Salt = Some salt; PasswordHash = pwHash }
         db.UpdateEntry upgraded
         let! _ = db.SaveChangesAsync ()
-        return Some { u with passwordHash = ""; salt = None; smallGroups = List<UserSmallGroup>() }, pwHash
+        return Some { u with PasswordHash = ""; Salt = None; SmallGroups = List<UserSmallGroup>() }, pwHash
     | _ -> return None, ""
 }
 
+open System.Threading.Tasks
 
 /// POST /user/password/change
 let changePassword : HttpHandler = requireAccess [ User ] >=> validateCsrf >=> fun next ctx -> task {
@@ -49,13 +47,13 @@ let changePassword : HttpHandler = requireAccess [ User ] >=> validateCsrf >=> f
     | Ok m ->
         let  s      = Views.I18N.localizer.Force ()
         let  curUsr = currentUser ctx
-        let! dbUsr  = ctx.db.TryUserById curUsr.userId
+        let! dbUsr  = ctx.db.TryUserById curUsr.Id
         let! user   =
             match dbUsr with
             | Some usr ->
                 // Check the old password against a possibly non-salted hash
-                (match usr.salt with Some salt -> pbkdf2Hash salt | None -> sha1Hash) m.OldPassword
-                |> ctx.db.TryUserLogOnByCookie curUsr.userId (currentGroup ctx).smallGroupId
+                (match usr.Salt with Some salt -> pbkdf2Hash salt | None -> sha1Hash) m.OldPassword
+                |> ctx.db.TryUserLogOnByCookie curUsr.Id (currentGroup ctx).Id
             | _ -> Task.FromResult None
         match user with
         | Some _ when m.NewPassword = m.NewPasswordConfirm ->
@@ -63,10 +61,10 @@ let changePassword : HttpHandler = requireAccess [ User ] >=> validateCsrf >=> f
             | Some usr ->
                 // Generate new salt whenever the password is changed
                 let salt = Guid.NewGuid ()
-                ctx.db.UpdateEntry { usr with passwordHash = pbkdf2Hash salt m.NewPassword; salt = Some salt }
+                ctx.db.UpdateEntry { usr with PasswordHash = pbkdf2Hash salt m.NewPassword; Salt = Some salt }
                 let! _ = ctx.db.SaveChangesAsync ()
                 // If the user is remembered, update the cookie with the new hash
-                if ctx.Request.Cookies.Keys.Contains Key.Cookie.user then setUserCookie ctx usr.passwordHash
+                if ctx.Request.Cookies.Keys.Contains Key.Cookie.user then setUserCookie ctx usr.PasswordHash
                 addInfo ctx s["Your password was changed successfully"]
             | None -> addError ctx s["Unable to change password"]
             return! redirectTo false "/" next ctx
@@ -79,9 +77,9 @@ let changePassword : HttpHandler = requireAccess [ User ] >=> validateCsrf >=> f
     | Result.Error e -> return! bindError e next ctx
 }
 
-
 /// POST /user/[user-id]/delete
-let delete userId : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next ctx -> task {
+let delete usrId : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next ctx -> task {
+    let userId = UserId usrId
     match! ctx.db.TryUserById userId with
     | Some user ->
         ctx.db.RemoveEntry user
@@ -92,33 +90,36 @@ let delete userId : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> f
     | _ -> return! fourOhFour next ctx
 }
 
+open System.Net
+open Microsoft.AspNetCore.Html
 
 /// POST /user/log-on
 let doLogOn : HttpHandler = requireAccess [ AccessLevel.Public ] >=> validateCsrf >=> fun next ctx -> task {
     match! ctx.TryBindFormAsync<UserLogOn> () with
-    | Ok m -> 
+    | Ok model -> 
         let  s           = Views.I18N.localizer.Force ()
-        let! usr, pwHash = findUserByPassword m ctx.db
-        let! grp         = ctx.db.TryGroupById m.SmallGroupId
+        let! usr, pwHash = findUserByPassword model ctx.db
+        let! grp         = ctx.db.TryGroupById (idFromShort SmallGroupId model.SmallGroupId)
         let  nextUrl     =
             match usr with
             | Some _ ->
                 ctx.Session.user       <- usr
                 ctx.Session.smallGroup <- grp
-                if defaultArg m.RememberMe false then setUserCookie ctx pwHash
+                if defaultArg model.RememberMe false then setUserCookie ctx pwHash
                 addHtmlInfo ctx s["Log On Successful • Welcome to {0}", s["PrayerTracker"]]
-                match m.RedirectUrl with
+                match model.RedirectUrl with
                 | None -> "/small-group"
+                // TODO: ensure "x" is a local URL
                 | Some x when x = "" -> "/small-group"
                 | Some x -> x
             | _ ->
-                let grpName = match grp with Some g -> g.name | _ -> "N/A"
+                let grpName = match grp with Some g -> g.Name | _ -> "N/A"
                 { UserMessage.error with
                     Text        = htmlLocString s["Invalid credentials - log on unsuccessful"]
                     Description =
                         [ s["This is likely due to one of the following reasons"].Value
                           ":<ul><li>"
-                          s["The e-mail address “{0}” is invalid.", WebUtility.HtmlEncode m.Email].Value
+                          s["The e-mail address “{0}” is invalid.", WebUtility.HtmlEncode model.Email].Value
                           "</li><li>"
                           s["The password entered does not match the password for the given e-mail address."].Value
                           "</li><li>"
@@ -137,9 +138,10 @@ let doLogOn : HttpHandler = requireAccess [ AccessLevel.Public ] >=> validateCsr
 
 
 /// GET /user/[user-id]/edit
-let edit (userId : UserId) : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> task {
+let edit usrId : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> task {
     let startTicks = DateTime.Now.Ticks
-    if userId = Guid.Empty then
+    let userId = UserId usrId
+    if userId.Value = Guid.Empty then
         return!
             viewInfo ctx startTicks
             |> Views.User.edit EditUser.empty ctx
@@ -196,22 +198,22 @@ let save : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next c
     match! ctx.TryBindFormAsync<EditUser> () with
     | Ok m ->
         let! user =
-            if m.IsNew then Task.FromResult (Some { User.empty with userId = Guid.NewGuid () })
-            else ctx.db.TryUserById m.UserId
+            if m.IsNew then Task.FromResult (Some { User.empty with Id = (Guid.NewGuid >> UserId) () })
+            else ctx.db.TryUserById (idFromShort UserId m.UserId)
         let saltedUser = 
             match user with
             | Some u ->
-                match u.salt with
+                match u.Salt with
                 | None when m.Password <> "" ->
                     // Generate salt so that a new password hash can be generated
-                    Some { u with salt = Some (Guid.NewGuid ()) }
+                    Some { u with Salt = Some (Guid.NewGuid ()) }
                 | _ ->
                     // Leave the user with no salt, so prior hash can be validated/upgraded
                     user
             | _ -> user
         match saltedUser with
         | Some u ->
-            let updatedUser = m.PopulateUser u (pbkdf2Hash (Option.get u.salt))
+            let updatedUser = m.PopulateUser u (pbkdf2Hash (Option.get u.Salt))
             updatedUser |> if m.IsNew then ctx.db.AddEntry else ctx.db.UpdateEntry
             let! _ = ctx.db.SaveChangesAsync ()
             let  s = Views.I18N.localizer.Force ()
@@ -225,7 +227,7 @@ let save : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next c
                       |> Some
                 }
                 |> addUserMessage ctx
-                return! redirectTo false $"/user/{flatGuid u.userId}/small-groups" next ctx
+                return! redirectTo false $"/user/{shortGuid u.Id.Value}/small-groups" next ctx
             else
                 addInfo ctx s["Successfully {0} user", s["Updated"].Value.ToLower ()]
                 return! redirectTo false "/users" next ctx
@@ -237,30 +239,30 @@ let save : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next c
 /// POST /user/small-groups/save
 let saveGroups : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next ctx -> task {
     match! ctx.TryBindFormAsync<AssignGroups> () with
-    | Ok m ->
+    | Ok model ->
         let s = Views.I18N.localizer.Force ()
-        match Seq.length m.SmallGroups with
+        match Seq.length model.SmallGroups with
         | 0 ->
             addError ctx s["You must select at least one group to assign"]
-            return! redirectTo false $"/user/{flatGuid m.UserId}/small-groups" next ctx
+            return! redirectTo false $"/user/{model.UserId}/small-groups" next ctx
         | _ ->
-            match! ctx.db.TryUserByIdWithGroups m.UserId with
+            match! ctx.db.TryUserByIdWithGroups (idFromShort UserId model.UserId) with
             | Some user ->
                 let groups =
-                    m.SmallGroups.Split ','
-                    |> Array.map Guid.Parse
+                    model.SmallGroups.Split ','
+                    |> Array.map (idFromShort SmallGroupId)
                     |> List.ofArray
-                user.smallGroups
-                |> Seq.filter (fun x -> not (groups |> List.exists (fun y -> y = x.smallGroupId)))
+                user.SmallGroups
+                |> Seq.filter (fun x -> not (groups |> List.exists (fun y -> y = x.SmallGroupId)))
                 |> ctx.db.UserGroupXref.RemoveRange
                 groups
                 |> Seq.ofList
-                |> Seq.filter (fun x -> not (user.smallGroups |> Seq.exists (fun y -> y.smallGroupId = x)))
-                |> Seq.map (fun x -> { UserSmallGroup.empty with userId = user.userId; smallGroupId = x })
+                |> Seq.filter (fun x -> not (user.SmallGroups |> Seq.exists (fun y -> y.SmallGroupId = x)))
+                |> Seq.map (fun x -> { UserSmallGroup.empty with UserId = user.Id; SmallGroupId = x })
                 |> List.ofSeq
                 |> List.iter ctx.db.AddEntry
                 let! _ = ctx.db.SaveChangesAsync ()
-                addInfo ctx s["Successfully updated group permissions for {0}", m.UserName]
+                addInfo ctx s["Successfully updated group permissions for {0}", model.UserName]
                 return! redirectTo false "/users" next ctx
               | _ -> return! fourOhFour next ctx
     | Result.Error e -> return! bindError e next ctx
@@ -268,12 +270,13 @@ let saveGroups : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun 
 
 
 /// GET /user/[user-id]/small-groups
-let smallGroups userId : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> task {
+let smallGroups usrId : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> task {
     let startTicks = DateTime.Now.Ticks
+    let userId     = UserId usrId
     match! ctx.db.TryUserByIdWithGroups userId with
     | Some user ->
         let! groups    = ctx.db.GroupList ()
-        let  curGroups = user.smallGroups |> Seq.map (fun g -> flatGuid g.smallGroupId) |> List.ofSeq
+        let  curGroups = user.SmallGroups |> Seq.map (fun g -> shortGuid g.SmallGroupId.Value) |> List.ofSeq
         return! 
             viewInfo ctx startTicks
             |> Views.User.assignGroups (AssignGroups.fromUser user) groups curGroups ctx

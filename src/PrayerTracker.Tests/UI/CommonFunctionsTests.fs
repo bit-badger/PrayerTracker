@@ -178,37 +178,38 @@ let tableSummaryTests =
 
 module TimeZones =
   
+    open PrayerTracker.Entities
     open PrayerTracker.Views.CommonFunctions.TimeZones
 
     [<Tests>]
     let nameTests =
         testList "TimeZones.name" [
             test "succeeds for US Eastern time" {
-                Expect.equal (name "America/New_York" _s |> string) "Eastern"
+                Expect.equal (name (TimeZoneId "America/New_York") _s |> string) "Eastern"
                     "US Eastern time zone not returned correctly"
             }
             test "succeeds for US Central time" {
-                Expect.equal (name "America/Chicago" _s |> string) "Central"
+                Expect.equal (name (TimeZoneId "America/Chicago") _s |> string) "Central"
                     "US Central time zone not returned correctly"
             }
             test "succeeds for US Mountain time" {
-                Expect.equal (name "America/Denver" _s |> string) "Mountain"
+                Expect.equal (name (TimeZoneId "America/Denver") _s |> string) "Mountain"
                     "US Mountain time zone not returned correctly"
             }
             test "succeeds for US Mountain (AZ) time" {
-                Expect.equal (name "America/Phoenix" _s |> string) "Mountain (Arizona)"
+                Expect.equal (name (TimeZoneId "America/Phoenix") _s |> string) "Mountain (Arizona)"
                     "US Mountain (AZ) time zone not returned correctly"
             }
             test "succeeds for US Pacific time" {
-                Expect.equal (name "America/Los_Angeles" _s |> string) "Pacific"
+                Expect.equal (name (TimeZoneId "America/Los_Angeles") _s |> string) "Pacific"
                     "US Pacific time zone not returned correctly"
             }
             test "succeeds for Central European time" {
-                Expect.equal (name "Europe/Berlin" _s |> string) "Central European"
+                Expect.equal (name (TimeZoneId "Europe/Berlin") _s |> string) "Central European"
                     "Central European time zone not returned correctly"
             }
             test "fails for unexpected time zone" {
-                Expect.equal (name "Wakanda" _s |> string) "Wakanda"
+                Expect.equal (name (TimeZoneId "Wakanda") _s |> string) "Wakanda"
                     "Unexpected time zone should have returned the original ID"
             }
         ]

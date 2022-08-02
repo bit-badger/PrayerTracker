@@ -17,13 +17,13 @@ let edit (model : EditRequest) today ctx viewInfo =
     let vi        = AppViewInfo.withOnLoadScript "PT.initCKEditor" viewInfo
     form [ _action "/prayer-request/save"; _method "post"; _class "pt-center-columns"; Target.content ] [
         csrfToken ctx
-        inputField "hidden" (nameof model.RequestId) (flatGuid model.RequestId) []
+        inputField "hidden" (nameof model.RequestId) model.RequestId []
         div [ _fieldRow ] [
             div [ _inputField ] [
                 label [ _for (nameof model.RequestType) ] [ locStr s["Request Type"] ]
                 ReferenceList.requestTypeList s
                 |> Seq.ofList
-                |> Seq.map (fun (typ, desc) -> typ.code, desc.Value)
+                |> Seq.map (fun (typ, desc) -> PrayerRequestType.toCode typ, desc.Value)
                 |> selectList (nameof model.RequestType) model.RequestType [ _required; _autofocus ]
             ]
             div [ _inputField ] [
@@ -76,10 +76,10 @@ let edit (model : EditRequest) today ctx viewInfo =
 /// View for the request e-mail results page
 let email model viewInfo =
     let s         = I18N.localizer.Force ()
-    let pageTitle = $"""{s["Prayer Requests"].Value} • {model.SmallGroup.name}"""
-    let prefs     = model.SmallGroup.preferences
-    let addresses = model.Recipients |> List.map (fun mbr -> $"{mbr.memberName} <{mbr.email}>") |> String.concat ", "
-    [   p [ _style $"font-family:{prefs.listFonts};font-size:%i{prefs.textFontSize}pt;" ] [
+    let pageTitle = $"""{s["Prayer Requests"].Value} • {model.SmallGroup.Name}"""
+    let prefs     = model.SmallGroup.Preferences
+    let addresses = model.Recipients |> List.map (fun mbr -> $"{mbr.Name} <{mbr.Email}>") |> String.concat ", "
+    [   p [ _style $"font-family:{prefs.Fonts};font-size:%i{prefs.TextFontSize}pt;" ] [
             locStr s["The request list was sent to the following people, via individual e-mails"]
             rawText ":"
             br []
@@ -126,9 +126,9 @@ let lists (groups : SmallGroup list) viewInfo =
                 tableHeadings s [ "Actions"; "Church"; "Group" ]
                 groups
                 |> List.map (fun grp ->
-                    let grpId = flatGuid grp.smallGroupId
+                    let grpId = shortGuid grp.Id.Value
                     tr [] [
-                        if grp.preferences.isPublic then
+                        if grp.Preferences.IsPublic then
                             a [ _href $"/prayer-requests/{grpId}/list"; _title s["View"].Value ] [ icon "list" ]
                         else
                             a [ _href $"/small-group/log-on/{grpId}"; _title s["Log On"].Value ] [
@@ -136,8 +136,8 @@ let lists (groups : SmallGroup list) viewInfo =
                             ]
                         |> List.singleton
                         |> td []
-                        td [] [ str grp.church.name ]
-                        td [] [ str grp.name ]
+                        td [] [ str grp.Church.Name ]
+                        td [] [ str grp.Name ]
                     ])
                 |> tbody []
             ]
@@ -153,19 +153,19 @@ let maintain (model : MaintainRequests) (ctx : HttpContext) viewInfo =
     use sw    = new StringWriter ()
     let raw   = rawLocText sw
     let now   = model.SmallGroup.localDateNow (ctx.GetService<IClock> ())
-    let prefs = model.SmallGroup.preferences
+    let prefs = model.SmallGroup.Preferences
     let types = ReferenceList.requestTypeList s |> Map.ofList
     let updReq (req : PrayerRequest) =
-        if req.updateRequired now prefs.daysToExpire prefs.longTermUpdateWeeks then "pt-request-update" else ""
+        if req.updateRequired now prefs.DaysToExpire prefs.LongTermUpdateWeeks then "pt-request-update" else ""
         |> _class 
     let reqExp (req : PrayerRequest) =
-        _class (if req.isExpired now prefs.daysToExpire then "pt-request-expired" else "")
+        _class (if req.isExpired now prefs.DaysToExpire then "pt-request-expired" else "")
     /// Iterate the sequence once, before we render, so we can get the count of it at the top of the table
     let requests =
         model.Requests
         |> List.map (fun req ->
-            let reqId     = flatGuid req.prayerRequestId
-            let reqText   = htmlToPlainText req.text
+            let reqId     = shortGuid req.Id.Value
+            let reqText   = htmlToPlainText req.Text
             let delAction = $"/prayer-request/{reqId}/delete"
             let delPrompt =
                 [   s["Are you sure you want to delete this {0}?  This action cannot be undone.",
@@ -180,7 +180,7 @@ let maintain (model : MaintainRequests) (ctx : HttpContext) viewInfo =
                     a [ _href $"/prayer-request/{reqId}/edit"; _title l["Edit This Prayer Request"].Value ] [
                         icon "edit"
                     ]
-                    if req.isExpired now prefs.daysToExpire then
+                    if req.isExpired now prefs.DaysToExpire then
                         a [ _href  $"/prayer-request/{reqId}/restore"
                             _title l["Restore This Inactive Request"].Value ] [
                             icon "visibility"
@@ -197,10 +197,10 @@ let maintain (model : MaintainRequests) (ctx : HttpContext) viewInfo =
                     ]
                 ]
                 td [ updReq req ] [
-                    str (req.updatedDate.ToString(s["MMMM d, yyyy"].Value, Globalization.CultureInfo.CurrentUICulture))
+                    str (req.UpdatedDate.ToString(s["MMMM d, yyyy"].Value, Globalization.CultureInfo.CurrentUICulture))
                 ]
-                td [] [ locStr types[req.requestType] ]
-                td [ reqExp req ] [ str (match req.requestor with Some r -> r | None -> " ") ]
+                td [] [ locStr types[req.RequestType] ]
+                td [ reqExp req ] [ str (match req.Requestor with Some r -> r | None -> " ") ]
                 td [] [
                     match reqText.Length with
                     | len when len < 60 -> rawText reqText
@@ -265,7 +265,7 @@ let maintain (model : MaintainRequests) (ctx : HttpContext) viewInfo =
                     let withPage = match pg with 2 -> search | _ -> ("page", string (pg - 1)) :: search
                     a [ _href (makeUrl url withPage) ] [ icon "keyboard_arrow_left"; space; raw l["Previous Page"] ]
                 rawText " &nbsp; &nbsp; "
-                match requests.Length = model.SmallGroup.preferences.pageSize with
+                match requests.Length = model.SmallGroup.Preferences.PageSize with
                 | true ->
                     a [ _href (makeUrl url (("page", string (pg + 1)) :: search)) ] [
                         raw l["Next Page"]; space; icon "keyboard_arrow_right"
@@ -281,13 +281,13 @@ let maintain (model : MaintainRequests) (ctx : HttpContext) viewInfo =
 /// View for the printable prayer request list
 let print model version =
     let s         = I18N.localizer.Force ()
-    let pageTitle = $"""{s["Prayer Requests"].Value} • {model.SmallGroup.name}"""
+    let pageTitle = $"""{s["Prayer Requests"].Value} • {model.SmallGroup.Name}"""
     let imgAlt    = $"""{s["PrayerTracker"].Value} {s["from Bit Badger Solutions"].Value}"""
     article [] [
         rawText (model.AsHtml s)
         br []
         hr []
-        div [ _style $"font-size:70%%;font-family:{model.SmallGroup.preferences.listFonts};" ] [
+        div [ _style $"font-size:70%%;font-family:{model.SmallGroup.Preferences.Fonts};" ] [
             img [ _src $"""/img/{s["footer_en"].Value}.png"""
                   _style "vertical-align:text-bottom;"
                   _alt imgAlt
@@ -302,7 +302,7 @@ let print model version =
 /// View for the prayer request list
 let view model viewInfo =
     let s         = I18N.localizer.Force ()
-    let pageTitle = $"""{s["Prayer Requests"].Value} • {model.SmallGroup.name}"""
+    let pageTitle = $"""{s["Prayer Requests"].Value} • {model.SmallGroup.Name}"""
     let spacer    = rawText " &nbsp; &nbsp; &nbsp; "
     let dtString  = model.Date.ToString "yyyy-MM-dd"
     div [ _class "pt-center-text" ] [

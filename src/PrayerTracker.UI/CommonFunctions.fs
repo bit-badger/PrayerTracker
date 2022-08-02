@@ -103,16 +103,6 @@ let selectDefault text = $"— %s{text} —"
 /// Generate a standard submit button with icon and text
 let submit attrs ico text = button (_type "submit" :: attrs) [ icon ico; rawText " &nbsp;"; locStr text ]
 
-
-open System
-
-// TODO: this is where to implement issue #1
-/// Format a GUID with no dashes (used for URLs and forms)
-let flatGuid (x : Guid) = x.ToString "N"
-
-/// An empty GUID string (used for "add" actions)
-let emptyGuid = flatGuid Guid.Empty
-
 /// Create an HTML onsubmit event handler
 let _onsubmit = attr "onsubmit"
 
@@ -167,6 +157,7 @@ let renderHtmlString = renderHtmlNode >> HtmlString
 module TimeZones =
   
     open System.Collections.Generic
+    open PrayerTracker.Entities
 
     /// Cross-reference between time zone Ids and their English names
     let private xref =
@@ -180,7 +171,8 @@ module TimeZones =
         |> Map.ofList
 
     /// Get the name of a time zone, given its Id
-    let name tzId (s : IStringLocalizer) =
+    let name timeZoneId (s : IStringLocalizer) =
+        let tzId = TimeZoneId.toString timeZoneId
         try s[xref[tzId]]
         with :? KeyNotFoundException -> LocalizedString (tzId, tzId)
 

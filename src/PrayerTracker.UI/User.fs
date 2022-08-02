@@ -1,6 +1,7 @@
 ﻿module PrayerTracker.Views.User
 
 open Giraffe.ViewEngine
+open PrayerTracker
 open PrayerTracker.ViewModels
 
 /// View for the group assignment page
@@ -9,7 +10,7 @@ let assignGroups model groups curGroups ctx viewInfo =
     let pageTitle = sprintf "%s • %A" model.UserName s["Assign Groups"]
     form [ _action "/user/small-groups/save"; _method "post"; _class "pt-center-columns"; Target.content ] [
         csrfToken ctx
-        inputField "hidden" (nameof model.UserId) (flatGuid model.UserId) []
+        inputField "hidden" (nameof model.UserId) model.UserId []
         inputField "hidden" (nameof model.UserName) model.UserName []
         table [ _class "pt-table" ] [
             thead [] [
@@ -108,7 +109,7 @@ let edit (model : EditUser) ctx viewInfo =
            _onsubmit $"""return PT.compareValidation('{nameof model.Password}','{nameof model.PasswordConfirm}','%A{s["The passwords do not match"]}')"""
            Target.content ] [
         csrfToken ctx
-        inputField "hidden" (nameof model.UserId) (flatGuid model.UserId) []
+        inputField "hidden" (nameof model.UserId) model.UserId []
         div [ _fieldRow ] [
             div [ _inputField ] [
                 label [ _for (nameof model.FirstName) ] [ locStr s["First Name"] ]
@@ -195,7 +196,7 @@ let maintain (users : User list) ctx viewInfo =
                 tableHeadings s [ "Actions"; "Name"; "Admin?" ]
                 users
                 |> List.map (fun user ->
-                    let userId    = flatGuid user.userId
+                    let userId    = shortGuid user.Id.Value
                     let delAction = $"/user/{userId}/delete"
                     let delPrompt = s["Are you sure you want to delete this {0}?  This action cannot be undone.",
                                       $"""{s["User"].Value.ToLower ()} ({user.fullName})"""].Value
@@ -213,7 +214,7 @@ let maintain (users : User list) ctx viewInfo =
                         ]
                         td [] [ str user.fullName ]
                         td [ _class "pt-center-text" ] [
-                            if user.isAdmin then strong [] [ locStr s["Yes"] ] else locStr s["No"]
+                            if user.IsAdmin then strong [] [ locStr s["Yes"] ] else locStr s["No"]
                         ]
                     ])
               |> tbody []

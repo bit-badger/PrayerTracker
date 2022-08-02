@@ -21,9 +21,12 @@ module ReferenceListTests =
             test "has all three options listed" {
                 let asOf = ReferenceList.asOfDateList _s
                 Expect.hasCountOf asOf 3u countAll "There should have been 3 as-of choices returned"
-                Expect.exists asOf (fun (x, _) -> x = NoDisplay.code) "The option for no display was not found"
-                Expect.exists asOf (fun (x, _) -> x = ShortDate.code) "The option for a short date was not found"
-                Expect.exists asOf (fun (x, _) -> x = LongDate.code)  "The option for a full date was not found"
+                Expect.exists asOf (fun (x, _) -> x = AsOfDateDisplay.toCode NoDisplay)
+                    "The option for no display was not found"
+                Expect.exists asOf (fun (x, _) -> x = AsOfDateDisplay.toCode ShortDate)
+                    "The option for a short date was not found"
+                Expect.exists asOf (fun (x, _) -> x = AsOfDateDisplay.toCode LongDate)
+                    "The option for a full date was not found"
             }
         ]
 
@@ -37,9 +40,9 @@ module ReferenceListTests =
                 Expect.equal (fst top) "" "The default option should have been blank"
                 Expect.equal (snd top).Value "Group Default (HTML Format)" "The default option label was incorrect"
                 let nxt = typs |> Seq.skip 1 |> Seq.head
-                Expect.equal (fst nxt) HtmlFormat.code "The 2nd option should have been HTML"
+                Expect.equal (fst nxt) (EmailFormat.toCode HtmlFormat) "The 2nd option should have been HTML"
                 let lst = typs |> Seq.last
-                Expect.equal (fst lst) PlainTextFormat.code "The 3rd option should have been plain text"
+                Expect.equal (fst lst) (EmailFormat.toCode PlainTextFormat) "The 3rd option should have been plain text"
             }
         ]
     
@@ -49,17 +52,19 @@ module ReferenceListTests =
             test "excludes immediate expiration if not required" {
                 let exps = ReferenceList.expirationList _s false
                 Expect.hasCountOf exps 2u countAll "There should have been 2 expiration types returned"
-                Expect.exists exps (fun (exp, _) -> exp = Automatic.code)
+                Expect.exists exps (fun (exp, _) -> exp = Expiration.toCode Automatic)
                     "The option for automatic expiration was not found"
-                Expect.exists exps (fun (exp, _) -> exp = Manual.code) "The option for manual expiration was not found"
+                Expect.exists exps (fun (exp, _) -> exp = Expiration.toCode Manual)
+                    "The option for manual expiration was not found"
             }
             test "includes immediate expiration if required" {
                 let exps = ReferenceList.expirationList _s true
                 Expect.hasCountOf exps 3u countAll "There should have been 3 expiration types returned"
-                Expect.exists exps (fun (exp, _) -> exp = Automatic.code)
+                Expect.exists exps (fun (exp, _) -> exp = Expiration.toCode Automatic)
                     "The option for automatic expiration was not found"
-                Expect.exists exps (fun (exp, _) -> exp = Manual.code) "The option for manual expiration was not found"
-                Expect.exists exps (fun (exp, _) -> exp = Forced.code)
+                Expect.exists exps (fun (exp, _) -> exp = Expiration.toCode Manual)
+                    "The option for manual expiration was not found"
+                Expect.exists exps (fun (exp, _) -> exp = Expiration.toCode Forced)
                     "The option for immediate expiration was not found"
             }
         ]
@@ -127,9 +132,9 @@ let appViewInfoTests =
 let assignGroupsTests =
     testList "AssignGroups" [
         test "fromUser populates correctly" {
-            let usr = { User.empty with userId = Guid.NewGuid (); firstName = "Alice"; lastName = "Bob" }
+            let usr = { User.empty with Id = (Guid.NewGuid >> UserId) (); FirstName = "Alice"; LastName = "Bob" }
             let asg = AssignGroups.fromUser usr
-            Expect.equal asg.UserId usr.userId "The user ID was not filled correctly"
+            Expect.equal asg.UserId (shortGuid usr.Id.Value) "The user ID was not filled correctly"
             Expect.equal asg.UserName usr.fullName "The user name was not filled correctly"
             Expect.equal asg.SmallGroups "" "The small group string was not filled correctly"
         }
@@ -141,38 +146,38 @@ let editChurchTests =
         test "fromChurch populates correctly when interface exists" {
             let church =
                 { Church.empty with
-                    churchId         = Guid.NewGuid ()
-                    name             = "Unit Test"
-                    city             = "Testlandia"
-                    st               = "UT"
-                    hasInterface     = true
-                    interfaceAddress = Some "https://test-dem-units.test"
+                    Id               = (Guid.NewGuid >> ChurchId) ()
+                    Name             = "Unit Test"
+                    City             = "Testlandia"
+                    State            = "UT"
+                    HasInterface     = true
+                    InterfaceAddress = Some "https://test-dem-units.test"
                   }
             let edit = EditChurch.fromChurch church
-            Expect.equal edit.ChurchId church.churchId "The church ID was not filled correctly"
-            Expect.equal edit.Name church.name "The church name was not filled correctly"
-            Expect.equal edit.City church.city "The church's city was not filled correctly"
-            Expect.equal edit.State church.st "The church's state was not filled correctly"
+            Expect.equal edit.ChurchId (shortGuid church.Id.Value) "The church ID was not filled correctly"
+            Expect.equal edit.Name church.Name "The church name was not filled correctly"
+            Expect.equal edit.City church.City "The church's city was not filled correctly"
+            Expect.equal edit.State church.State "The church's state was not filled correctly"
             Expect.isSome edit.HasInterface "The church should show that it has an interface"
             Expect.equal edit.HasInterface (Some true) "The hasInterface flag should be true"
             Expect.isSome edit.InterfaceAddress "The interface address should exist"
-            Expect.equal edit.InterfaceAddress church.interfaceAddress "The interface address was not filled correctly"
+            Expect.equal edit.InterfaceAddress church.InterfaceAddress "The interface address was not filled correctly"
         }
         test "fromChurch populates correctly when interface does not exist" {
             let edit =
                 EditChurch.fromChurch
                     { Church.empty with
-                        churchId = Guid.NewGuid ()
-                        name     = "Unit Test"
-                        city     = "Testlandia"
-                        st       = "UT"
+                        Id    = (Guid.NewGuid >> ChurchId) ()
+                        Name  = "Unit Test"
+                        City  = "Testlandia"
+                        State = "UT"
                     }
             Expect.isNone edit.HasInterface "The church should not show that it has an interface"
             Expect.isNone edit.InterfaceAddress "The interface address should not exist"
         }
         test "empty is as expected" {
             let edit = EditChurch.empty
-            Expect.equal edit.ChurchId Guid.Empty "The church ID should be the empty GUID"
+            Expect.equal edit.ChurchId emptyGuid "The church ID should be the empty GUID"
             Expect.equal edit.Name "" "The church name should be blank"
             Expect.equal edit.City "" "The church's city should be blank"
             Expect.equal edit.State "" "The church's state should be blank"
@@ -183,13 +188,13 @@ let editChurchTests =
             Expect.isTrue EditChurch.empty.IsNew "An empty GUID should be flagged as a new church"
         }
         test "isNew works on an existing church" {
-            Expect.isFalse { EditChurch.empty with ChurchId = Guid.NewGuid () }.IsNew
+            Expect.isFalse { EditChurch.empty with ChurchId = (Guid.NewGuid >> shortGuid) () }.IsNew
                 "A non-empty GUID should not be flagged as a new church"
         }
         test "populateChurch works correctly when an interface exists" {
             let edit =
                 { EditChurch.empty with
-                    ChurchId         = Guid.NewGuid ()
+                    ChurchId         = (Guid.NewGuid >> shortGuid) ()
                     Name             = "Test Baptist Church"
                     City             = "Testerville"
                     State               = "TE"
@@ -197,23 +202,23 @@ let editChurchTests =
                     InterfaceAddress = Some "https://test.units"
                   }
             let church = edit.PopulateChurch Church.empty
-            Expect.notEqual church.churchId edit.ChurchId "The church ID should not have been modified"
-            Expect.equal church.name edit.Name "The church name was not updated correctly"
-            Expect.equal church.city edit.City "The church's city was not updated correctly"
-            Expect.equal church.st edit.State "The church's state was not updated correctly"
-            Expect.isTrue church.hasInterface "The church should show that it has an interface"
-            Expect.isSome church.interfaceAddress "The interface address should exist"
-            Expect.equal church.interfaceAddress edit.InterfaceAddress "The interface address was not updated correctly"
+            Expect.notEqual (shortGuid church.Id.Value) edit.ChurchId "The church ID should not have been modified"
+            Expect.equal church.Name edit.Name "The church name was not updated correctly"
+            Expect.equal church.City edit.City "The church's city was not updated correctly"
+            Expect.equal church.State edit.State "The church's state was not updated correctly"
+            Expect.isTrue church.HasInterface "The church should show that it has an interface"
+            Expect.isSome church.InterfaceAddress "The interface address should exist"
+            Expect.equal church.InterfaceAddress edit.InterfaceAddress "The interface address was not updated correctly"
         }
         test "populateChurch works correctly when an interface does not exist" {
             let church =
                 { EditChurch.empty with
-                    Name = "Test Baptist Church"
-                    City = "Testerville"
-                    State   = "TE"
+                    Name  = "Test Baptist Church"
+                    City  = "Testerville"
+                    State = "TE"
                   }.PopulateChurch Church.empty
-            Expect.isFalse church.hasInterface "The church should show that it has an interface"
-            Expect.isNone church.interfaceAddress "The interface address should exist"
+            Expect.isFalse church.HasInterface "The church should show that it has an interface"
+            Expect.isNone church.InterfaceAddress "The interface address should exist"
         }
     ]
 
@@ -223,23 +228,23 @@ let editMemberTests =
         test "fromMember populates with group default format" {
             let mbr  =
                 { Member.empty with
-                    memberId   = Guid.NewGuid ()
-                    memberName = "Test Name"
-                    email      = "test_units@example.com"
+                    Id    = (Guid.NewGuid >> MemberId) ()
+                    Name  = "Test Name"
+                    Email = "test_units@example.com"
                   }
             let edit = EditMember.fromMember mbr
-            Expect.equal edit.MemberId mbr.memberId "The member ID was not filled correctly"
-            Expect.equal edit.Name mbr.memberName "The member name was not filled correctly"
-            Expect.equal edit.Email mbr.email "The e-mail address was not filled correctly"
+            Expect.equal edit.MemberId (shortGuid mbr.Id.Value) "The member ID was not filled correctly"
+            Expect.equal edit.Name mbr.Name "The member name was not filled correctly"
+            Expect.equal edit.Email mbr.Email "The e-mail address was not filled correctly"
             Expect.equal edit.Format "" "The e-mail format should have been blank for group default"
         }
         test "fromMember populates with specific format" {
-            let edit = EditMember.fromMember { Member.empty with format = Some HtmlFormat.code }
-            Expect.equal edit.Format HtmlFormat.code "The e-mail format was not filled correctly"
+            let edit = EditMember.fromMember { Member.empty with Format = Some HtmlFormat }
+            Expect.equal edit.Format (EmailFormat.toCode HtmlFormat) "The e-mail format was not filled correctly"
         }
         test "empty is as expected" {
             let edit = EditMember.empty
-            Expect.equal edit.MemberId Guid.Empty "The member ID should have been an empty GUID"
+            Expect.equal edit.MemberId emptyGuid "The member ID should have been an empty GUID"
             Expect.equal edit.Name "" "The member name should have been blank"
             Expect.equal edit.Email "" "The e-mail address should have been blank"
             Expect.equal edit.Format "" "The e-mail format should have been blank"
@@ -248,7 +253,7 @@ let editMemberTests =
             Expect.isTrue EditMember.empty.IsNew "An empty GUID should be flagged as a new member"
         }
         test "isNew works for an existing member" {
-            Expect.isFalse { EditMember.empty with MemberId = Guid.NewGuid () }.IsNew
+            Expect.isFalse { EditMember.empty with MemberId = (Guid.NewGuid >> shortGuid) () }.IsNew
                 "A non-empty GUID should not be flagged as a new member"
         }
     ]
@@ -259,45 +264,47 @@ let editPreferencesTests =
         test "fromPreferences succeeds for named colors and private list" {
             let prefs = ListPreferences.empty
             let edit  = EditPreferences.fromPreferences prefs
-            Expect.equal edit.ExpireDays prefs.daysToExpire "The expiration days were not filled correctly"
-            Expect.equal edit.DaysToKeepNew prefs.daysToKeepNew "The days to keep new were not filled correctly"
-            Expect.equal edit.LongTermUpdateWeeks prefs.longTermUpdateWeeks
+            Expect.equal edit.ExpireDays prefs.DaysToExpire "The expiration days were not filled correctly"
+            Expect.equal edit.DaysToKeepNew prefs.DaysToKeepNew "The days to keep new were not filled correctly"
+            Expect.equal edit.LongTermUpdateWeeks prefs.LongTermUpdateWeeks
                 "The weeks for update were not filled correctly"
-            Expect.equal edit.RequestSort prefs.requestSort.code "The request sort was not filled correctly"
-            Expect.equal edit.EmailFromName prefs.emailFromName "The e-mail from name was not filled correctly"
-            Expect.equal edit.EmailFromAddress prefs.emailFromAddress "The e-mail from address was not filled correctly"
-            Expect.equal edit.DefaultEmailType prefs.defaultEmailType.code
+            Expect.equal edit.RequestSort (RequestSort.toCode prefs.RequestSort)
+                "The request sort was not filled correctly"
+            Expect.equal edit.EmailFromName prefs.EmailFromName "The e-mail from name was not filled correctly"
+            Expect.equal edit.EmailFromAddress prefs.EmailFromAddress "The e-mail from address was not filled correctly"
+            Expect.equal edit.DefaultEmailType (EmailFormat.toCode prefs.DefaultEmailType)
                 "The default e-mail type was not filled correctly"
             Expect.equal edit.LineColorType "Name" "The heading line color type was not derived correctly"
-            Expect.equal edit.LineColor prefs.lineColor "The heading line color was not filled correctly"
+            Expect.equal edit.LineColor prefs.LineColor "The heading line color was not filled correctly"
             Expect.equal edit.HeadingColorType "Name" "The heading text color type was not derived correctly"
-            Expect.equal edit.HeadingColor prefs.headingColor "The heading text color was not filled correctly"
-            Expect.equal edit.Fonts prefs.listFonts "The list fonts were not filled correctly"
-            Expect.equal edit.HeadingFontSize prefs.headingFontSize "The heading font size was not filled correctly"
-            Expect.equal edit.ListFontSize prefs.textFontSize "The list text font size was not filled correctly"
-            Expect.equal edit.TimeZone prefs.timeZoneId "The time zone was not filled correctly"
+            Expect.equal edit.HeadingColor prefs.HeadingColor "The heading text color was not filled correctly"
+            Expect.equal edit.Fonts prefs.Fonts "The list fonts were not filled correctly"
+            Expect.equal edit.HeadingFontSize prefs.HeadingFontSize "The heading font size was not filled correctly"
+            Expect.equal edit.ListFontSize prefs.TextFontSize "The list text font size was not filled correctly"
+            Expect.equal edit.TimeZone (TimeZoneId.toString prefs.TimeZoneId) "The time zone was not filled correctly"
             Expect.isSome edit.GroupPassword "The group password should have been set"
-            Expect.equal edit.GroupPassword (Some prefs.groupPassword) "The group password was not filled correctly"
+            Expect.equal edit.GroupPassword (Some prefs.GroupPassword) "The group password was not filled correctly"
             Expect.equal edit.Visibility RequestVisibility.``private``
                 "The list visibility was not derived correctly"
-            Expect.equal edit.PageSize prefs.pageSize "The page size was not filled correctly"
-            Expect.equal edit.AsOfDate prefs.asOfDateDisplay.code "The as-of date display was not filled correctly"
+            Expect.equal edit.PageSize prefs.PageSize "The page size was not filled correctly"
+            Expect.equal edit.AsOfDate (AsOfDateDisplay.toCode prefs.AsOfDateDisplay)
+                "The as-of date display was not filled correctly"
         }
         test "fromPreferences succeeds for RGB line color and password-protected list" {
-            let prefs = { ListPreferences.empty with lineColor = "#ff0000"; groupPassword = "pw" }
+            let prefs = { ListPreferences.empty with LineColor = "#ff0000"; GroupPassword = "pw" }
             let edit  = EditPreferences.fromPreferences prefs
             Expect.equal edit.LineColorType "RGB" "The heading line color type was not derived correctly"
-            Expect.equal edit.LineColor prefs.lineColor "The heading line color was not filled correctly"
+            Expect.equal edit.LineColor prefs.LineColor "The heading line color was not filled correctly"
             Expect.isSome edit.GroupPassword "The group password should have been set"
-            Expect.equal edit.GroupPassword (Some prefs.groupPassword) "The group password was not filled correctly"
+            Expect.equal edit.GroupPassword (Some prefs.GroupPassword) "The group password was not filled correctly"
             Expect.equal edit.Visibility RequestVisibility.passwordProtected
                 "The list visibility was not derived correctly"
         }
         test "fromPreferences succeeds for RGB text color and public list" {
-            let prefs = { ListPreferences.empty with headingColor = "#0000ff"; isPublic = true }
+            let prefs = { ListPreferences.empty with HeadingColor = "#0000ff"; IsPublic = true }
             let edit  = EditPreferences.fromPreferences prefs
             Expect.equal edit.HeadingColorType "RGB" "The heading text color type was not derived correctly"
-            Expect.equal edit.HeadingColor prefs.headingColor "The heading text color was not filled correctly"
+            Expect.equal edit.HeadingColor prefs.HeadingColor "The heading text color was not filled correctly"
             Expect.isSome edit.GroupPassword "The group password should have been set"
             Expect.equal edit.GroupPassword (Some "") "The group password was not filled correctly"
             Expect.equal edit.Visibility RequestVisibility.``public``
@@ -310,35 +317,38 @@ let editRequestTests =
     testList "EditRequest" [
         test "empty is as expected" {
             let mt = EditRequest.empty
-            Expect.equal mt.RequestId Guid.Empty "The request ID should be an empty GUID"
-            Expect.equal mt.RequestType CurrentRequest.code "The request type should have been \"Current\""
+            Expect.equal mt.RequestId emptyGuid "The request ID should be an empty GUID"
+            Expect.equal mt.RequestType (PrayerRequestType.toCode CurrentRequest)
+                "The request type should have been \"Current\""
             Expect.isNone mt.EnteredDate "The entered date should have been None"
             Expect.isNone mt.SkipDateUpdate """The "skip date update" flag should have been None"""
             Expect.isNone mt.Requestor "The requestor should have been None"
-            Expect.equal mt.Expiration Automatic.code """The expiration should have been "A" (Automatic)"""
+            Expect.equal mt.Expiration (Expiration.toCode Automatic)
+                """The expiration should have been "A" (Automatic)"""
             Expect.equal mt.Text "" "The text should have been blank"
         }
         test "fromRequest succeeds" {
             let req =
                 { PrayerRequest.empty with
-                    prayerRequestId = Guid.NewGuid ()
-                    requestType     = CurrentRequest
-                    requestor       = Some "Me"
-                    expiration      = Manual
-                    text            = "the text"
-                  }
+                    Id          = (Guid.NewGuid >> PrayerRequestId) ()
+                    RequestType = CurrentRequest
+                    Requestor   = Some "Me"
+                    Expiration  = Manual
+                    Text        = "the text"
+                }
             let edit = EditRequest.fromRequest req
-            Expect.equal edit.RequestId req.prayerRequestId "The request ID was not filled correctly"
-            Expect.equal edit.RequestType req.requestType.code "The request type was not filled correctly"
-            Expect.equal edit.Requestor req.requestor "The requestor was not filled correctly"
-            Expect.equal edit.Expiration Manual.code "The expiration was not filled correctly"
-            Expect.equal edit.Text req.text "The text was not filled correctly"
+            Expect.equal edit.RequestId (shortGuid req.Id.Value) "The request ID was not filled correctly"
+            Expect.equal edit.RequestType (PrayerRequestType.toCode req.RequestType)
+                "The request type was not filled correctly"
+            Expect.equal edit.Requestor req.Requestor "The requestor was not filled correctly"
+            Expect.equal edit.Expiration (Expiration.toCode Manual) "The expiration was not filled correctly"
+            Expect.equal edit.Text req.Text "The text was not filled correctly"
         }
         test "isNew works for a new request" {
             Expect.isTrue EditRequest.empty.IsNew "An empty GUID should be flagged as a new request"
         }
         test "isNew works for an existing request" {
-            Expect.isFalse { EditRequest.empty with RequestId = Guid.NewGuid () }.IsNew
+            Expect.isFalse { EditRequest.empty with RequestId = (Guid.NewGuid >> shortGuid) () }.IsNew
                 "A non-empty GUID should not be flagged as a new request"
         }
     ]
@@ -349,37 +359,37 @@ let editSmallGroupTests =
         test "fromGroup succeeds" {
             let grp =
                 { SmallGroup.empty with
-                    smallGroupId = Guid.NewGuid ()
-                    name         = "test group"
-                    churchId     = Guid.NewGuid ()
+                    Id       = (Guid.NewGuid >> SmallGroupId) ()
+                    Name     = "test group"
+                    ChurchId = (Guid.NewGuid >> ChurchId) ()
                   }
             let edit = EditSmallGroup.fromGroup grp
-            Expect.equal edit.SmallGroupId grp.smallGroupId "The small group ID was not filled correctly"
-            Expect.equal edit.Name grp.name "The name was not filled correctly"
-            Expect.equal edit.ChurchId grp.churchId "The church ID was not filled correctly"
+            Expect.equal edit.SmallGroupId (shortGuid grp.Id.Value) "The small group ID was not filled correctly"
+            Expect.equal edit.Name grp.Name "The name was not filled correctly"
+            Expect.equal edit.ChurchId (shortGuid grp.ChurchId.Value) "The church ID was not filled correctly"
         }
         test "empty is as expected" {
             let mt = EditSmallGroup.empty
-            Expect.equal mt.SmallGroupId Guid.Empty "The small group ID should be an empty GUID"
+            Expect.equal mt.SmallGroupId emptyGuid "The small group ID should be an empty GUID"
             Expect.equal mt.Name "" "The name should be blank"
-            Expect.equal mt.ChurchId Guid.Empty "The church ID should be an empty GUID"
+            Expect.equal mt.ChurchId emptyGuid "The church ID should be an empty GUID"
         }
         test "isNew works for a new small group" {
             Expect.isTrue EditSmallGroup.empty.IsNew "An empty GUID should be flagged as a new small group"
         }
         test "isNew works for an existing small group" {
-            Expect.isFalse { EditSmallGroup.empty with SmallGroupId = Guid.NewGuid () }.IsNew
+            Expect.isFalse { EditSmallGroup.empty with SmallGroupId = (Guid.NewGuid >> shortGuid) () }.IsNew
                 "A non-empty GUID should not be flagged as a new small group"
         }
         test "populateGroup succeeds" {
             let edit =
                 { EditSmallGroup.empty with
                     Name     = "test name"
-                    ChurchId = Guid.NewGuid ()
+                    ChurchId = (Guid.NewGuid >> shortGuid) ()
                   }
             let grp = edit.populateGroup SmallGroup.empty
-            Expect.equal grp.name edit.Name "The name was not populated correctly"
-            Expect.equal grp.churchId edit.ChurchId "The church ID was not populated correctly"
+            Expect.equal grp.Name edit.Name "The name was not populated correctly"
+            Expect.equal grp.ChurchId (idFromShort ChurchId edit.ChurchId) "The church ID was not populated correctly"
         }
     ]
 
@@ -388,7 +398,7 @@ let editUserTests =
     testList "EditUser" [
         test "empty is as expected" {
             let mt = EditUser.empty
-            Expect.equal mt.UserId Guid.Empty "The user ID should be an empty GUID"
+            Expect.equal mt.UserId emptyGuid "The user ID should be an empty GUID"
             Expect.equal mt.FirstName "" "The first name should be blank"
             Expect.equal mt.LastName "" "The last name should be blank"
             Expect.equal mt.Email "" "The e-mail address should be blank"
@@ -399,23 +409,23 @@ let editUserTests =
         test "fromUser succeeds" {
             let usr =
                 { User.empty with
-                    userId       = Guid.NewGuid ()
-                    firstName    = "user"
-                    lastName     = "test"
-                    emailAddress = "a@b.c"
+                    Id        = (Guid.NewGuid >> UserId) ()
+                    FirstName = "user"
+                    LastName  = "test"
+                    Email     = "a@b.c"
                   }
             let edit = EditUser.fromUser usr
-            Expect.equal edit.UserId usr.userId "The user ID was not filled correctly"
-            Expect.equal edit.FirstName usr.firstName "The first name was not filled correctly"
-            Expect.equal edit.LastName usr.lastName "The last name was not filled correctly"
-            Expect.equal edit.Email usr.emailAddress "The e-mail address was not filled correctly"
+            Expect.equal edit.UserId (shortGuid usr.Id.Value) "The user ID was not filled correctly"
+            Expect.equal edit.FirstName usr.FirstName "The first name was not filled correctly"
+            Expect.equal edit.LastName usr.LastName "The last name was not filled correctly"
+            Expect.equal edit.Email usr.Email "The e-mail address was not filled correctly"
             Expect.isNone edit.IsAdmin "The IsAdmin flag was not filled correctly"
         }
         test "isNew works for a new user" {
             Expect.isTrue EditUser.empty.IsNew "An empty GUID should be flagged as a new user"
         }
         test "isNew works for an existing user" {
-            Expect.isFalse { EditUser.empty with UserId = Guid.NewGuid () }.IsNew
+            Expect.isFalse { EditUser.empty with UserId = (Guid.NewGuid >> shortGuid) () }.IsNew
                 "A non-empty GUID should not be flagged as a new user"
         }
         test "populateUser succeeds" {
@@ -429,11 +439,11 @@ let editUserTests =
                   }
             let hasher = fun x -> x + "+"
             let usr = edit.PopulateUser User.empty hasher
-            Expect.equal usr.firstName edit.FirstName "The first name was not populated correctly"
-            Expect.equal usr.lastName edit.LastName "The last name was not populated correctly"
-            Expect.equal usr.emailAddress edit.Email "The e-mail address was not populated correctly"
-            Expect.isTrue usr.isAdmin "The isAdmin flag was not populated correctly"
-            Expect.equal usr.passwordHash (hasher edit.Password) "The password hash was not populated correctly"
+            Expect.equal usr.FirstName edit.FirstName "The first name was not populated correctly"
+            Expect.equal usr.LastName edit.LastName "The last name was not populated correctly"
+            Expect.equal usr.Email edit.Email "The e-mail address was not populated correctly"
+            Expect.isTrue usr.IsAdmin "The isAdmin flag was not populated correctly"
+            Expect.equal usr.PasswordHash (hasher edit.Password) "The password hash was not populated correctly"
         }
     ]
 
@@ -442,7 +452,7 @@ let groupLogOnTests =
     testList "GroupLogOn" [
         test "empty is as expected" {
             let mt = GroupLogOn.empty
-            Expect.equal mt.SmallGroupId Guid.Empty "The small group ID should be an empty GUID"
+            Expect.equal mt.SmallGroupId emptyGuid "The small group ID should be an empty GUID"
             Expect.equal mt.Password "" "The password should be blank"
             Expect.isNone mt.RememberMe "Remember Me should be None"
         }
@@ -454,7 +464,7 @@ let maintainRequestsTests =
         test "empty is as expected" {
             let mt = MaintainRequests.empty
             Expect.isEmpty mt.Requests "The requests for the model should have been empty"
-            Expect.equal mt.SmallGroup.smallGroupId Guid.Empty "The small group should have been an empty one"
+            Expect.equal mt.SmallGroup.Id.Value Guid.Empty "The small group should have been an empty one"
             Expect.isNone mt.OnlyActive "The only active flag should have been None"
             Expect.isNone mt.SearchTerm "The search term should have been None"
             Expect.isNone mt.PageNbr "The page number should have been None"
@@ -490,21 +500,21 @@ let requestListTests =
         let withRequestList f () =
             { Requests   = [
                 { PrayerRequest.empty with
-                    requestType = CurrentRequest
-                    requestor   = Some "Zeb"
-                    text        = "zyx"
-                    updatedDate = DateTime.Today
+                    RequestType = CurrentRequest
+                    Requestor   = Some "Zeb"
+                    Text        = "zyx"
+                    UpdatedDate = DateTime.Today
                 }
                 { PrayerRequest.empty with
-                    requestType = CurrentRequest
-                    requestor   = Some "Aaron"
-                    text        = "abc"
-                    updatedDate = DateTime.Today - TimeSpan.FromDays 9.
+                    RequestType = CurrentRequest
+                    Requestor   = Some "Aaron"
+                    Text        = "abc"
+                    UpdatedDate = DateTime.Today - TimeSpan.FromDays 9.
                 }
                 { PrayerRequest.empty with
-                    requestType = PraiseReport
-                    text        = "nmo"
-                    updatedDate = DateTime.Today
+                    RequestType = PraiseReport
+                    Text        = "nmo"
+                    UpdatedDate = DateTime.Today
                 }
               ]
               Date       = DateTime.Today
@@ -517,7 +527,7 @@ let requestListTests =
         yield! testFixture withRequestList [
             "AsHtml succeeds without header or as-of date",
             fun reqList ->
-                let htmlList = { reqList with SmallGroup = { reqList.SmallGroup with name = "Test HTML Group" } }
+                let htmlList = { reqList with SmallGroup = { reqList.SmallGroup with Name = "Test HTML Group" } }
                 let html = htmlList.AsHtml _s
                 Expect.equal -1 (html.IndexOf "Test HTML Group")
                     "The small group name should not have existed (no header)"
@@ -557,7 +567,7 @@ let requestListTests =
             fun reqList ->
                 let htmlList =
                     { reqList with
-                        SmallGroup  = { reqList.SmallGroup with name = "Test HTML Group" }
+                        SmallGroup  = { reqList.SmallGroup with Name = "Test HTML Group" }
                         ShowHeader = true
                     }
                 let html = htmlList.AsHtml _s
@@ -578,12 +588,12 @@ let requestListTests =
                     { reqList with
                         SmallGroup =
                             { reqList.SmallGroup with
-                                preferences = { reqList.SmallGroup.preferences with asOfDateDisplay = ShortDate }
+                                Preferences = { reqList.SmallGroup.Preferences with AsOfDateDisplay = ShortDate }
                             }
                     }
                 let html     = htmlList.AsHtml _s
                 let expected =
-                    htmlList.Requests[0].updatedDate.ToShortDateString ()
+                    htmlList.Requests[0].UpdatedDate.ToShortDateString ()
                     |> sprintf """<strong>Zeb</strong> &mdash; zyx<i style="font-size:9.60pt">&nbsp; (as of %s)</i>"""
                 // spot check; if one request has it, they all should
                 Expect.stringContains html expected "Expected short as-of date not found"    
@@ -593,20 +603,20 @@ let requestListTests =
                     { reqList with
                         SmallGroup =
                             { reqList.SmallGroup with
-                                preferences = { reqList.SmallGroup.preferences with asOfDateDisplay = LongDate }
+                                Preferences = { reqList.SmallGroup.Preferences with AsOfDateDisplay = LongDate }
                             }
                     }
                 let html     = htmlList.AsHtml _s
                 let expected =
-                    htmlList.Requests[0].updatedDate.ToLongDateString ()
+                    htmlList.Requests[0].UpdatedDate.ToLongDateString ()
                     |> sprintf """<strong>Zeb</strong> &mdash; zyx<i style="font-size:9.60pt">&nbsp; (as of %s)</i>"""
                 // spot check; if one request has it, they all should
                 Expect.stringContains html expected "Expected long as-of date not found"    
             "AsText succeeds with no as-of date",
             fun reqList ->
-                let textList = { reqList with SmallGroup = { reqList.SmallGroup with name = "Test Group" } }
+                let textList = { reqList with SmallGroup = { reqList.SmallGroup with Name = "Test Group" } }
                 let text = textList.AsText _s
-                Expect.stringContains text $"{textList.SmallGroup.name}\n" "Small group name not found"
+                Expect.stringContains text $"{textList.SmallGroup.Name}\n" "Small group name not found"
                 Expect.stringContains text "Prayer Requests\n" "List heading not found"
                 Expect.stringContains text ((textList.Date.ToString "MMMM d, yyyy") + "\n \n") "List date not found"
                 Expect.stringContains text "--------------------\n  CURRENT REQUESTS\n--------------------\n"
@@ -623,12 +633,12 @@ let requestListTests =
                     { reqList with
                         SmallGroup =
                             { reqList.SmallGroup with
-                                preferences = { reqList.SmallGroup.preferences with asOfDateDisplay = ShortDate }
+                                Preferences = { reqList.SmallGroup.Preferences with AsOfDateDisplay = ShortDate }
                             }
                     }
                 let text     = textList.AsText _s
                 let expected =
-                    textList.Requests[0].updatedDate.ToShortDateString ()
+                    textList.Requests[0].UpdatedDate.ToShortDateString ()
                     |> sprintf " + Zeb - zyx  (as of %s)"
                 // spot check; if one request has it, they all should
                 Expect.stringContains text expected "Expected short as-of date not found"    
@@ -638,12 +648,12 @@ let requestListTests =
                     { reqList with
                         SmallGroup =
                             { reqList.SmallGroup with
-                                preferences = { reqList.SmallGroup.preferences with asOfDateDisplay = LongDate }
+                                Preferences = { reqList.SmallGroup.Preferences with AsOfDateDisplay = LongDate }
                             }
                     }
                 let text     = textList.AsText _s
                 let expected =
-                    textList.Requests[0].updatedDate.ToLongDateString ()
+                    textList.Requests[0].UpdatedDate.ToLongDateString ()
                     |> sprintf " + Zeb - zyx  (as of %s)"
                 // spot check; if one request has it, they all should
                 Expect.stringContains text expected "Expected long as-of date not found"    
@@ -663,7 +673,7 @@ let requestListTests =
                 let _, _, reqs = Option.get maybeCurrent
                 Expect.hasCountOf reqs 2u countAll "There should have been two requests"
                 let first = List.head reqs
-                Expect.equal first.text "zyx" "The requests should be sorted by updated date descending"
+                Expect.equal first.Text "zyx" "The requests should be sorted by updated date descending"
                 Expect.isTrue (allReqs |> List.exists (fun (typ, _, _) -> typ = PraiseReport))
                     "There should have been praise reports"
                 Expect.isFalse (allReqs |> List.exists (fun (typ, _, _) -> typ = Announcement))
@@ -674,14 +684,14 @@ let requestListTests =
                     { reqList with
                         SmallGroup =
                             { reqList.SmallGroup with
-                                preferences = { reqList.SmallGroup.preferences with requestSort = SortByRequestor }
+                                Preferences = { reqList.SmallGroup.Preferences with RequestSort = SortByRequestor }
                             }
                     }
                 let allReqs = newList.RequestsByType _s
                 let _, _, reqs = allReqs |> List.find (fun (typ, _, _) -> typ = CurrentRequest)
                 Expect.hasCountOf reqs 2u countAll "There should have been two requests"
                 let first = List.head reqs
-                Expect.equal first.text "abc" "The requests should be sorted by requestor"
+                Expect.equal first.Text "abc" "The requests should be sorted by requestor"
           ]
     ]
 
@@ -692,7 +702,7 @@ let userLogOnTests =
             let mt = UserLogOn.empty
             Expect.equal mt.Email "" "The e-mail address should be blank"
             Expect.equal mt.Password "" "The password should be blank"
-            Expect.equal mt.SmallGroupId Guid.Empty "The small group ID should be an empty GUID"
+            Expect.equal mt.SmallGroupId emptyGuid "The small group ID should be an empty GUID"
             Expect.isNone mt.RememberMe "Remember Me should be None"
             Expect.isNone mt.RedirectUrl "Redirect URL should be None"
         }

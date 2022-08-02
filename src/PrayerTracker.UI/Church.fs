@@ -1,6 +1,7 @@
 ﻿module PrayerTracker.Views.Church
 
 open Giraffe.ViewEngine
+open PrayerTracker
 open PrayerTracker.Entities
 open PrayerTracker.ViewModels
 
@@ -19,7 +20,7 @@ let edit (model : EditChurch) ctx viewInfo =
         |> AppViewInfo.withOnLoadScript "PT.church.edit.onPageLoad"
     form [ _action "/church/save"; _method "post"; _class "pt-center-columns"; Target.content ] [
         csrfToken ctx
-        input [ _type "hidden"; _name (nameof model.ChurchId); _value (flatGuid model.ChurchId) ]
+        input [ _type "hidden"; _name (nameof model.ChurchId); _value model.ChurchId ]
         div [ _fieldRow ] [
             div [ _inputField ] [
                 label [ _for (nameof model.Name) ] [ locStr s["Church Name"] ]
@@ -65,10 +66,10 @@ let maintain (churches : Church list) (stats : Map<string, ChurchStats>) ctx vi 
                 tableHeadings s [ "Actions"; "Name"; "Location"; "Groups"; "Requests"; "Users"; "Interface?" ]
                 churches
                 |> List.map (fun ch ->
-                    let chId      = flatGuid ch.churchId
+                    let chId      = shortGuid ch.Id.Value
                     let delAction = $"/church/{chId}/delete"
                     let delPrompt = s["Are you sure you want to delete this {0}?  This action cannot be undone.",
-                                      $"""{s["Church"].Value.ToLower ()} ({ch.name})"""]
+                                      $"""{s["Church"].Value.ToLower ()} ({ch.Name})"""]
                     tr [] [
                         td [] [
                             a [ _href $"/church/{chId}/edit"; _title s["Edit This Church"].Value ] [ icon "edit" ]
@@ -78,12 +79,12 @@ let maintain (churches : Church list) (stats : Map<string, ChurchStats>) ctx vi 
                                 icon "delete_forever"
                             ]
                         ]
-                        td [] [ str ch.name ]
-                        td [] [ str ch.city; rawText ", "; str ch.st ]
-                        td [ _class "pt-right-text" ] [ rawText (stats[chId].smallGroups.ToString "N0") ]
-                        td [ _class "pt-right-text" ] [ rawText (stats[chId].prayerRequests.ToString "N0") ]
-                        td [ _class "pt-right-text" ] [ rawText (stats[chId].users.ToString "N0") ]
-                        td [ _class "pt-center-text" ] [ locStr s[if ch.hasInterface then "Yes" else "No"] ]
+                        td [] [ str ch.Name ]
+                        td [] [ str ch.City; rawText ", "; str ch.State ]
+                        td [ _class "pt-right-text" ] [ rawText (stats[chId].SmallGroups.ToString "N0") ]
+                        td [ _class "pt-right-text" ] [ rawText (stats[chId].PrayerRequests.ToString "N0") ]
+                        td [ _class "pt-right-text" ] [ rawText (stats[chId].Users.ToString "N0") ]
+                        td [ _class "pt-center-text" ] [ locStr s[if ch.HasInterface then "Yes" else "No"] ]
                     ])
                 |> tbody []
             ]

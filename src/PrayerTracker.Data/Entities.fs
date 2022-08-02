@@ -1,11 +1,5 @@
 namespace PrayerTracker.Entities
 
-open FSharp.EFCore.OptionConverter
-open Microsoft.EntityFrameworkCore
-open NodaTime
-open System
-open System.Collections.Generic
-
 // fsharplint:disable RecordFieldNames MemberNames
 
 (*-- SUPPORT TYPES --*)
@@ -18,10 +12,12 @@ type AsOfDateDisplay =
     | ShortDate
     /// The as-of date should be displayed in the culture's long date format
     | LongDate
-with
+
+/// Functions to support as-of date display options
+module AsOfDateDisplay =
     
     /// Convert to a DU case from a single-character string
-    static member fromCode code =
+    let fromCode code =
         match code with
         | "N" -> NoDisplay
         | "S" -> ShortDate
@@ -29,11 +25,7 @@ with
         | _   -> invalidArg "code" $"Unknown code {code}"
     
     /// Convert this DU case to a single-character string
-    member this.code =
-        match this with
-        | NoDisplay -> "N"
-        | ShortDate -> "S"
-        | LongDate  -> "L"
+    let toCode = function NoDisplay -> "N" | ShortDate -> "S" | LongDate -> "L"
 
 
 /// Acceptable e-mail formats
@@ -42,20 +34,19 @@ type EmailFormat =
     | HtmlFormat
     /// Plain-text e-mail
     | PlainTextFormat
-with
+
+/// Functions to support e-mail formats
+module EmailFormat =
     
     /// Convert to a DU case from a single-character string
-    static member fromCode code =
+    let fromCode code =
         match code with
         | "H" -> HtmlFormat
         | "P" -> PlainTextFormat
         | _   -> invalidArg "code" $"Unknown code {code}"
     
     /// Convert this DU case to a single-character string
-    member this.code =
-        match this with
-        | HtmlFormat      -> "H"
-        | PlainTextFormat -> "P"
+    let toCode = function HtmlFormat -> "H" | PlainTextFormat -> "P"
 
 
 /// Expiration for requests
@@ -66,10 +57,12 @@ type Expiration =
     | Manual
     /// Force immediate expiration
     | Forced
-with
+
+/// Functions to support expirations
+module Expiration =
     
     /// Convert to a DU case from a single-character string
-    static member fromCode code =
+    let fromCode code =
         match code with
         | "A" -> Automatic
         | "M" -> Manual
@@ -77,11 +70,7 @@ with
         | _   -> invalidArg "code" $"Unknown code {code}"
     
     /// Convert this DU case to a single-character string
-    member this.code =
-        match this with
-        | Automatic -> "A"
-        | Manual    -> "M"
-        | Forced    -> "F"
+    let toCode = function Automatic -> "A" | Manual -> "M" | Forced -> "F"
 
 
 /// Types of prayer requests
@@ -96,10 +85,12 @@ type PrayerRequestType =
     | PraiseReport
     /// Announcements
     | Announcement
-with
+
+/// Functions to support prayer request types
+module PrayerRequestType =
     
     /// Convert to a DU case from a single-character string
-    static member fromCode code =
+    let fromCode code =
         match code with
         | "C" -> CurrentRequest
         | "L" -> LongTermRequest
@@ -109,8 +100,8 @@ with
         | _   -> invalidArg "code" $"Unknown code {code}"
     
     /// Convert this DU case to a single-character string
-    member this.code =
-        match this with
+    let toCode =
+        function
         | CurrentRequest  -> "C"
         | LongTermRequest -> "L"
         | Expecting       -> "E"
@@ -124,20 +115,71 @@ type RequestSort =
     | SortByDate
     /// Sort by requestor/subject, then by date
     | SortByRequestor
-with
+
+/// Functions to support request sorts
+module RequestSort =
     
     /// Convert to a DU case from a single-character string
-    static member fromCode code =
+    let fromCode code =
         match code with
         | "D" -> SortByDate
         | "R" -> SortByRequestor
         | _   -> invalidArg "code" $"Unknown code {code}"
     
     /// Convert this DU case to a single-character string
-    member this.code =
-        match this with
-        | SortByDate      -> "D"
-        | SortByRequestor -> "R"
+    let toCode = function SortByDate -> "D" | SortByRequestor -> "R"
+
+
+open System
+
+/// PK type for the Church entity
+type ChurchId =
+    | ChurchId of Guid
+with
+    /// The GUID value of the church ID
+    member this.Value = this |> function ChurchId guid -> guid
+
+
+/// PK type for the Member entity
+type MemberId =
+    | MemberId of Guid
+with
+    /// The GUID value of the member ID
+    member this.Value = this |> function MemberId guid -> guid
+
+
+/// PK type for the PrayerRequest entity
+type PrayerRequestId =
+    | PrayerRequestId of Guid
+with
+    /// The GUID value of the prayer request ID
+    member this.Value = this |> function PrayerRequestId guid -> guid
+
+
+/// PK type for the SmallGroup entity
+type SmallGroupId =
+    | SmallGroupId of Guid
+with
+    /// The GUID value of the small group ID
+    member this.Value = this |> function SmallGroupId guid -> guid
+
+
+/// PK type for the TimeZone entity
+type TimeZoneId = TimeZoneId of string
+
+/// Functions to support time zone IDs
+module TimeZoneId =
+    
+    /// Convert a time zone ID to its string value
+    let toString = function TimeZoneId it -> it
+
+
+/// PK type for the User entity
+type UserId =
+    | UserId of Guid
+with
+    /// The GUID value of the user ID
+    member this.Value = this |> function UserId guid -> guid
 
 
 /// EF Core value converters for the discriminated union types above
@@ -148,7 +190,7 @@ module Converters =
     open System.Linq.Expressions
 
     let private asOfFromDU =
-        <@ Func<AsOfDateDisplay, string>(fun (x : AsOfDateDisplay) -> x.code) @>
+        <@ Func<AsOfDateDisplay, string>(AsOfDateDisplay.toCode) @>
         |> LeafExpressionConverter.QuotationToExpression
         |> unbox<Expression<Func<AsOfDateDisplay, string>>>
 
@@ -157,8 +199,18 @@ module Converters =
         |> LeafExpressionConverter.QuotationToExpression
         |> unbox<Expression<Func<string, AsOfDateDisplay>>>
     
+    let private churchIdFromDU =
+        <@ Func<ChurchId, Guid>(fun it -> it.Value) @>
+        |> LeafExpressionConverter.QuotationToExpression
+        |> unbox<Expression<Func<ChurchId, Guid>>>
+    
+    let private churchIdToDU =
+        <@ Func<Guid, ChurchId>(ChurchId) @>
+        |> LeafExpressionConverter.QuotationToExpression
+        |> unbox<Expression<Func<Guid, ChurchId>>>
+    
     let private emailFromDU =
-        <@ Func<EmailFormat, string>(fun (x : EmailFormat) -> x.code) @>
+        <@ Func<EmailFormat, string>(EmailFormat.toCode) @>
         |> LeafExpressionConverter.QuotationToExpression
         |> unbox<Expression<Func<EmailFormat, string>>>
 
@@ -167,8 +219,20 @@ module Converters =
         |> LeafExpressionConverter.QuotationToExpression
         |> unbox<Expression<Func<string, EmailFormat>>>
     
+    let private emailOptionFromDU =
+        <@ Func<EmailFormat option, string>(fun opt ->
+            match opt with Some fmt -> EmailFormat.toCode fmt | None -> null) @>
+        |> LeafExpressionConverter.QuotationToExpression
+        |> unbox<Expression<Func<EmailFormat option, string>>>
+
+    let private emailOptionToDU =
+        <@ Func<string, EmailFormat option>(fun opt ->
+            match opt with "" | null -> None | it -> Some (EmailFormat.fromCode it)) @>
+        |> LeafExpressionConverter.QuotationToExpression
+        |> unbox<Expression<Func<string, EmailFormat option>>>
+    
     let private expFromDU =
-        <@ Func<Expiration, string>(fun (x : Expiration) -> x.code) @>
+        <@ Func<Expiration, string>(Expiration.toCode) @>
         |> LeafExpressionConverter.QuotationToExpression
         |> unbox<Expression<Func<Expiration, string>>>
 
@@ -177,8 +241,38 @@ module Converters =
         |> LeafExpressionConverter.QuotationToExpression
         |> unbox<Expression<Func<string, Expiration>>>
     
+    let private memberIdFromDU =
+        <@ Func<MemberId, Guid>(fun it -> it.Value) @>
+        |> LeafExpressionConverter.QuotationToExpression
+        |> unbox<Expression<Func<MemberId, Guid>>>
+    
+    let private memberIdToDU =
+        <@ Func<Guid, MemberId>(MemberId) @>
+        |> LeafExpressionConverter.QuotationToExpression
+        |> unbox<Expression<Func<Guid, MemberId>>>
+    
+    let private prayerReqIdFromDU =
+        <@ Func<PrayerRequestId, Guid>(fun it -> it.Value) @>
+        |> LeafExpressionConverter.QuotationToExpression
+        |> unbox<Expression<Func<PrayerRequestId, Guid>>>
+    
+    let private prayerReqIdToDU =
+        <@ Func<Guid, PrayerRequestId>(PrayerRequestId) @>
+        |> LeafExpressionConverter.QuotationToExpression
+        |> unbox<Expression<Func<Guid, PrayerRequestId>>>
+    
+    let private smallGrpIdFromDU =
+        <@ Func<SmallGroupId, Guid>(fun it -> it.Value) @>
+        |> LeafExpressionConverter.QuotationToExpression
+        |> unbox<Expression<Func<SmallGroupId, Guid>>>
+    
+    let private smallGrpIdToDU =
+        <@ Func<Guid, SmallGroupId>(SmallGroupId) @>
+        |> LeafExpressionConverter.QuotationToExpression
+        |> unbox<Expression<Func<Guid, SmallGroupId>>>
+    
     let private sortFromDU =
-        <@ Func<RequestSort, string>(fun (x : RequestSort) -> x.code) @>
+        <@ Func<RequestSort, string>(RequestSort.toCode) @>
         |> LeafExpressionConverter.QuotationToExpression
         |> unbox<Expression<Func<RequestSort, string>>>
 
@@ -188,7 +282,7 @@ module Converters =
         |> unbox<Expression<Func<string, RequestSort>>>
     
     let private typFromDU =
-        <@ Func<PrayerRequestType, string>(fun (x : PrayerRequestType) -> x.code) @>
+        <@ Func<PrayerRequestType, string>(PrayerRequestType.toCode) @>
         |> LeafExpressionConverter.QuotationToExpression
         |> unbox<Expression<Func<PrayerRequestType, string>>>
 
@@ -197,493 +291,534 @@ module Converters =
         |> LeafExpressionConverter.QuotationToExpression
         |> unbox<Expression<Func<string, PrayerRequestType>>>
     
+    let private tzIdFromDU =
+        <@ Func<TimeZoneId, string>(TimeZoneId.toString) @>
+        |> LeafExpressionConverter.QuotationToExpression
+        |> unbox<Expression<Func<TimeZoneId, string>>>
+    
+    let private tzIdToDU =
+        <@ Func<string, TimeZoneId>(TimeZoneId) @>
+        |> LeafExpressionConverter.QuotationToExpression
+        |> unbox<Expression<Func<string, TimeZoneId>>>
+    
+    let private userIdFromDU =
+        <@ Func<UserId, Guid>(fun it -> it.Value) @>
+        |> LeafExpressionConverter.QuotationToExpression
+        |> unbox<Expression<Func<UserId, Guid>>>
+    
+    let private userIdToDU =
+        <@ Func<Guid, UserId>(UserId) @>
+        |> LeafExpressionConverter.QuotationToExpression
+        |> unbox<Expression<Func<Guid, UserId>>>
+    
     /// Conversion between a string and an AsOfDateDisplay DU value
     type AsOfDateDisplayConverter () =
         inherit ValueConverter<AsOfDateDisplay, string> (asOfFromDU, asOfToDU)
 
+    /// Conversion between a GUID and a church ID
+    type ChurchIdConverter () =
+        inherit ValueConverter<ChurchId, Guid> (churchIdFromDU, churchIdToDU)
+    
     /// Conversion between a string and an EmailFormat DU value
     type EmailFormatConverter () =
         inherit ValueConverter<EmailFormat, string> (emailFromDU, emailToDU)
 
+    /// Conversion between a string an an optional EmailFormat DU value
+    type EmailFormatOptionConverter () =
+        inherit ValueConverter<EmailFormat option, string> (emailOptionFromDU, emailOptionToDU)
+    
     /// Conversion between a string and an Expiration DU value
     type ExpirationConverter () =
         inherit ValueConverter<Expiration, string> (expFromDU, expToDU)
 
-    /// Conversion between a string and an AsOfDateDisplay DU value
+    /// Conversion between a GUID and a member ID
+    type MemberIdConverter () =
+        inherit ValueConverter<MemberId, Guid> (memberIdFromDU, memberIdToDU)
+    
+    /// Conversion between a GUID and a prayer request ID
+    type PrayerRequestIdConverter () =
+        inherit ValueConverter<PrayerRequestId, Guid> (prayerReqIdFromDU, prayerReqIdToDU)
+    
+    /// Conversion between a string and a PrayerRequestType DU value
     type PrayerRequestTypeConverter () =
         inherit ValueConverter<PrayerRequestType, string> (typFromDU, typToDU)
 
     /// Conversion between a string and a RequestSort DU value
     type RequestSortConverter () =
         inherit ValueConverter<RequestSort, string> (sortFromDU, sortToDU)
+    
+    /// Conversion between a GUID and a small group ID
+    type SmallGroupIdConverter () =
+        inherit ValueConverter<SmallGroupId, Guid> (smallGrpIdFromDU, smallGrpIdToDU)
+
+    /// Conversion between a string and a time zone ID
+    type TimeZoneIdConverter () =
+        inherit ValueConverter<TimeZoneId, string> (tzIdFromDU, tzIdToDU)
+
+    /// Conversion between a GUID and a user ID
+    type UserIdConverter () =
+        inherit ValueConverter<UserId, Guid> (userIdFromDU, userIdToDU)
 
 
 /// Statistics for churches
 [<NoComparison; NoEquality>]
 type ChurchStats =
     {   /// The number of small groups in the church
-        smallGroups    : int
+        SmallGroups : int
         
         /// The number of prayer requests in the church
-        prayerRequests : int
+        PrayerRequests : int
         
         /// The number of users who can access small groups in the church
-        users          : int
+        Users : int
     }
-
-/// PK type for the Church entity
-type ChurchId = Guid
-
-/// PK type for the Member entity
-type MemberId = Guid
-
-/// PK type for the PrayerRequest entity
-type PrayerRequestId = Guid
-
-/// PK type for the SmallGroup entity
-type SmallGroupId = Guid
-
-/// PK type for the TimeZone entity
-type TimeZoneId = string
-
-/// PK type for the User entity
-type UserId = Guid
-
-/// PK for User/SmallGroup cross-reference table
-type UserSmallGroupKey =
-  {   /// The ID of the user to whom access is granted
-      userId       : UserId
-      
-      /// The ID of the small group to which the entry grants access
-      smallGroupId : SmallGroupId
-   }
 
 (*-- ENTITIES --*)
 
+open System.Collections.Generic
+open FSharp.EFCore.OptionConverter
+open Microsoft.EntityFrameworkCore
+open NodaTime
+
 /// This represents a church
 type [<CLIMutable; NoComparison; NoEquality>] Church =
-    {   /// The Id of this church
-        churchId         : ChurchId
+    {   /// The ID of this church
+        Id : ChurchId
         
         /// The name of the church
-        name             : string
+        Name : string
         
         /// The city where the church is
-        city             : string
+        City : string
         
-        /// The state where the church is
-        st               : string
+        /// The 2-letter state or province code for the church's location
+        State : string
         
         /// Does this church have an active interface with Virtual Prayer Room?
-        hasInterface     : bool
+        HasInterface : bool
         
         /// The address for the interface
-        interfaceAddress : string option
+        InterfaceAddress : string option
         
         /// Small groups for this church
-        smallGroups      : ICollection<SmallGroup>
+        SmallGroups : ICollection<SmallGroup>
     }
 with
     /// An empty church
     // aww... how sad :(
     static member empty =
-        { churchId         = Guid.Empty
-          name             = ""
-          city             = ""
-          st               = ""
-          hasInterface     = false
-          interfaceAddress = None
-          smallGroups      = List<SmallGroup> ()
+        {   Id               = ChurchId Guid.Empty
+            Name             = ""
+            City             = ""
+            State            = ""
+            HasInterface     = false
+            InterfaceAddress = None
+            SmallGroups      = List<SmallGroup> ()
         }
     
     /// Configure EF for this entity
     static member internal configureEF (mb : ModelBuilder) =
         mb.Entity<Church> (fun m ->
             m.ToTable "Church" |> ignore
-            m.Property(fun e -> e.churchId).HasColumnName "ChurchId" |> ignore
-            m.Property(fun e -> e.name).HasColumnName("Name").IsRequired () |> ignore
-            m.Property(fun e -> e.city).HasColumnName("City").IsRequired () |> ignore
-            m.Property(fun e -> e.st).HasColumnName("ST").IsRequired().HasMaxLength 2 |> ignore
-            m.Property(fun e -> e.hasInterface).HasColumnName "HasVirtualPrayerRoomInterface" |> ignore
-            m.Property(fun e -> e.interfaceAddress).HasColumnName "InterfaceAddress" |> ignore)
+            m.Property(fun e -> e.Id).HasColumnName "ChurchId" |> ignore
+            m.Property(fun e -> e.Name).HasColumnName("Name").IsRequired () |> ignore
+            m.Property(fun e -> e.City).HasColumnName("City").IsRequired () |> ignore
+            m.Property(fun e -> e.State).HasColumnName("ST").IsRequired().HasMaxLength 2 |> ignore
+            m.Property(fun e -> e.HasInterface).HasColumnName "HasVirtualPrayerRoomInterface" |> ignore
+            m.Property(fun e -> e.InterfaceAddress).HasColumnName "InterfaceAddress" |> ignore)
         |> ignore
-        mb.Model.FindEntityType(typeof<Church>).FindProperty("interfaceAddress")
+        mb.Model.FindEntityType(typeof<Church>).FindProperty("Id").SetValueConverter(Converters.ChurchIdConverter ())
+        mb.Model.FindEntityType(typeof<Church>).FindProperty("InterfaceAddress")
             .SetValueConverter(OptionConverter<string> ())
 
 
 /// Preferences for the form and format of the prayer request list
 and [<CLIMutable; NoComparison; NoEquality>] ListPreferences =
     {   /// The Id of the small group to which these preferences belong
-        smallGroupId        : SmallGroupId
+        SmallGroupId : SmallGroupId
         
         /// The days after which regular requests expire
-        daysToExpire        : int
+        DaysToExpire : int
         
         /// The number of days a new or updated request is considered new
-        daysToKeepNew       : int
+        DaysToKeepNew : int
         
         /// The number of weeks after which long-term requests are flagged for follow-up
-        longTermUpdateWeeks : int
+        LongTermUpdateWeeks : int
         
         /// The name from which e-mails are sent
-        emailFromName       : string
+        EmailFromName : string
         
         /// The e-mail address from which e-mails are sent
-        emailFromAddress    : string
+        EmailFromAddress : string
         
         /// The fonts to use in generating the list of prayer requests
-        listFonts           : string
+        Fonts : string
         
         /// The color for the prayer request list headings
-        headingColor        : string
+        HeadingColor : string
         
         /// The color for the lines offsetting the prayer request list headings
-        lineColor           : string
+        LineColor : string
         
         /// The font size for the headings on the prayer request list
-        headingFontSize     : int
+        HeadingFontSize : int
         
         /// The font size for the text on the prayer request list
-        textFontSize        : int
+        TextFontSize : int
         
         /// The order in which the prayer requests are sorted
-        requestSort         : RequestSort
+        RequestSort : RequestSort
         
         /// The password used for "small group login" (view-only request list)
-        groupPassword       : string
+        GroupPassword : string
         
         /// The default e-mail type for this class
-        defaultEmailType    : EmailFormat
+        DefaultEmailType : EmailFormat
         
         /// Whether this class makes its request list public
-        isPublic            : bool
+        IsPublic : bool
         
         /// The time zone which this class uses (use tzdata names)
-        timeZoneId          : TimeZoneId
+        TimeZoneId : TimeZoneId
         
         /// The time zone information
-        timeZone            : TimeZone
+        TimeZone : TimeZone
         
         /// The number of requests displayed per page
-        pageSize            : int
+        PageSize : int
         
         /// How the as-of date should be automatically displayed
-        asOfDateDisplay     : AsOfDateDisplay
+        AsOfDateDisplay : AsOfDateDisplay
     }
 with
     
     /// A set of preferences with their default values
     static member empty =
-        { smallGroupId        = Guid.Empty
-          daysToExpire        = 14
-          daysToKeepNew       = 7
-          longTermUpdateWeeks = 4
-          emailFromName       = "PrayerTracker"
-          emailFromAddress    = "prayer@djs-consulting.com"
-          listFonts           = "Century Gothic,Tahoma,Luxi Sans,sans-serif"
-          headingColor        = "maroon"
-          lineColor           = "navy"
-          headingFontSize     = 16
-          textFontSize        = 12
-          requestSort         = SortByDate
-          groupPassword       = ""
-          defaultEmailType    = HtmlFormat
-          isPublic            = false
-          timeZoneId          = "America/Denver"
-          timeZone            = TimeZone.empty
-          pageSize            = 100
-          asOfDateDisplay     = NoDisplay
+        {   SmallGroupId        = SmallGroupId Guid.Empty
+            DaysToExpire        = 14
+            DaysToKeepNew       = 7
+            LongTermUpdateWeeks = 4
+            EmailFromName       = "PrayerTracker"
+            EmailFromAddress    = "prayer@djs-consulting.com"
+            Fonts               = "Century Gothic,Tahoma,Luxi Sans,sans-serif"
+            HeadingColor        = "maroon"
+            LineColor           = "navy"
+            HeadingFontSize     = 16
+            TextFontSize        = 12
+            RequestSort         = SortByDate
+            GroupPassword       = ""
+            DefaultEmailType    = HtmlFormat
+            IsPublic            = false
+            TimeZoneId          = TimeZoneId "America/Denver"
+            TimeZone            = TimeZone.empty
+            PageSize            = 100
+            AsOfDateDisplay     = NoDisplay
         }
     
     /// Configure EF for this entity
     static member internal configureEF (mb : ModelBuilder) =
         mb.Entity<ListPreferences> (fun m ->
             m.ToTable "ListPreference" |> ignore
-            m.HasKey (fun e -> e.smallGroupId :> obj) |> ignore
-            m.Property(fun e -> e.smallGroupId).HasColumnName "SmallGroupId" |> ignore
-            m.Property(fun e -> e.daysToKeepNew)
+            m.HasKey (fun e -> e.SmallGroupId :> obj) |> ignore
+            m.Property(fun e -> e.SmallGroupId).HasColumnName "SmallGroupId" |> ignore
+            m.Property(fun e -> e.DaysToKeepNew)
                 .HasColumnName("DaysToKeepNew")
                 .IsRequired()
                 .HasDefaultValue 7
             |> ignore
-            m.Property(fun e -> e.daysToExpire)
+            m.Property(fun e -> e.DaysToExpire)
                 .HasColumnName("DaysToExpire")
                 .IsRequired()
                 .HasDefaultValue 14
             |> ignore
-            m.Property(fun e -> e.longTermUpdateWeeks)
+            m.Property(fun e -> e.LongTermUpdateWeeks)
                 .HasColumnName("LongTermUpdateWeeks")
                 .IsRequired()
                 .HasDefaultValue 4
             |> ignore
-            m.Property(fun e -> e.emailFromName)
+            m.Property(fun e -> e.EmailFromName)
                 .HasColumnName("EmailFromName")
                 .IsRequired()
                 .HasDefaultValue "PrayerTracker"
             |> ignore
-            m.Property(fun e -> e.emailFromAddress)
+            m.Property(fun e -> e.EmailFromAddress)
                 .HasColumnName("EmailFromAddress")
                 .IsRequired()
                 .HasDefaultValue "prayer@djs-consulting.com"
               |> ignore
-            m.Property(fun e -> e.listFonts)
+            m.Property(fun e -> e.Fonts)
                 .HasColumnName("ListFonts")
                 .IsRequired()
                 .HasDefaultValue "Century Gothic,Tahoma,Luxi Sans,sans-serif"
             |> ignore
-            m.Property(fun e -> e.headingColor)
+            m.Property(fun e -> e.HeadingColor)
                 .HasColumnName("HeadingColor")
                 .IsRequired()
                 .HasDefaultValue "maroon"
             |> ignore
-            m.Property(fun e -> e.lineColor)
+            m.Property(fun e -> e.LineColor)
                 .HasColumnName("LineColor")
                 .IsRequired()
                 .HasDefaultValue "navy"
             |> ignore
-            m.Property(fun e -> e.headingFontSize)
+            m.Property(fun e -> e.HeadingFontSize)
                 .HasColumnName("HeadingFontSize")
                 .IsRequired()
                 .HasDefaultValue 16
             |> ignore
-            m.Property(fun e -> e.textFontSize)
+            m.Property(fun e -> e.TextFontSize)
                 .HasColumnName("TextFontSize")
                 .IsRequired()
                 .HasDefaultValue 12
             |> ignore
-            m.Property(fun e -> e.requestSort)
+            m.Property(fun e -> e.RequestSort)
                 .HasColumnName("RequestSort")
                 .IsRequired()
                 .HasMaxLength(1)
                 .HasDefaultValue SortByDate
             |> ignore
-            m.Property(fun e -> e.groupPassword)
+            m.Property(fun e -> e.GroupPassword)
                 .HasColumnName("GroupPassword")
                 .IsRequired()
                 .HasDefaultValue ""
             |> ignore
-            m.Property(fun e -> e.defaultEmailType)
+            m.Property(fun e -> e.DefaultEmailType)
                 .HasColumnName("DefaultEmailType")
                 .IsRequired()
                 .HasDefaultValue HtmlFormat
             |> ignore
-            m.Property(fun e -> e.isPublic)
+            m.Property(fun e -> e.IsPublic)
                 .HasColumnName("IsPublic")
                 .IsRequired()
                 .HasDefaultValue false
             |> ignore
-            m.Property(fun e -> e.timeZoneId)
+            m.Property(fun e -> e.TimeZoneId)
                 .HasColumnName("TimeZoneId")
                 .IsRequired()
                 .HasDefaultValue "America/Denver"
             |> ignore
-            m.Property(fun e -> e.pageSize)
+            m.Property(fun e -> e.PageSize)
                 .HasColumnName("PageSize")
                 .IsRequired()
                 .HasDefaultValue 100
             |> ignore
-            m.Property(fun e -> e.asOfDateDisplay)
+            m.Property(fun e -> e.AsOfDateDisplay)
                 .HasColumnName("AsOfDateDisplay")
                 .IsRequired()
                 .HasMaxLength(1)
                 .HasDefaultValue NoDisplay
             |> ignore)
         |> ignore
-        mb.Model.FindEntityType(typeof<ListPreferences>).FindProperty("requestSort")
+        mb.Model.FindEntityType(typeof<ListPreferences>).FindProperty("SmallGroupId")
+            .SetValueConverter(Converters.SmallGroupIdConverter ())
+        mb.Model.FindEntityType(typeof<ListPreferences>).FindProperty("RequestSort")
             .SetValueConverter(Converters.RequestSortConverter ())
-        mb.Model.FindEntityType(typeof<ListPreferences>).FindProperty("defaultEmailType")
+        mb.Model.FindEntityType(typeof<ListPreferences>).FindProperty("DefaultEmailType")
             .SetValueConverter(Converters.EmailFormatConverter ())
-        mb.Model.FindEntityType(typeof<ListPreferences>).FindProperty("asOfDateDisplay")
+        mb.Model.FindEntityType(typeof<ListPreferences>).FindProperty("TimeZoneId")
+            .SetValueConverter(Converters.TimeZoneIdConverter ())
+        mb.Model.FindEntityType(typeof<ListPreferences>).FindProperty("AsOfDateDisplay")
             .SetValueConverter(Converters.AsOfDateDisplayConverter ())
 
 
 /// A member of a small group
 and [<CLIMutable; NoComparison; NoEquality>] Member =
-    {   /// The Id of the member
-        memberId     : MemberId
+    {   /// The ID of the small group member
+        Id : MemberId
         
         /// The Id of the small group to which this member belongs
-        smallGroupId : SmallGroupId
+        SmallGroupId : SmallGroupId
         
         /// The name of the member
-        memberName   : string
+        Name : string
         
         /// The e-mail address for the member
-        email        : string
+        Email : string
         
-        /// The type of e-mail preferred by this member (see <see cref="EmailTypes"/> constants)
-        format       : string option // TODO - do I need a custom formatter for this?
+        /// The type of e-mail preferred by this member
+        Format : EmailFormat option
         
         /// The small group to which this member belongs
-        smallGroup   : SmallGroup
+        SmallGroup : SmallGroup
     }
 with
     
     /// An empty member
     static member empty =
-        { memberId     = Guid.Empty
-          smallGroupId = Guid.Empty
-          memberName   = ""
-          email        = ""
-          format       = None
-          smallGroup   = SmallGroup.empty
+        {   Id           = MemberId Guid.Empty
+            SmallGroupId = SmallGroupId Guid.Empty
+            Name         = ""
+            Email        = ""
+            Format       = None
+            SmallGroup   = SmallGroup.empty
         }
     
     /// Configure EF for this entity
     static member internal configureEF (mb : ModelBuilder) =
         mb.Entity<Member> (fun m ->
             m.ToTable "Member" |> ignore
-            m.Property(fun e -> e.memberId).HasColumnName "MemberId" |> ignore
-            m.Property(fun e -> e.smallGroupId).HasColumnName "SmallGroupId" |> ignore
-            m.Property(fun e -> e.memberName).HasColumnName("MemberName").IsRequired() |> ignore
-            m.Property(fun e -> e.email).HasColumnName("Email").IsRequired() |> ignore
-            m.Property(fun e -> e.format).HasColumnName "Format" |> ignore)
+            m.Property(fun e -> e.Id).HasColumnName "MemberId" |> ignore
+            m.Property(fun e -> e.SmallGroupId).HasColumnName "SmallGroupId" |> ignore
+            m.Property(fun e -> e.Name).HasColumnName("MemberName").IsRequired() |> ignore
+            m.Property(fun e -> e.Email).HasColumnName("Email").IsRequired() |> ignore
+            m.Property(fun e -> e.Format).HasColumnName "Format" |> ignore)
         |> ignore
-        mb.Model.FindEntityType(typeof<Member>).FindProperty("format").SetValueConverter(OptionConverter<string> ())
+        mb.Model.FindEntityType(typeof<Member>).FindProperty("Id").SetValueConverter(Converters.MemberIdConverter ())
+        mb.Model.FindEntityType(typeof<Member>).FindProperty("SmallGroupId")
+            .SetValueConverter(Converters.SmallGroupIdConverter ())
+        mb.Model.FindEntityType(typeof<Member>).FindProperty("Format")
+            .SetValueConverter(Converters.EmailFormatOptionConverter ())
 
 
 /// This represents a single prayer request
 and [<CLIMutable; NoComparison; NoEquality>] PrayerRequest =
-    {   /// The Id of this request
-        prayerRequestId : PrayerRequestId
+    {   /// The ID of this request
+        Id : PrayerRequestId
         
         /// The type of the request
-        requestType     : PrayerRequestType
+        RequestType : PrayerRequestType
         
-        /// The user who entered the request
-        userId          : UserId
+        /// The ID of the user who entered the request
+        UserId : UserId
         
         /// The small group to which this request belongs
-        smallGroupId    : SmallGroupId
+        SmallGroupId : SmallGroupId
         
         /// The date/time on which this request was entered
-        enteredDate     : DateTime
+        EnteredDate : DateTime
         
         /// The date/time this request was last updated
-        updatedDate     : DateTime
+        UpdatedDate : DateTime
         
         /// The name of the requestor or subject, or title of announcement
-        requestor       : string option
+        Requestor : string option
         
         /// The text of the request
-        text            : string
+        Text : string
         
         /// Whether the chaplain should be notified for this request
-        notifyChaplain  : bool
+        NotifyChaplain : bool
         
         /// The user who entered this request
-        user            : User
+        User : User
         
         /// The small group to which this request belongs
-        smallGroup      : SmallGroup
+        SmallGroup : SmallGroup
         
         /// Is this request expired?
-        expiration      : Expiration
+        Expiration : Expiration
     }
 with
     
     /// An empty request
     static member empty =
-        { prayerRequestId = Guid.Empty
-          requestType     = CurrentRequest
-          userId          = Guid.Empty
-          smallGroupId    = Guid.Empty
-          enteredDate     = DateTime.MinValue
-          updatedDate     = DateTime.MinValue
-          requestor       = None
-          text            = "" 
-          notifyChaplain  = false
-          user            = User.empty
-          smallGroup      = SmallGroup.empty
-          expiration      = Automatic
+        {   Id              = PrayerRequestId Guid.Empty
+            RequestType     = CurrentRequest
+            UserId          = UserId Guid.Empty
+            SmallGroupId    = SmallGroupId Guid.Empty
+            EnteredDate     = DateTime.MinValue
+            UpdatedDate     = DateTime.MinValue
+            Requestor       = None
+            Text            = "" 
+            NotifyChaplain  = false
+            User            = User.empty
+            SmallGroup      = SmallGroup.empty
+            Expiration      = Automatic
         }
     
     /// Is this request expired?
     member this.isExpired (curr : DateTime) expDays =
-        match this.expiration with
+        match this.Expiration with
         | Forced -> true
         | Manual -> false 
         | Automatic ->
-            match this.requestType with
+            match this.RequestType with
             | LongTermRequest
             | Expecting -> false
-            | _ -> curr.AddDays(-(float expDays)).Date > this.updatedDate.Date // Automatic expiration
+            | _ -> curr.AddDays(-(float expDays)).Date > this.UpdatedDate.Date // Automatic expiration
 
     /// Is an update required for this long-term request?
     member this.updateRequired curr expDays updWeeks =
         match this.isExpired curr expDays with
         | true -> false
-        | false -> curr.AddDays(-(float (updWeeks * 7))).Date > this.updatedDate.Date
+        | false -> curr.AddDays(-(float (updWeeks * 7))).Date > this.UpdatedDate.Date
 
     /// Configure EF for this entity
     static member internal configureEF (mb : ModelBuilder) =
         mb.Entity<PrayerRequest> (fun m ->
             m.ToTable "PrayerRequest" |> ignore
-            m.Property(fun e -> e.prayerRequestId).HasColumnName "PrayerRequestId" |> ignore
-            m.Property(fun e -> e.requestType).HasColumnName("RequestType").IsRequired() |> ignore
-            m.Property(fun e -> e.userId).HasColumnName "UserId" |> ignore
-            m.Property(fun e -> e.smallGroupId).HasColumnName "SmallGroupId" |> ignore
-            m.Property(fun e -> e.enteredDate).HasColumnName "EnteredDate" |> ignore
-            m.Property(fun e -> e.updatedDate).HasColumnName "UpdatedDate" |> ignore
-            m.Property(fun e -> e.requestor).HasColumnName "Requestor" |> ignore
-            m.Property(fun e -> e.text).HasColumnName("Text").IsRequired() |> ignore
-            m.Property(fun e -> e.notifyChaplain).HasColumnName "NotifyChaplain" |> ignore
-            m.Property(fun e -> e.expiration).HasColumnName "Expiration" |> ignore)
+            m.Property(fun e -> e.Id).HasColumnName "PrayerRequestId" |> ignore
+            m.Property(fun e -> e.RequestType).HasColumnName("RequestType").IsRequired() |> ignore
+            m.Property(fun e -> e.UserId).HasColumnName "UserId" |> ignore
+            m.Property(fun e -> e.SmallGroupId).HasColumnName "SmallGroupId" |> ignore
+            m.Property(fun e -> e.EnteredDate).HasColumnName "EnteredDate" |> ignore
+            m.Property(fun e -> e.UpdatedDate).HasColumnName "UpdatedDate" |> ignore
+            m.Property(fun e -> e.Requestor).HasColumnName "Requestor" |> ignore
+            m.Property(fun e -> e.Text).HasColumnName("Text").IsRequired() |> ignore
+            m.Property(fun e -> e.NotifyChaplain).HasColumnName "NotifyChaplain" |> ignore
+            m.Property(fun e -> e.Expiration).HasColumnName "Expiration" |> ignore)
         |> ignore
-        mb.Model.FindEntityType(typeof<PrayerRequest>).FindProperty("requestType")
+        mb.Model.FindEntityType(typeof<PrayerRequest>).FindProperty("Id")
+            .SetValueConverter(Converters.PrayerRequestIdConverter ())
+        mb.Model.FindEntityType(typeof<PrayerRequest>).FindProperty("RequestType")
             .SetValueConverter(Converters.PrayerRequestTypeConverter ())
-        mb.Model.FindEntityType(typeof<PrayerRequest>).FindProperty("requestor")
+        mb.Model.FindEntityType(typeof<PrayerRequest>).FindProperty("UserId")
+            .SetValueConverter(Converters.UserIdConverter ())
+        mb.Model.FindEntityType(typeof<PrayerRequest>).FindProperty("SmallGroupId")
+            .SetValueConverter(Converters.SmallGroupIdConverter ())
+        mb.Model.FindEntityType(typeof<PrayerRequest>).FindProperty("Requestor")
             .SetValueConverter(OptionConverter<string> ())
-        mb.Model.FindEntityType(typeof<PrayerRequest>).FindProperty("expiration")
+        mb.Model.FindEntityType(typeof<PrayerRequest>).FindProperty("Expiration")
             .SetValueConverter(Converters.ExpirationConverter ())
 
 
 /// This represents a small group (Sunday School class, Bible study group, etc.)
 and [<CLIMutable; NoComparison; NoEquality>] SmallGroup =
-    {   /// The Id of this small group
-        smallGroupId   : SmallGroupId
+    {   /// The ID of this small group
+        Id : SmallGroupId
         
         /// The church to which this group belongs
-        churchId       : ChurchId
+        ChurchId : ChurchId
         
         /// The name of the group
-        name           : string
+        Name : string
         
         /// The church to which this small group belongs
-        church         : Church
+        Church : Church
         
         /// The preferences for the request list
-        preferences    : ListPreferences
+        Preferences : ListPreferences
         
         /// The members of the group
-        members        : ICollection<Member>
+        Members : ICollection<Member>
         
         /// Prayer requests for this small group
-        prayerRequests : ICollection<PrayerRequest>
+        PrayerRequests : ICollection<PrayerRequest>
         
         /// The users authorized to manage this group
-        users          : ICollection<UserSmallGroup>
+        Users : ICollection<UserSmallGroup>
     }
 with
     
     /// An empty small group
     static member empty =
-        { smallGroupId   = Guid.Empty
-          churchId       = Guid.Empty
-          name           = "" 
-          church         = Church.empty
-          preferences    = ListPreferences.empty
-          members        = List<Member> ()
-          prayerRequests = List<PrayerRequest> ()
-          users          = List<UserSmallGroup> ()
+        {   Id             = SmallGroupId Guid.Empty
+            ChurchId       = ChurchId Guid.Empty
+            Name           = "" 
+            Church         = Church.empty
+            Preferences    = ListPreferences.empty
+            Members        = List<Member> ()
+            PrayerRequests = List<PrayerRequest> ()
+            Users          = List<UserSmallGroup> ()
         }
 
     /// Get the local date for this group
     member this.localTimeNow (clock : IClock) =
         match clock with null -> nullArg "clock" | _ -> ()
+        let tzId = TimeZoneId.toString this.Preferences.TimeZoneId
         let tz =
-            if DateTimeZoneProviders.Tzdb.Ids.Contains this.preferences.timeZoneId then
-                DateTimeZoneProviders.Tzdb[this.preferences.timeZoneId]
+            if DateTimeZoneProviders.Tzdb.Ids.Contains tzId then DateTimeZoneProviders.Tzdb[tzId]
             else DateTimeZone.Utc
         clock.GetCurrentInstant().InZone(tz).ToDateTimeUnspecified ()
 
@@ -695,146 +830,158 @@ with
     static member internal configureEF (mb : ModelBuilder) =
         mb.Entity<SmallGroup> (fun m ->
             m.ToTable "SmallGroup" |> ignore
-            m.Property(fun e -> e.smallGroupId).HasColumnName "SmallGroupId" |> ignore
-            m.Property(fun e -> e.churchId).HasColumnName "ChurchId" |> ignore
-            m.Property(fun e -> e.name).HasColumnName("Name").IsRequired() |> ignore
-            m.HasOne(fun e -> e.preferences) |> ignore)
+            m.Property(fun e -> e.Id).HasColumnName "SmallGroupId" |> ignore
+            m.Property(fun e -> e.ChurchId).HasColumnName "ChurchId" |> ignore
+            m.Property(fun e -> e.Name).HasColumnName("Name").IsRequired() |> ignore
+            m.HasOne(fun e -> e.Preferences) |> ignore)
         |> ignore
+        mb.Model.FindEntityType(typeof<SmallGroup>).FindProperty("Id")
+            .SetValueConverter(Converters.SmallGroupIdConverter ())
+        mb.Model.FindEntityType(typeof<SmallGroup>).FindProperty("ChurchId")
+            .SetValueConverter(Converters.ChurchIdConverter ())
 
 
 /// This represents a time zone in which a class may reside
 and [<CLIMutable; NoComparison; NoEquality>] TimeZone =
     {   /// The Id for this time zone (uses tzdata names)
-        timeZoneId  : TimeZoneId
+        Id : TimeZoneId
         
         /// The description of this time zone
-        description : string
+        Description : string
         
         /// The order in which this timezone should be displayed
-        sortOrder   : int
+        SortOrder : int
         
         /// Whether this timezone is active
-        isActive    : bool
+        IsActive : bool
     }
 with
     
     /// An empty time zone
     static member empty =
-        { timeZoneId  = ""
-          description = ""
-          sortOrder   = 0
-          isActive    = false
+        {   Id          = TimeZoneId ""
+            Description = ""
+            SortOrder   = 0
+            IsActive    = false
         }
     
     /// Configure EF for this entity
     static member internal configureEF (mb : ModelBuilder) =
         mb.Entity<TimeZone> ( fun m ->
             m.ToTable "TimeZone" |> ignore
-            m.Property(fun e -> e.timeZoneId).HasColumnName "TimeZoneId" |> ignore
-            m.Property(fun e -> e.description).HasColumnName("Description").IsRequired() |> ignore
-            m.Property(fun e -> e.sortOrder).HasColumnName "SortOrder" |> ignore
-            m.Property(fun e -> e.isActive).HasColumnName "IsActive" |> ignore)
+            m.Property(fun e -> e.Id).HasColumnName "TimeZoneId" |> ignore
+            m.Property(fun e -> e.Description).HasColumnName("Description").IsRequired() |> ignore
+            m.Property(fun e -> e.SortOrder).HasColumnName "SortOrder" |> ignore
+            m.Property(fun e -> e.IsActive).HasColumnName "IsActive" |> ignore)
         |> ignore
+        mb.Model.FindEntityType(typeof<TimeZone>).FindProperty("Id")
+            .SetValueConverter(Converters.TimeZoneIdConverter ())
 
 
 /// This represents a user of PrayerTracker
 and [<CLIMutable; NoComparison; NoEquality>] User =
-    {   /// The Id of this user
-        userId       : UserId
+    {   /// The ID of this user
+        Id : UserId
         
         /// The first name of this user
-        firstName    : string
+        FirstName : string
         
         /// The last name of this user
-        lastName     : string
+        LastName : string
         
         /// The e-mail address of the user
-        emailAddress : string
+        Email : string
         
         /// Whether this user is a PrayerTracker system administrator
-        isAdmin      : bool
+        IsAdmin : bool
         
         /// The user's hashed password
-        passwordHash : string
+        PasswordHash : string
         
         /// The salt for the user's hashed password
-        salt         : Guid option
+        Salt : Guid option
         
         /// The small groups which this user is authorized
-        smallGroups  : ICollection<UserSmallGroup>
+        SmallGroups : ICollection<UserSmallGroup>
     }
 with
     
     /// An empty user
     static member empty =
-        { userId       = Guid.Empty
-          firstName    = ""
-          lastName     = ""
-          emailAddress = ""
-          isAdmin      = false
-          passwordHash = ""
-          salt         = None
-          smallGroups  = List<UserSmallGroup> ()
+        {   Id           = UserId Guid.Empty
+            FirstName    = ""
+            LastName     = ""
+            Email        = ""
+            IsAdmin      = false
+            PasswordHash = ""
+            Salt         = None
+            SmallGroups  = List<UserSmallGroup> ()
         }
     
     /// The full name of the user
     member this.fullName =
-        $"{this.firstName} {this.lastName}"
+        $"{this.FirstName} {this.LastName}"
 
     /// Configure EF for this entity
     static member internal configureEF (mb : ModelBuilder) =
         mb.Entity<User> (fun m ->
             m.ToTable "User" |> ignore
             m.Ignore(fun e -> e.fullName :> obj) |> ignore
-            m.Property(fun e -> e.userId).HasColumnName "UserId" |> ignore
-            m.Property(fun e -> e.firstName).HasColumnName("FirstName").IsRequired() |> ignore
-            m.Property(fun e -> e.lastName).HasColumnName("LastName").IsRequired() |> ignore
-            m.Property(fun e -> e.emailAddress).HasColumnName("EmailAddress").IsRequired() |> ignore
-            m.Property(fun e -> e.isAdmin).HasColumnName "IsSystemAdmin" |> ignore
-            m.Property(fun e -> e.passwordHash).HasColumnName("PasswordHash").IsRequired() |> ignore
-            m.Property(fun e -> e.salt).HasColumnName "Salt" |> ignore)
+            m.Property(fun e -> e.Id).HasColumnName "UserId" |> ignore
+            m.Property(fun e -> e.FirstName).HasColumnName("FirstName").IsRequired() |> ignore
+            m.Property(fun e -> e.LastName).HasColumnName("LastName").IsRequired() |> ignore
+            m.Property(fun e -> e.Email).HasColumnName("EmailAddress").IsRequired() |> ignore
+            m.Property(fun e -> e.IsAdmin).HasColumnName "IsSystemAdmin" |> ignore
+            m.Property(fun e -> e.PasswordHash).HasColumnName("PasswordHash").IsRequired() |> ignore
+            m.Property(fun e -> e.Salt).HasColumnName "Salt" |> ignore)
         |> ignore
-        mb.Model.FindEntityType(typeof<User>).FindProperty("salt")
+        mb.Model.FindEntityType(typeof<User>).FindProperty("Id").SetValueConverter(Converters.UserIdConverter ())
+        mb.Model.FindEntityType(typeof<User>).FindProperty("Salt")
             .SetValueConverter(OptionConverter<Guid> ())
 
 
 /// Cross-reference between user and small group
 and [<CLIMutable; NoComparison; NoEquality>] UserSmallGroup =
     {   /// The Id of the user who has access to the small group
-        userId       : UserId
+        UserId : UserId
         
         /// The Id of the small group to which the user has access
-        smallGroupId : SmallGroupId
+        SmallGroupId : SmallGroupId
         
         /// The user who has access to the small group
-        user         : User
+        User : User
         
         /// The small group to which the user has access
-        smallGroup   : SmallGroup
+        SmallGroup : SmallGroup
     }
 with
     
     /// An empty user/small group xref
     static member empty =
-        { userId       = Guid.Empty
-          smallGroupId = Guid.Empty
-          user         = User.empty
-          smallGroup   = SmallGroup.empty
+        {   UserId       = UserId Guid.Empty
+            SmallGroupId = SmallGroupId Guid.Empty
+            User         = User.empty
+            SmallGroup   = SmallGroup.empty
         }
     
     /// Configure EF for this entity
     static member internal configureEF (mb : ModelBuilder) =
         mb.Entity<UserSmallGroup> (fun m ->
             m.ToTable "User_SmallGroup" |> ignore
-            m.HasKey(fun e -> { userId = e.userId; smallGroupId = e.smallGroupId } :> obj) |> ignore
-            m.Property(fun e -> e.userId).HasColumnName "UserId" |> ignore
-            m.Property(fun e -> e.smallGroupId).HasColumnName "SmallGroupId" |> ignore
-            m.HasOne(fun e -> e.user)
-                .WithMany(fun e -> e.smallGroups :> IEnumerable<UserSmallGroup>)
-                .HasForeignKey(fun e -> e.userId :> obj)
+            m.HasKey(fun e -> {| UserId = e.UserId; SmallGroupId = e.SmallGroupId |} :> obj) |> ignore
+            m.Property(fun e -> e.UserId).HasColumnName "UserId" |> ignore
+            m.Property(fun e -> e.SmallGroupId).HasColumnName "SmallGroupId" |> ignore
+            m.HasOne(fun e -> e.User)
+                .WithMany(fun e -> e.SmallGroups :> IEnumerable<UserSmallGroup>)
+                .HasForeignKey(fun e -> e.UserId :> obj)
             |> ignore
-            m.HasOne(fun e -> e.smallGroup)
-                .WithMany(fun e -> e.users :> IEnumerable<UserSmallGroup>)
-                .HasForeignKey(fun e -> e.smallGroupId :> obj)
+            m.HasOne(fun e -> e.SmallGroup)
+                .WithMany(fun e -> e.Users :> IEnumerable<UserSmallGroup>)
+                .HasForeignKey(fun e -> e.SmallGroupId :> obj)
             |> ignore)
         |> ignore
+        mb.Model.FindEntityType(typeof<UserSmallGroup>).FindProperty("UserId")
+            .SetValueConverter(Converters.UserIdConverter ())
+        mb.Model.FindEntityType(typeof<UserSmallGroup>).FindProperty("SmallGroupId")
+            .SetValueConverter(Converters.SmallGroupIdConverter ())
+        

@@ -50,7 +50,7 @@ module Navigation =
                         ]
                     ]
                 ]
-                if u.isAdmin then
+                if u.IsAdmin then
                     li [ _class "dropdown" ] [
                         a [ _dropdown
                             _ariaLabel s["Administration"].Value
@@ -167,8 +167,8 @@ module Navigation =
                     icon "group"
                     space
                     match m.User with
-                    | Some _ -> a [ _href "/small-group"; Target.content ] [ strong [] [ str g.name ] ]
-                    | None -> strong [] [ str g.name ]
+                    | Some _ -> a [ _href "/small-group"; Target.content ] [ strong [] [ str g.Name ] ]
+                    | None -> strong [] [ str g.Name ]
                     rawText " &nbsp;"
                 ]
             | None -> []
@@ -297,7 +297,7 @@ let private contentSection viewInfo pgTitle (content : XmlNode) = [
     yield! messages viewInfo
     match viewInfo.ScopedStyle with
     | [] -> ()
-    | styles -> style [ _scoped ] (styles |> List.map (fun it -> rawText $"{it};"))
+    | styles -> style [ _scoped ] (styles |> List.map (fun it -> rawText $"{it}; "))
     content
     htmlFooter viewInfo
     for jsFile in viewInfo.Script do

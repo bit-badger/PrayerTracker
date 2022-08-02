@@ -22,9 +22,9 @@ let getConnection () = task {
 /// Create a mail message object, filled with everything but the body content
 let createMessage (grp : SmallGroup) subj =
     let msg = new MimeMessage ()
-    msg.From.Add (MailboxAddress (grp.preferences.emailFromName, fromAddress))
+    msg.From.Add (MailboxAddress (grp.Preferences.EmailFromName, fromAddress))
     msg.Subject <- subj
-    msg.ReplyTo.Add (MailboxAddress (grp.preferences.emailFromName, grp.preferences.emailFromAddress))
+    msg.ReplyTo.Add (MailboxAddress (grp.Preferences.EmailFromName, grp.Preferences.EmailFromAddress))
     msg
 
 /// Create an HTML-format e-mail message
@@ -63,12 +63,8 @@ let sendEmails (client : SmtpClient) (recipients : Member list) grp subj html te
     use plainTextMsg = createTextMessage grp subj text s
 
     for mbr in recipients do
-        let emailType =
-            match mbr.format with
-            | Some f -> EmailFormat.fromCode f
-            | None -> grp.preferences.defaultEmailType
-        let emailTo = MailboxAddress (mbr.memberName, mbr.email)
-        match emailType with
+        let emailTo = MailboxAddress (mbr.Name, mbr.Email)
+        match defaultArg mbr.Format grp.Preferences.DefaultEmailType with
         | HtmlFormat ->
             htmlMsg.To.Add emailTo
             let! _ = client.SendAsync htmlMsg

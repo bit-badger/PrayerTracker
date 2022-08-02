@@ -12,11 +12,22 @@ let sha1Hash (x : string) =
     |> Seq.map (fun chr -> chr.ToString "x2")
     |> String.concat ""
 
-
 /// Hash a string using 1,024 rounds of PBKDF2 and a salt
 let pbkdf2Hash (salt : Guid) (x : string) =
     use alg = new Rfc2898DeriveBytes (x, Encoding.UTF8.GetBytes (salt.ToString "N"), 1024)
     (alg.GetBytes >> Convert.ToBase64String) 64
+
+open Giraffe
+
+/// Parse a short-GUID-based ID from a string
+let idFromShort<'T> (f : Guid -> 'T) strValue =
+    (ShortGuid.toGuid >> f) strValue
+
+/// Format a GUID as a short GUID
+let shortGuid = ShortGuid.fromGuid
+
+/// An empty short GUID string (used for "add" actions)
+let emptyGuid = shortGuid Guid.Empty
 
 
 /// String helper functions

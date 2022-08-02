@@ -2,6 +2,7 @@
 
 open Giraffe.ViewEngine
 open Microsoft.Extensions.Localization
+open PrayerTracker
 open PrayerTracker.Entities
 open PrayerTracker.ViewModels
 
@@ -45,8 +46,8 @@ let announcement isAdmin ctx viewInfo =
                 label [ _for (nameof model.RequestType) ] [ locStr s["Request Type"] ]
                 reqTypes
                 |> Seq.ofList
-                |> Seq.map (fun (typ, desc) -> typ.code, desc.Value)
-                |> selectList (nameof model.RequestType) Announcement.code []
+                |> Seq.map (fun (typ, desc) -> PrayerRequestType.toCode typ, desc.Value)
+                |> selectList (nameof model.RequestType) (PrayerRequestType.toCode Announcement) []
             ]
         ]
         div [ _fieldRow ] [ submit [] "send" s["Send Announcement"] ]
@@ -76,7 +77,7 @@ let edit (model : EditSmallGroup) (churches : Church list) ctx viewInfo =
     let pageTitle = if model.IsNew then "Add a New Group" else "Edit Group"
     form [ _action "/small-group/save"; _method "post"; _class "pt-center-columns"; Target.content ] [
         csrfToken ctx
-        inputField "hidden" (nameof model.SmallGroupId) (flatGuid model.SmallGroupId) []
+        inputField "hidden" (nameof model.SmallGroupId) model.SmallGroupId []
         div [ _fieldRow ] [
             div [ _inputField ] [
                 label [ _for (nameof model.Name) ] [ locStr s["Group Name"] ]
@@ -88,9 +89,9 @@ let edit (model : EditSmallGroup) (churches : Church list) ctx viewInfo =
                 label [ _for (nameof model.ChurchId) ] [ locStr s["Church"] ]
                 seq {
                     "", selectDefault s["Select Church"].Value
-                    yield! churches |> List.map (fun c -> flatGuid c.churchId, c.name)
+                    yield! churches |> List.map (fun c -> shortGuid c.Id.Value, c.Name)
                 }
-                |> selectList (nameof model.ChurchId) (flatGuid model.ChurchId) [ _required ] 
+                |> selectList (nameof model.ChurchId) model.ChurchId [ _required ] 
             ]
         ]
         div [ _fieldRow ] [ submit [] "save" s["Save Group"] ]
@@ -111,7 +112,7 @@ let editMember (model : EditMember) (types : (string * LocalizedString) seq) ctx
         ] viewInfo
     form [ _action "/small-group/member/save"; _method "post"; _class "pt-center-columns"; Target.content ] [
         csrfToken ctx
-        inputField "hidden" (nameof model.MemberId) (flatGuid model.MemberId) []
+        inputField "hidden" (nameof model.MemberId) model.MemberId []
         div [ _fieldRow ] [
             div [ _inputField ] [
                 label [ _for (nameof model.Name) ] [ locStr s["Member Name"] ]
@@ -140,7 +141,7 @@ let editMember (model : EditMember) (types : (string * LocalizedString) seq) ctx
 /// View for the small group log on page
 let logOn (groups : SmallGroup list) grpId ctx viewInfo =
     let s     = I18N.localizer.Force ()
-    let model = { SmallGroupId = System.Guid.Empty; Password = ""; RememberMe = None }
+    let model = { SmallGroupId = emptyGuid; Password = ""; RememberMe = None }
     let vi    = AppViewInfo.withOnLoadScript "PT.smallGroup.logOn.onPageLoad" viewInfo
     form [ _action "/small-group/log-on/submit"; _method "post"; _class "pt-center-columns"; Target.body ] [
         csrfToken ctx
@@ -153,7 +154,7 @@ let logOn (groups : SmallGroup list) grpId ctx viewInfo =
                         "", selectDefault s["Select Group"].Value
                         yield!
                             groups
-                            |> List.map (fun grp -> flatGuid grp.smallGroupId, $"{grp.church.name} | {grp.name}")
+                            |> List.map (fun grp -> shortGuid grp.Id.Value, $"{grp.Church.Name} | {grp.Name}")
                 }
                 |> selectList (nameof model.SmallGroupId) grpId [ _required ]
             ]
@@ -187,10 +188,10 @@ let maintain (groups : SmallGroup list) ctx viewInfo =
                 tableHeadings s [ "Actions"; "Name"; "Church"; "Time Zone"]
                 groups
                 |> List.map (fun g ->
-                    let grpId     = flatGuid g.smallGroupId
+                    let grpId     = shortGuid g.Id.Value
                     let delAction = $"/small-group/{grpId}/delete"
                     let delPrompt = s["Are you sure you want to delete this {0}?  This action cannot be undone.",
-                                         $"""{s["Small Group"].Value.ToLower ()} ({g.name})""" ].Value
+                                         $"""{s["Small Group"].Value.ToLower ()} ({g.Name})""" ].Value
                     tr [] [
                         td [] [
                             a [ _href $"/small-group/{grpId}/edit"; _title s["Edit This Group"].Value ] [ icon "edit" ]
@@ -200,9 +201,9 @@ let maintain (groups : SmallGroup list) ctx viewInfo =
                                 icon "delete_forever"
                             ]
                         ]
-                        td [] [ str g.name ]
-                        td [] [ str g.church.name ]
-                        td [] [ locStr (TimeZones.name g.preferences.timeZoneId s) ]
+                        td [] [ str g.Name ]
+                        td [] [ str g.Church.Name ]
+                        td [] [ locStr (TimeZones.name g.Preferences.TimeZoneId s) ]
                     ])
                 |> tbody []
             ]
@@ -233,11 +234,11 @@ let members (members : Member list) (emailTypes : Map<string, LocalizedString>) 
                 tableHeadings s [ "Actions"; "Name"; "E-mail Address"; "Format"]
                 members
                 |> List.map (fun mbr ->
-                    let mbrId     = flatGuid mbr.memberId
+                    let mbrId     = shortGuid mbr.Id.Value
                     let delAction = $"/small-group/member/{mbrId}/delete"
                     let delPrompt =
                         s["Are you sure you want to delete this {0}?  This action cannot be undone.", s["group member"]]
-                            .Value.Replace("?", $" ({mbr.memberName})?")
+                            .Value.Replace("?", $" ({mbr.Name})?")
                     tr [] [
                         td [] [
                             a [ _href $"/small-group/member/{mbrId}/edit"; _title s["Edit This Group Member"].Value ] [
@@ -249,9 +250,9 @@ let members (members : Member list) (emailTypes : Map<string, LocalizedString>) 
                                 icon "delete_forever"
                             ]
                         ]
-                        td [] [ str mbr.memberName ]
-                        td [] [ str mbr.email ]
-                        td [] [ locStr emailTypes[defaultArg mbr.format ""] ]
+                        td [] [ str mbr.Name ]
+                        td [] [ str mbr.Email ]
+                        td [] [ locStr emailTypes[defaultArg (mbr.Format |> Option.map EmailFormat.toCode) ""] ]
                     ])
                 |> tbody []
             ]
@@ -326,7 +327,6 @@ let overview model viewInfo =
 
 
 open System.IO
-open PrayerTracker
 
 /// View for the small group preferences page
 let preferences (model : EditPreferences) (tzs : TimeZone list) ctx viewInfo =
@@ -494,7 +494,10 @@ let preferences (model : EditPreferences) (tzs : TimeZone list) ctx viewInfo =
                     label [ _for (nameof model.TimeZone) ] [ locStr s["Time Zone"] ]
                     seq {
                         "", selectDefault s["Select"].Value
-                        yield! tzs |> List.map (fun tz -> tz.timeZoneId, (TimeZones.name tz.timeZoneId s).Value)
+                        yield!
+                            tzs
+                            |> List.map (fun tz ->
+                                TimeZoneId.toString tz.Id, (TimeZones.name tz.Id s).Value)
                     }
                     |> selectList (nameof model.TimeZone) model.TimeZone [ _required ]
                 ]

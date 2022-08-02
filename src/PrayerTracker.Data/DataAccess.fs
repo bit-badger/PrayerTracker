@@ -11,13 +11,13 @@ module private Helpers =
     let reqSort sort (q : IQueryable<PrayerRequest>) =
         match sort with
         | SortByDate ->
-            q.OrderByDescending(fun req -> req.updatedDate)
-                .ThenByDescending(fun req -> req.enteredDate)
-                .ThenBy (fun req -> req.requestor)
+            q.OrderByDescending(fun req -> req.UpdatedDate)
+                .ThenByDescending(fun req -> req.EnteredDate)
+                .ThenBy (fun req -> req.Requestor)
         | SortByRequestor ->
-            q.OrderBy(fun req -> req.requestor)
-                .ThenByDescending(fun req -> req.updatedDate)
-                .ThenByDescending (fun req -> req.enteredDate)
+            q.OrderBy(fun req -> req.Requestor)
+                .ThenByDescending(fun req -> req.UpdatedDate)
+                .ThenByDescending (fun req -> req.EnteredDate)
     
     /// Paginate a prayer request query
     let paginate (pageNbr : int) pageSize (q : IQueryable<PrayerRequest>) =
@@ -48,44 +48,44 @@ type AppDbContext with
     (*-- CHURCH EXTENSIONS --*)
 
     /// Find a church by its Id
-    member this.TryChurchById cId = backgroundTask {
-        let! church = this.Churches.SingleOrDefaultAsync (fun ch -> ch.churchId = cId)
+    member this.TryChurchById churchId = backgroundTask {
+        let! church = this.Churches.SingleOrDefaultAsync (fun ch -> ch.Id = churchId)
         return Option.fromObject church
     }
         
     /// Find all churches
     member this.AllChurches () = backgroundTask {
-        let! churches = this.Churches.OrderBy(fun ch -> ch.name).ToListAsync ()
+        let! churches = this.Churches.OrderBy(fun ch -> ch.Name).ToListAsync ()
         return List.ofSeq churches
     }
 
     (*-- MEMBER EXTENSIONS --*)
 
     /// Get a small group member by its Id
-    member this.TryMemberById mbrId = backgroundTask {
-        let! mbr = this.Members.SingleOrDefaultAsync (fun m -> m.memberId = mbrId)
+    member this.TryMemberById memberId = backgroundTask {
+        let! mbr = this.Members.SingleOrDefaultAsync (fun m -> m.Id = memberId)
         return Option.fromObject mbr
     }
 
     /// Find all members for a small group
-    member this.AllMembersForSmallGroup gId = backgroundTask {
+    member this.AllMembersForSmallGroup groupId = backgroundTask {
         let! members =
-            this.Members.Where(fun mbr -> mbr.smallGroupId = gId)
-                .OrderBy(fun mbr -> mbr.memberName)
+            this.Members.Where(fun mbr -> mbr.SmallGroupId = groupId)
+                .OrderBy(fun mbr -> mbr.Name)
                 .ToListAsync ()
         return List.ofSeq members
     }
 
     /// Count members for a small group
-    member this.CountMembersForSmallGroup gId = backgroundTask {
-        return! this.Members.CountAsync (fun m -> m.smallGroupId = gId)
+    member this.CountMembersForSmallGroup groupId = backgroundTask {
+        return! this.Members.CountAsync (fun m -> m.SmallGroupId = groupId)
     }
     
     (*-- PRAYER REQUEST EXTENSIONS --*)
 
     /// Get a prayer request by its Id
     member this.TryRequestById reqId = backgroundTask {
-        let! req = this.PrayerRequests.SingleOrDefaultAsync (fun r -> r.prayerRequestId = reqId)
+        let! req = this.PrayerRequests.SingleOrDefaultAsync (fun r -> r.Id = reqId)
         return Option.fromObject req
     }
 
@@ -93,31 +93,31 @@ type AppDbContext with
     member this.AllRequestsForSmallGroup (grp : SmallGroup) clock listDate activeOnly pageNbr = backgroundTask {
         let theDate = match listDate with Some dt -> dt | _ -> grp.localDateNow clock
         let query =
-            this.PrayerRequests.Where(fun req -> req.smallGroupId = grp.smallGroupId)
+            this.PrayerRequests.Where(fun req -> req.SmallGroupId = grp.Id)
             |> function
             | q when activeOnly ->
-                let asOf = DateTime (theDate.AddDays(-(float grp.preferences.daysToExpire)).Date.Ticks, DateTimeKind.Utc)
+                let asOf = DateTime (theDate.AddDays(-(float grp.Preferences.DaysToExpire)).Date.Ticks, DateTimeKind.Utc)
                 q.Where(fun req ->
-                        (   req.updatedDate > asOf
-                         || req.expiration  = Manual
-                         || req.requestType = LongTermRequest
-                         || req.requestType = Expecting)
-                     && req.expiration <> Forced)
-                |> reqSort grp.preferences.requestSort
-                |> paginate pageNbr grp.preferences.pageSize
-            | q -> reqSort grp.preferences.requestSort q
+                        (   req.UpdatedDate > asOf
+                         || req.Expiration  = Manual
+                         || req.RequestType = LongTermRequest
+                         || req.RequestType = Expecting)
+                     && req.Expiration <> Forced)
+                |> reqSort grp.Preferences.RequestSort
+                |> paginate pageNbr grp.Preferences.PageSize
+            | q -> reqSort grp.Preferences.RequestSort q
         let! reqs = query.ToListAsync ()
         return List.ofSeq reqs
     }
 
     /// Count prayer requests for the given small group Id
-    member this.CountRequestsBySmallGroup gId = backgroundTask {
-        return! this.PrayerRequests.CountAsync (fun pr -> pr.smallGroupId = gId)
+    member this.CountRequestsBySmallGroup groupId = backgroundTask {
+        return! this.PrayerRequests.CountAsync (fun pr -> pr.SmallGroupId = groupId)
     }
 
     /// Count prayer requests for the given church Id
-    member this.CountRequestsByChurch cId = backgroundTask {
-        return! this.PrayerRequests.CountAsync (fun pr -> pr.smallGroup.churchId = cId)
+    member this.CountRequestsByChurch churchId = backgroundTask {
+        return! this.PrayerRequests.CountAsync (fun pr -> pr.SmallGroup.ChurchId = churchId)
     }
 
     /// Get all (or active) requests for a small group as of now or the specified date
@@ -128,9 +128,9 @@ type AppDbContext with
             SELECT * FROM pt."PrayerRequest" WHERE "SmallGroupId" = {0} AND COALESCE("Requestor", '') ILIKE {1}"""
         let like  = sprintf "%%%s%%"
         let query =
-            this.PrayerRequests.FromSqlRaw(sql, grp.smallGroupId, like searchTerm)
-            |> reqSort grp.preferences.requestSort
-            |> paginate pageNbr grp.preferences.pageSize
+            this.PrayerRequests.FromSqlRaw(sql, grp.Id, like searchTerm)
+            |> reqSort grp.Preferences.RequestSort
+            |> paginate pageNbr grp.Preferences.PageSize
         let! reqs = query.ToListAsync ()
         return List.ofSeq reqs
     }
@@ -138,21 +138,21 @@ type AppDbContext with
     (*-- SMALL GROUP EXTENSIONS --*)
 
     /// Find a small group by its Id
-    member this.TryGroupById gId = backgroundTask {
+    member this.TryGroupById groupId = backgroundTask {
         let! grp =
-            this.SmallGroups.Include(fun sg -> sg.preferences)
-                .SingleOrDefaultAsync (fun sg -> sg.smallGroupId = gId)
+            this.SmallGroups.Include(fun sg -> sg.Preferences)
+                .SingleOrDefaultAsync (fun sg -> sg.Id = groupId)
         return Option.fromObject grp
     }
 
     /// Get small groups that are public or password protected
     member this.PublicAndProtectedGroups () = backgroundTask {
         let! groups =
-            this.SmallGroups.Include(fun sg -> sg.preferences).Include(fun sg -> sg.church)
+            this.SmallGroups.Include(fun sg -> sg.Preferences).Include(fun sg -> sg.Church)
                 .Where(fun sg ->
-                       sg.preferences.isPublic
-                    || (sg.preferences.groupPassword <> null && sg.preferences.groupPassword <> ""))
-                .OrderBy(fun sg -> sg.church.name).ThenBy(fun sg -> sg.name)
+                       sg.Preferences.IsPublic
+                    || (sg.Preferences.GroupPassword <> null && sg.Preferences.GroupPassword <> ""))
+                .OrderBy(fun sg -> sg.Church.Name).ThenBy(fun sg -> sg.Name)
                 .ToListAsync ()
         return List.ofSeq groups
     }
@@ -160,9 +160,9 @@ type AppDbContext with
     /// Get small groups that are password protected
     member this.ProtectedGroups () = backgroundTask {
         let! groups =
-            this.SmallGroups.Include(fun sg -> sg.church)
-                .Where(fun sg -> sg.preferences.groupPassword <> null && sg.preferences.groupPassword <> "")
-                .OrderBy(fun sg -> sg.church.name).ThenBy(fun sg -> sg.name)
+            this.SmallGroups.Include(fun sg -> sg.Church)
+                .Where(fun sg -> sg.Preferences.GroupPassword <> null && sg.Preferences.GroupPassword <> "")
+                .OrderBy(fun sg -> sg.Church.Name).ThenBy(fun sg -> sg.Name)
                 .ToListAsync ()
         return List.ofSeq groups
     }
@@ -171,10 +171,10 @@ type AppDbContext with
     member this.AllGroups () = backgroundTask {
         let! groups =
             this.SmallGroups
-                .Include(fun sg -> sg.church)
-                .Include(fun sg -> sg.preferences)
-                .Include(fun sg -> sg.preferences.timeZone)
-                .OrderBy(fun sg -> sg.name)
+                .Include(fun sg -> sg.Church)
+                .Include(fun sg -> sg.Preferences)
+                .Include(fun sg -> sg.Preferences.TimeZone)
+                .OrderBy(fun sg -> sg.Name)
                 .ToListAsync ()
         return List.ofSeq groups
     }
@@ -182,88 +182,89 @@ type AppDbContext with
     /// Get a small group list by their Id, with their church prepended to their name
     member this.GroupList () = backgroundTask {
         let! groups =
-            this.SmallGroups.Include(fun sg -> sg.church)
-                .OrderBy(fun sg -> sg.church.name).ThenBy(fun sg -> sg.name)
+            this.SmallGroups.Include(fun sg -> sg.Church)
+                .OrderBy(fun sg -> sg.Church.Name).ThenBy(fun sg -> sg.Name)
                 .ToListAsync ()
-        return groups
-          |> Seq.map (fun sg -> sg.smallGroupId.ToString "N", $"{sg.church.name} | {sg.name}")
-          |> List.ofSeq
+        return
+            groups
+            |> Seq.map (fun sg -> Giraffe.ShortGuid.fromGuid sg.Id.Value, $"{sg.Church.Name} | {sg.Name}")
+            |> List.ofSeq
     }
 
     /// Log on a small group
-    member this.TryGroupLogOnByPassword gId pw = backgroundTask {
-        match! this.TryGroupById gId with
-        | None -> return None
-        | Some grp -> return if pw = grp.preferences.groupPassword then Some grp else None
+    member this.TryGroupLogOnByPassword groupId pw = backgroundTask {
+        match! this.TryGroupById groupId with
+        | Some grp when pw = grp.Preferences.GroupPassword -> return Some grp
+        | _ -> return None
     }
 
     /// Check a cookie log on for a small group
-    member this.TryGroupLogOnByCookie gId pwHash (hasher : string -> string) = backgroundTask {
-        match! this.TryGroupById gId with
+    member this.TryGroupLogOnByCookie groupId pwHash (hasher : string -> string) = backgroundTask {
+        match! this.TryGroupById groupId with
         | None -> return None
-        | Some grp -> return if pwHash = hasher grp.preferences.groupPassword then Some grp else None
+        | Some grp -> return if pwHash = hasher grp.Preferences.GroupPassword then Some grp else None
     }
 
     /// Count small groups for the given church Id
-    member this.CountGroupsByChurch cId = backgroundTask {
-        return! this.SmallGroups.CountAsync (fun sg -> sg.churchId = cId)
+    member this.CountGroupsByChurch churchId = backgroundTask {
+        return! this.SmallGroups.CountAsync (fun sg -> sg.ChurchId = churchId)
     }
         
     (*-- TIME ZONE EXTENSIONS --*)
 
     /// Get a time zone by its Id
     member this.TryTimeZoneById tzId = backgroundTask {
-        let! zone = this.TimeZones.SingleOrDefaultAsync (fun tz -> tz.timeZoneId = tzId)
+        let! zone = this.TimeZones.SingleOrDefaultAsync (fun tz -> tz.Id = tzId)
         return Option.fromObject zone
     }
 
     /// Get all time zones
     member this.AllTimeZones () = backgroundTask {
-        let! zones = this.TimeZones.OrderBy(fun tz -> tz.sortOrder).ToListAsync ()
+        let! zones = this.TimeZones.OrderBy(fun tz -> tz.SortOrder).ToListAsync ()
         return List.ofSeq zones
     }
     
     (*-- USER EXTENSIONS --*)
 
     /// Find a user by its Id
-    member this.TryUserById uId = backgroundTask {
-        let! usr = this.Users.SingleOrDefaultAsync (fun u -> u.userId = uId)
+    member this.TryUserById userId = backgroundTask {
+        let! usr = this.Users.SingleOrDefaultAsync (fun u -> u.Id = userId)
         return Option.fromObject usr
     }
 
     /// Find a user by its e-mail address and authorized small group
-    member this.TryUserByEmailAndGroup email gId = backgroundTask {
+    member this.TryUserByEmailAndGroup email groupId = backgroundTask {
         let! usr =
             this.Users.SingleOrDefaultAsync (fun u ->
-                u.emailAddress = email && u.smallGroups.Any (fun xref -> xref.smallGroupId = gId))
+                u.Email = email && u.SmallGroups.Any (fun xref -> xref.SmallGroupId = groupId))
         return Option.fromObject usr
     }
     
     /// Find a user by its Id, eagerly loading the user's groups
-    member this.TryUserByIdWithGroups uId = backgroundTask {
-        let! usr = this.Users.Include(fun u -> u.smallGroups).SingleOrDefaultAsync (fun u -> u.userId = uId)
+    member this.TryUserByIdWithGroups userId = backgroundTask {
+        let! usr = this.Users.Include(fun u -> u.SmallGroups).SingleOrDefaultAsync (fun u -> u.Id = userId)
         return Option.fromObject usr
     }
 
     /// Get a list of all users
     member this.AllUsers () = backgroundTask {
-        let! users = this.Users.OrderBy(fun u -> u.lastName).ThenBy(fun u -> u.firstName).ToListAsync ()
+        let! users = this.Users.OrderBy(fun u -> u.LastName).ThenBy(fun u -> u.FirstName).ToListAsync ()
         return List.ofSeq users
     }
 
     /// Get all PrayerTracker users as members (used to send e-mails)
     member this.AllUsersAsMembers () = backgroundTask {
         let! users = this.AllUsers ()
-        return users |> List.map (fun u -> { Member.empty with email = u.emailAddress; memberName = u.fullName })
+        return users |> List.map (fun u -> { Member.empty with Email = u.Email; Name = u.fullName })
     }
 
     /// Find a user based on their credentials
-    member this.TryUserLogOnByPassword email pwHash gId = backgroundTask {
+    member this.TryUserLogOnByPassword email pwHash groupId = backgroundTask {
         let! usr =
             this.Users.SingleOrDefaultAsync (fun u ->
-                   u.emailAddress = email
-                && u.passwordHash = pwHash
-                && u.smallGroups.Any (fun xref -> xref.smallGroupId = gId))
+                   u.Email = email
+                && u.PasswordHash = pwHash
+                && u.SmallGroups.Any (fun xref -> xref.SmallGroupId = groupId))
         return Option.fromObject usr
     }
 
@@ -272,17 +273,17 @@ type AppDbContext with
         match! this.TryUserByIdWithGroups uId with
         | None -> return None
         | Some usr ->
-            if pwHash = usr.passwordHash && usr.smallGroups |> Seq.exists (fun xref -> xref.smallGroupId = gId) then
-                return Some { usr with passwordHash = ""; salt = None; smallGroups = List<UserSmallGroup>() }
+            if pwHash = usr.PasswordHash && usr.SmallGroups |> Seq.exists (fun xref -> xref.SmallGroupId = gId) then
+                return Some { usr with PasswordHash = ""; Salt = None; SmallGroups = List<UserSmallGroup>() }
             else return None
     }
 
     /// Count the number of users for a small group
-    member this.CountUsersBySmallGroup gId = backgroundTask {
-        return! this.Users.CountAsync (fun u -> u.smallGroups.Any (fun xref -> xref.smallGroupId = gId))
+    member this.CountUsersBySmallGroup groupId = backgroundTask {
+        return! this.Users.CountAsync (fun u -> u.SmallGroups.Any (fun xref -> xref.SmallGroupId = groupId))
     }
 
     /// Count the number of users for a church
-    member this.CountUsersByChurch cId = backgroundTask {
-        return! this.Users.CountAsync (fun u -> u.smallGroups.Any (fun xref -> xref.smallGroup.churchId = cId))
+    member this.CountUsersByChurch churchId = backgroundTask {
+        return! this.Users.CountAsync (fun u -> u.SmallGroups.Any (fun xref -> xref.SmallGroup.ChurchId = churchId))
     }

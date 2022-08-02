@@ -72,8 +72,8 @@ let viewInfo (ctx : HttpContext) startTicks =
         // The idle timeout is 2 hours; if the app pool is recycled or the actual session goes away, we will log the
         // user back in transparently using this cookie.  Every request resets the timer.
         let timeout =
-            { Id       = u.userId
-              GroupId  = (currentGroup ctx).smallGroupId
+            { Id       = u.Id.Value
+              GroupId  = (currentGroup ctx).Id.Value
               Until    = DateTime.UtcNow.AddHours(2.).Ticks
               Password = ""
             }
@@ -163,6 +163,7 @@ type AccessLevel =
 
 
 open Microsoft.AspNetCore.Http.Extensions
+open PrayerTracker.Entities
 
 /// Require the given access role (also refreshes "Remember Me" user and group logons)
 let requireAccess level : HttpHandler =
@@ -177,11 +178,11 @@ let requireAccess level : HttpHandler =
         try
             match TimeoutCookie.fromPayload ctx.Request.Cookies[Key.Cookie.timeout] with
             | Some c when c.Password = saltedTimeoutHash c ->
-                let! user = ctx.db.TryUserById c.Id
+                let! user = ctx.db.TryUserById (UserId c.Id)
                 match user with
                 | Some _ ->
                     ctx.Session.user <- user
-                    let! grp = ctx.db.TryGroupById c.GroupId
+                    let! grp = ctx.db.TryGroupById (SmallGroupId c.GroupId)
                     ctx.Session.smallGroup <- grp
                 | _ -> ()
             | _ -> ()
@@ -193,11 +194,11 @@ let requireAccess level : HttpHandler =
     let logOnUserFromCookie (ctx : HttpContext) = task {
         match UserCookie.fromPayload ctx.Request.Cookies[Key.Cookie.user] with
         | Some c ->
-            let! user = ctx.db.TryUserLogOnByCookie c.Id c.GroupId c.PasswordHash
+            let! user = ctx.db.TryUserLogOnByCookie (UserId c.Id) (SmallGroupId c.GroupId) c.PasswordHash
             match user with
             | Some _ ->
                 ctx.Session.user <- user
-                let! grp = ctx.db.TryGroupById c.GroupId
+                let! grp = ctx.db.TryGroupById (SmallGroupId c.GroupId)
                 ctx.Session.smallGroup <- grp
                 // Rewrite the cookie to extend the expiration
                 ctx.Response.Cookies.Append (Key.Cookie.user, c.toPayload (), autoRefresh)
@@ -213,7 +214,7 @@ let requireAccess level : HttpHandler =
     let logOnGroupFromCookie (ctx : HttpContext) = task {
         match GroupCookie.fromPayload ctx.Request.Cookies[Key.Cookie.group] with
         | Some c ->
-            let! grp = ctx.db.TryGroupLogOnByCookie c.GroupId c.PasswordHash sha1Hash
+            let! grp = ctx.db.TryGroupLogOnByCookie (SmallGroupId c.GroupId) c.PasswordHash sha1Hash
             match grp with
             | Some _ ->
                 ctx.Session.smallGroup <- grp
@@ -236,7 +237,7 @@ let requireAccess level : HttpHandler =
         | _ when level |> List.contains User  && isUserLoggedOn  ctx -> return! next ctx
         | _ when level |> List.contains Group && isGroupLoggedOn ctx -> return! next ctx
         | _ when level |> List.contains Admin && isUserLoggedOn  ctx ->
-            match (currentUser ctx).isAdmin with
+            match (currentUser ctx).IsAdmin with
             | true -> return! next ctx
             | false ->
                 let s = Views.I18N.localizer.Force ()
