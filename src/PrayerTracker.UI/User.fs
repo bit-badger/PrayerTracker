@@ -199,7 +199,7 @@ let maintain (users : User list) ctx viewInfo =
                     let userId    = shortGuid user.Id.Value
                     let delAction = $"/user/{userId}/delete"
                     let delPrompt = s["Are you sure you want to delete this {0}?  This action cannot be undone.",
-                                      $"""{s["User"].Value.ToLower ()} ({user.fullName})"""].Value
+                                      $"""{s["User"].Value.ToLower ()} ({user.Name})"""].Value
                     tr [] [
                         td [] [
                             a [ _href $"/user/{userId}/edit"; _title s["Edit This User"].Value ] [ icon "edit" ]
@@ -212,7 +212,7 @@ let maintain (users : User list) ctx viewInfo =
                                 icon "delete_forever"
                             ]
                         ]
-                        td [] [ str user.fullName ]
+                        td [] [ str user.Name ]
                         td [ _class "pt-center-text" ] [
                             if user.IsAdmin then strong [] [ locStr s["Yes"] ] else locStr s["No"]
                         ]

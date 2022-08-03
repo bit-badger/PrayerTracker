@@ -1,10 +1,7 @@
 ﻿module PrayerTracker.Handlers.PrayerRequest
 
-open System
-open System.Threading.Tasks
 open Giraffe
 open Microsoft.AspNetCore.Http
-open NodaTime
 open PrayerTracker
 open PrayerTracker.Entities
 open PrayerTracker.ViewModels
@@ -20,11 +17,13 @@ let private findRequest (ctx : HttpContext) reqId = task {
     | None -> return Result.Error fourOhFour
 }
 
+open NodaTime
+
 /// Generate a list of requests for the given date
 let private generateRequestList ctx date = task {
     let  grp      = currentGroup ctx
     let  clock    = ctx.GetService<IClock> ()
-    let  listDate = match date with Some d -> d | None -> grp.localDateNow clock
+    let  listDate = match date with Some d -> d | None -> grp.LocalDateNow clock
     let! reqs     = ctx.db.AllRequestsForSmallGroup grp clock (Some listDate) true 0
     return
         {   Requests   = reqs
@@ -36,29 +35,30 @@ let private generateRequestList ctx date = task {
         }
 }
 
+open System
+
 /// Parse a string into a date (optionally, of course)
 let private parseListDate (date : string option) =
     match date with
     | Some dt -> match DateTime.TryParse dt with true, d -> Some d | false, _ -> None
     | None -> None
 
-
 /// GET /prayer-request/[request-id]/edit
 let edit reqId : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task {
     let startTicks = DateTime.Now.Ticks
     let grp        = currentGroup ctx
-    let now        = grp.localDateNow (ctx.GetService<IClock> ())
+    let now        = grp.LocalDateNow (ctx.GetService<IClock> ())
     let requestId  = PrayerRequestId reqId
     if requestId.Value = Guid.Empty then
         return!
-            { viewInfo ctx startTicks with Script = [ "ckeditor/ckeditor" ]; HelpLink = Some Help.editRequest }
+            { viewInfo ctx startTicks with HelpLink = Some Help.editRequest }
             |> Views.PrayerRequest.edit EditRequest.empty (now.ToString "yyyy-MM-dd") ctx
             |> renderHtml next ctx
     else
         match! findRequest ctx requestId with
         | Ok req ->
             let s = Views.I18N.localizer.Force ()
-            if req.isExpired now grp.Preferences.DaysToExpire then
+            if req.IsExpired now grp.Preferences.DaysToExpire then
                 { UserMessage.warning with
                     Text        = htmlLocString s["This request is expired."]
                     Description =
@@ -68,12 +68,11 @@ let edit reqId : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task {
                   }
                 |> addUserMessage ctx
             return!
-                { viewInfo ctx startTicks with Script = [ "ckeditor/ckeditor" ]; HelpLink = Some Help.editRequest }
+                { viewInfo ctx startTicks with HelpLink = Some Help.editRequest }
                 |> Views.PrayerRequest.edit (EditRequest.fromRequest req) "" ctx
                 |> renderHtml next ctx
         | Result.Error e -> return! e next ctx
 }
-
 
 /// GET /prayer-requests/email/[date]
 let email date : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task {
@@ -93,7 +92,6 @@ let email date : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task {
         |> renderHtml next ctx
 }
 
-
 /// POST /prayer-request/[request-id]/delete
 let delete reqId : HttpHandler = requireAccess [ User ] >=> validateCsrf >=> fun next ctx -> task {
     let requestId = PrayerRequestId reqId
@@ -106,7 +104,6 @@ let delete reqId : HttpHandler = requireAccess [ User ] >=> validateCsrf >=> fun
         return! redirectTo false "/prayer-requests" next ctx
     | Result.Error e -> return! e next ctx
 }
-
 
 /// GET /prayer-request/[request-id]/expire
 let expire reqId : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task {
@@ -121,7 +118,6 @@ let expire reqId : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task
     | Result.Error e -> return! e next ctx
 }
 
-
 /// GET /prayer-requests/[group-id]/list
 let list groupId : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx -> task {
     let startTicks = DateTime.Now.Ticks
@@ -132,12 +128,12 @@ let list groupId : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun ne
         return!
             viewInfo ctx startTicks
             |> Views.PrayerRequest.list
-                { Requests   = reqs
-                  Date       = grp.localDateNow clock
-                  SmallGroup = grp
-                  ShowHeader = true
-                  CanEmail   = Option.isSome ctx.Session.user
-                  Recipients = []
+                {   Requests   = reqs
+                    Date       = grp.LocalDateNow clock
+                    SmallGroup = grp
+                    ShowHeader = true
+                    CanEmail   = Option.isSome ctx.Session.user
+                    Recipients = []
                 }
             |> renderHtml next ctx
     | Some _ ->
@@ -146,7 +142,6 @@ let list groupId : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun ne
         return! redirectTo false "/unauthorized" next ctx
     | None -> return! fourOhFour next ctx
 }
-
 
 /// GET /prayer-requests/lists
 let lists : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx -> task {
@@ -157,7 +152,6 @@ let lists : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx 
         |> Views.PrayerRequest.lists groups
         |> renderHtml next ctx
 }
-
 
 /// GET /prayer-requests[/inactive?]
 ///  - OR -
@@ -201,8 +195,6 @@ let print date : HttpHandler = requireAccess [ User; Group ] >=> fun next ctx ->
         Views.PrayerRequest.print list appVersion
         |> renderHtml next ctx
 }
-    
-
 
 /// GET /prayer-request/[request-id]/restore
 let restore reqId : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task {
@@ -217,6 +209,7 @@ let restore reqId : HttpHandler = requireAccess [ User ] >=> fun next ctx -> tas
     | Result.Error e -> return! e next ctx
 }
 
+open System.Threading.Tasks
 
 /// POST /prayer-request/save
 let save : HttpHandler = requireAccess [ User ] >=> validateCsrf >=> fun next ctx -> task {
@@ -235,7 +228,7 @@ let save : HttpHandler = requireAccess [ User ] >=> validateCsrf >=> fun next ct
                     Expiration  = Expiration.fromCode m.Expiration
                 }
             let grp = currentGroup ctx
-            let now = grp.localDateNow (ctx.GetService<IClock> ())
+            let now = grp.LocalDateNow (ctx.GetService<IClock> ())
             match m.IsNew with
             | true ->
                 let dt = defaultArg m.EnteredDate now
@@ -256,7 +249,6 @@ let save : HttpHandler = requireAccess [ User ] >=> validateCsrf >=> fun next ct
         | None -> return! fourOhFour next ctx
     | Result.Error e -> return! bindError e next ctx
 }
-
 
 /// GET /prayer-request/view/[date?]
 let view date : HttpHandler = requireAccess [ User; Group ] >=> fun next ctx -> task {

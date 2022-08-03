@@ -394,8 +394,8 @@ type [<CLIMutable; NoComparison; NoEquality>] Church =
         /// The 2-letter state or province code for the church's location
         State : string
         
-        /// Does this church have an active interface with Virtual Prayer Room?
-        HasInterface : bool
+        /// Does this church have an active interface with Virtual Prayer Space?
+        HasVpsInterface : bool
         
         /// The address for the interface
         InterfaceAddress : string option
@@ -411,24 +411,27 @@ with
             Name             = ""
             City             = ""
             State            = ""
-            HasInterface     = false
+            HasVpsInterface  = false
             InterfaceAddress = None
             SmallGroups      = List<SmallGroup> ()
         }
     
     /// Configure EF for this entity
-    static member internal configureEF (mb : ModelBuilder) =
-        mb.Entity<Church> (fun m ->
-            m.ToTable "Church" |> ignore
-            m.Property(fun e -> e.Id).HasColumnName "ChurchId" |> ignore
-            m.Property(fun e -> e.Name).HasColumnName("Name").IsRequired () |> ignore
-            m.Property(fun e -> e.City).HasColumnName("City").IsRequired () |> ignore
-            m.Property(fun e -> e.State).HasColumnName("ST").IsRequired().HasMaxLength 2 |> ignore
-            m.Property(fun e -> e.HasInterface).HasColumnName "HasVirtualPrayerRoomInterface" |> ignore
-            m.Property(fun e -> e.InterfaceAddress).HasColumnName "InterfaceAddress" |> ignore)
+    static member internal ConfigureEF (mb : ModelBuilder) =
+        mb.Entity<Church> (fun it ->
+            seq<obj> {
+                it.ToTable "church"
+                it.Property(fun c -> c.Id).HasColumnName "id"
+                it.Property(fun c -> c.Name).HasColumnName("church_name").IsRequired ()
+                it.Property(fun c -> c.City).HasColumnName("city").IsRequired ()
+                it.Property(fun c -> c.State).HasColumnName("state").IsRequired().HasMaxLength 2
+                it.Property(fun c -> c.HasVpsInterface).HasColumnName "has_vps_interface"
+                it.Property(fun c -> c.InterfaceAddress).HasColumnName "interface_address"
+            } |> List.ofSeq |> ignore)
         |> ignore
-        mb.Model.FindEntityType(typeof<Church>).FindProperty("Id").SetValueConverter(Converters.ChurchIdConverter ())
-        mb.Model.FindEntityType(typeof<Church>).FindProperty("InterfaceAddress")
+        mb.Model.FindEntityType(typeof<Church>).FindProperty(nameof Church.empty.Id)
+            .SetValueConverter(Converters.ChurchIdConverter ())
+        mb.Model.FindEntityType(typeof<Church>).FindProperty(nameof Church.empty.InterfaceAddress)
             .SetValueConverter(OptionConverter<string> ())
 
 
@@ -517,108 +520,50 @@ with
         }
     
     /// Configure EF for this entity
-    static member internal configureEF (mb : ModelBuilder) =
-        mb.Entity<ListPreferences> (fun m ->
-            m.ToTable "ListPreference" |> ignore
-            m.HasKey (fun e -> e.SmallGroupId :> obj) |> ignore
-            m.Property(fun e -> e.SmallGroupId).HasColumnName "SmallGroupId" |> ignore
-            m.Property(fun e -> e.DaysToKeepNew)
-                .HasColumnName("DaysToKeepNew")
-                .IsRequired()
-                .HasDefaultValue 7
-            |> ignore
-            m.Property(fun e -> e.DaysToExpire)
-                .HasColumnName("DaysToExpire")
-                .IsRequired()
-                .HasDefaultValue 14
-            |> ignore
-            m.Property(fun e -> e.LongTermUpdateWeeks)
-                .HasColumnName("LongTermUpdateWeeks")
-                .IsRequired()
-                .HasDefaultValue 4
-            |> ignore
-            m.Property(fun e -> e.EmailFromName)
-                .HasColumnName("EmailFromName")
-                .IsRequired()
-                .HasDefaultValue "PrayerTracker"
-            |> ignore
-            m.Property(fun e -> e.EmailFromAddress)
-                .HasColumnName("EmailFromAddress")
-                .IsRequired()
-                .HasDefaultValue "prayer@djs-consulting.com"
-              |> ignore
-            m.Property(fun e -> e.Fonts)
-                .HasColumnName("ListFonts")
-                .IsRequired()
-                .HasDefaultValue "Century Gothic,Tahoma,Luxi Sans,sans-serif"
-            |> ignore
-            m.Property(fun e -> e.HeadingColor)
-                .HasColumnName("HeadingColor")
-                .IsRequired()
-                .HasDefaultValue "maroon"
-            |> ignore
-            m.Property(fun e -> e.LineColor)
-                .HasColumnName("LineColor")
-                .IsRequired()
-                .HasDefaultValue "navy"
-            |> ignore
-            m.Property(fun e -> e.HeadingFontSize)
-                .HasColumnName("HeadingFontSize")
-                .IsRequired()
-                .HasDefaultValue 16
-            |> ignore
-            m.Property(fun e -> e.TextFontSize)
-                .HasColumnName("TextFontSize")
-                .IsRequired()
-                .HasDefaultValue 12
-            |> ignore
-            m.Property(fun e -> e.RequestSort)
-                .HasColumnName("RequestSort")
-                .IsRequired()
-                .HasMaxLength(1)
-                .HasDefaultValue SortByDate
-            |> ignore
-            m.Property(fun e -> e.GroupPassword)
-                .HasColumnName("GroupPassword")
-                .IsRequired()
-                .HasDefaultValue ""
-            |> ignore
-            m.Property(fun e -> e.DefaultEmailType)
-                .HasColumnName("DefaultEmailType")
-                .IsRequired()
-                .HasDefaultValue HtmlFormat
-            |> ignore
-            m.Property(fun e -> e.IsPublic)
-                .HasColumnName("IsPublic")
-                .IsRequired()
-                .HasDefaultValue false
-            |> ignore
-            m.Property(fun e -> e.TimeZoneId)
-                .HasColumnName("TimeZoneId")
-                .IsRequired()
-                .HasDefaultValue "America/Denver"
-            |> ignore
-            m.Property(fun e -> e.PageSize)
-                .HasColumnName("PageSize")
-                .IsRequired()
-                .HasDefaultValue 100
-            |> ignore
-            m.Property(fun e -> e.AsOfDateDisplay)
-                .HasColumnName("AsOfDateDisplay")
-                .IsRequired()
-                .HasMaxLength(1)
-                .HasDefaultValue NoDisplay
-            |> ignore)
+    static member internal ConfigureEF (mb : ModelBuilder) =
+        mb.Entity<ListPreferences> (fun it ->
+            seq<obj> {
+                it.ToTable "list_preference"
+                it.HasKey (fun lp -> lp.SmallGroupId :> obj)
+                it.Property(fun lp -> lp.SmallGroupId).HasColumnName "small_group_id"
+                it.Property(fun lp -> lp.DaysToKeepNew).HasColumnName("days_to_keep_new").IsRequired().HasDefaultValue 7
+                it.Property(fun lp -> lp.DaysToExpire).HasColumnName("days_to_expire").IsRequired().HasDefaultValue 14
+                it.Property(fun lp -> lp.LongTermUpdateWeeks).HasColumnName("long_term_update_weeks").IsRequired()
+                    .HasDefaultValue 4
+                it.Property(fun lp -> lp.EmailFromName).HasColumnName("email_from_name").IsRequired()
+                    .HasDefaultValue "PrayerTracker"
+                it.Property(fun lp -> lp.EmailFromAddress).HasColumnName("email_from_address").IsRequired()
+                    .HasDefaultValue "prayer@djs-consulting.com"
+                it.Property(fun lp -> lp.Fonts).HasColumnName("fonts").IsRequired()
+                    .HasDefaultValue "Century Gothic,Tahoma,Luxi Sans,sans-serif"
+                it.Property(fun lp -> lp.HeadingColor).HasColumnName("heading_color").IsRequired()
+                    .HasDefaultValue "maroon"
+                it.Property(fun lp -> lp.LineColor).HasColumnName("line_color").IsRequired().HasDefaultValue "navy"
+                it.Property(fun lp -> lp.HeadingFontSize).HasColumnName("heading_font_size").IsRequired()
+                    .HasDefaultValue 16
+                it.Property(fun lp -> lp.TextFontSize).HasColumnName("text_font_size").IsRequired().HasDefaultValue 12
+                it.Property(fun lp -> lp.RequestSort).HasColumnName("request_sort").IsRequired().HasMaxLength(1)
+                    .HasDefaultValue SortByDate
+                it.Property(fun lp -> lp.GroupPassword).HasColumnName("group_password").IsRequired().HasDefaultValue ""
+                it.Property(fun lp -> lp.DefaultEmailType).HasColumnName("default_email_type").IsRequired()
+                    .HasDefaultValue HtmlFormat
+                it.Property(fun lp -> lp.IsPublic).HasColumnName("is_public").IsRequired().HasDefaultValue false
+                it.Property(fun lp -> lp.TimeZoneId).HasColumnName("time_zone_id").IsRequired()
+                    .HasDefaultValue (TimeZoneId "America/Denver")
+                it.Property(fun lp -> lp.PageSize).HasColumnName("page_size").IsRequired().HasDefaultValue 100
+                it.Property(fun lp -> lp.AsOfDateDisplay).HasColumnName("as_of_date_display").IsRequired()
+                    .HasMaxLength(1).HasDefaultValue NoDisplay
+            } |> List.ofSeq |> ignore)
         |> ignore
-        mb.Model.FindEntityType(typeof<ListPreferences>).FindProperty("SmallGroupId")
+        mb.Model.FindEntityType(typeof<ListPreferences>).FindProperty(nameof ListPreferences.empty.SmallGroupId)
             .SetValueConverter(Converters.SmallGroupIdConverter ())
-        mb.Model.FindEntityType(typeof<ListPreferences>).FindProperty("RequestSort")
+        mb.Model.FindEntityType(typeof<ListPreferences>).FindProperty(nameof ListPreferences.empty.RequestSort)
             .SetValueConverter(Converters.RequestSortConverter ())
-        mb.Model.FindEntityType(typeof<ListPreferences>).FindProperty("DefaultEmailType")
+        mb.Model.FindEntityType(typeof<ListPreferences>).FindProperty(nameof ListPreferences.empty.DefaultEmailType)
             .SetValueConverter(Converters.EmailFormatConverter ())
-        mb.Model.FindEntityType(typeof<ListPreferences>).FindProperty("TimeZoneId")
+        mb.Model.FindEntityType(typeof<ListPreferences>).FindProperty(nameof ListPreferences.empty.TimeZoneId)
             .SetValueConverter(Converters.TimeZoneIdConverter ())
-        mb.Model.FindEntityType(typeof<ListPreferences>).FindProperty("AsOfDateDisplay")
+        mb.Model.FindEntityType(typeof<ListPreferences>).FindProperty(nameof ListPreferences.empty.AsOfDateDisplay)
             .SetValueConverter(Converters.AsOfDateDisplayConverter ())
 
 
@@ -655,19 +600,22 @@ with
         }
     
     /// Configure EF for this entity
-    static member internal configureEF (mb : ModelBuilder) =
-        mb.Entity<Member> (fun m ->
-            m.ToTable "Member" |> ignore
-            m.Property(fun e -> e.Id).HasColumnName "MemberId" |> ignore
-            m.Property(fun e -> e.SmallGroupId).HasColumnName "SmallGroupId" |> ignore
-            m.Property(fun e -> e.Name).HasColumnName("MemberName").IsRequired() |> ignore
-            m.Property(fun e -> e.Email).HasColumnName("Email").IsRequired() |> ignore
-            m.Property(fun e -> e.Format).HasColumnName "Format" |> ignore)
+    static member internal ConfigureEF (mb : ModelBuilder) =
+        mb.Entity<Member> (fun it ->
+            seq<obj> {
+                it.ToTable "member"
+                it.Property(fun m -> m.Id).HasColumnName "id"
+                it.Property(fun m -> m.SmallGroupId).HasColumnName("small_group_id").IsRequired ()
+                it.Property(fun m -> m.Name).HasColumnName("member_name").IsRequired ()
+                it.Property(fun m -> m.Email).HasColumnName("email").IsRequired ()
+                it.Property(fun m -> m.Format).HasColumnName "email_format"
+            } |> List.ofSeq |> ignore)
         |> ignore
-        mb.Model.FindEntityType(typeof<Member>).FindProperty("Id").SetValueConverter(Converters.MemberIdConverter ())
-        mb.Model.FindEntityType(typeof<Member>).FindProperty("SmallGroupId")
+        mb.Model.FindEntityType(typeof<Member>).FindProperty(nameof Member.empty.Id)
+            .SetValueConverter(Converters.MemberIdConverter ())
+        mb.Model.FindEntityType(typeof<Member>).FindProperty(nameof Member.empty.SmallGroupId)
             .SetValueConverter(Converters.SmallGroupIdConverter ())
-        mb.Model.FindEntityType(typeof<Member>).FindProperty("Format")
+        mb.Model.FindEntityType(typeof<Member>).FindProperty(nameof Member.empty.Format)
             .SetValueConverter(Converters.EmailFormatOptionConverter ())
 
 
@@ -713,63 +661,62 @@ with
     
     /// An empty request
     static member empty =
-        {   Id              = PrayerRequestId Guid.Empty
-            RequestType     = CurrentRequest
-            UserId          = UserId Guid.Empty
-            SmallGroupId    = SmallGroupId Guid.Empty
-            EnteredDate     = DateTime.MinValue
-            UpdatedDate     = DateTime.MinValue
-            Requestor       = None
-            Text            = "" 
-            NotifyChaplain  = false
-            User            = User.empty
-            SmallGroup      = SmallGroup.empty
-            Expiration      = Automatic
+        {   Id             = PrayerRequestId Guid.Empty
+            RequestType    = CurrentRequest
+            UserId         = UserId Guid.Empty
+            SmallGroupId   = SmallGroupId Guid.Empty
+            EnteredDate    = DateTime.MinValue
+            UpdatedDate    = DateTime.MinValue
+            Requestor      = None
+            Text           = "" 
+            NotifyChaplain = false
+            User           = User.empty
+            SmallGroup     = SmallGroup.empty
+            Expiration     = Automatic
         }
     
     /// Is this request expired?
-    member this.isExpired (curr : DateTime) expDays =
-        match this.Expiration with
-        | Forced -> true
-        | Manual -> false 
-        | Automatic ->
-            match this.RequestType with
-            | LongTermRequest
-            | Expecting -> false
-            | _ -> curr.AddDays(-(float expDays)).Date > this.UpdatedDate.Date // Automatic expiration
+    member this.IsExpired (curr : DateTime) expDays =
+        match this.Expiration, this.RequestType with
+        | Forced, _ -> true
+        | Manual, _ 
+        | Automatic, LongTermRequest
+        | Automatic, Expecting  -> false
+        | Automatic, _ -> curr.AddDays(-(float expDays)).Date > this.UpdatedDate.Date // Automatic expiration
 
     /// Is an update required for this long-term request?
-    member this.updateRequired curr expDays updWeeks =
-        match this.isExpired curr expDays with
-        | true -> false
-        | false -> curr.AddDays(-(float (updWeeks * 7))).Date > this.UpdatedDate.Date
+    member this.UpdateRequired curr expDays updWeeks =
+        if this.IsExpired curr expDays then false
+        else curr.AddDays(-(float (updWeeks * 7))).Date > this.UpdatedDate.Date
 
     /// Configure EF for this entity
-    static member internal configureEF (mb : ModelBuilder) =
-        mb.Entity<PrayerRequest> (fun m ->
-            m.ToTable "PrayerRequest" |> ignore
-            m.Property(fun e -> e.Id).HasColumnName "PrayerRequestId" |> ignore
-            m.Property(fun e -> e.RequestType).HasColumnName("RequestType").IsRequired() |> ignore
-            m.Property(fun e -> e.UserId).HasColumnName "UserId" |> ignore
-            m.Property(fun e -> e.SmallGroupId).HasColumnName "SmallGroupId" |> ignore
-            m.Property(fun e -> e.EnteredDate).HasColumnName "EnteredDate" |> ignore
-            m.Property(fun e -> e.UpdatedDate).HasColumnName "UpdatedDate" |> ignore
-            m.Property(fun e -> e.Requestor).HasColumnName "Requestor" |> ignore
-            m.Property(fun e -> e.Text).HasColumnName("Text").IsRequired() |> ignore
-            m.Property(fun e -> e.NotifyChaplain).HasColumnName "NotifyChaplain" |> ignore
-            m.Property(fun e -> e.Expiration).HasColumnName "Expiration" |> ignore)
+    static member internal ConfigureEF (mb : ModelBuilder) =
+        mb.Entity<PrayerRequest> (fun it ->
+            seq<obj> {
+                it.ToTable "prayer_request"
+                it.Property(fun pr -> pr.Id).HasColumnName "id"
+                it.Property(fun pr -> pr.RequestType).HasColumnName("request_type").IsRequired ()
+                it.Property(fun pr -> pr.UserId).HasColumnName "user_id"
+                it.Property(fun pr -> pr.SmallGroupId).HasColumnName "small_group_id"
+                it.Property(fun pr -> pr.EnteredDate).HasColumnName "entered_date"
+                it.Property(fun pr -> pr.UpdatedDate).HasColumnName "updated_date"
+                it.Property(fun pr -> pr.Requestor).HasColumnName "requestor"
+                it.Property(fun pr -> pr.Text).HasColumnName("request_text").IsRequired ()
+                it.Property(fun pr -> pr.NotifyChaplain).HasColumnName "notify_chaplain"
+                it.Property(fun pr -> pr.Expiration).HasColumnName "expiration"
+            } |> List.ofSeq |> ignore)
         |> ignore
-        mb.Model.FindEntityType(typeof<PrayerRequest>).FindProperty("Id")
+        mb.Model.FindEntityType(typeof<PrayerRequest>).FindProperty(nameof PrayerRequest.empty.Id)
             .SetValueConverter(Converters.PrayerRequestIdConverter ())
-        mb.Model.FindEntityType(typeof<PrayerRequest>).FindProperty("RequestType")
+        mb.Model.FindEntityType(typeof<PrayerRequest>).FindProperty(nameof PrayerRequest.empty.RequestType)
             .SetValueConverter(Converters.PrayerRequestTypeConverter ())
-        mb.Model.FindEntityType(typeof<PrayerRequest>).FindProperty("UserId")
+        mb.Model.FindEntityType(typeof<PrayerRequest>).FindProperty(nameof PrayerRequest.empty.UserId)
             .SetValueConverter(Converters.UserIdConverter ())
-        mb.Model.FindEntityType(typeof<PrayerRequest>).FindProperty("SmallGroupId")
+        mb.Model.FindEntityType(typeof<PrayerRequest>).FindProperty(nameof PrayerRequest.empty.SmallGroupId)
             .SetValueConverter(Converters.SmallGroupIdConverter ())
-        mb.Model.FindEntityType(typeof<PrayerRequest>).FindProperty("Requestor")
+        mb.Model.FindEntityType(typeof<PrayerRequest>).FindProperty(nameof PrayerRequest.empty.Requestor)
             .SetValueConverter(OptionConverter<string> ())
-        mb.Model.FindEntityType(typeof<PrayerRequest>).FindProperty("Expiration")
+        mb.Model.FindEntityType(typeof<PrayerRequest>).FindProperty(nameof PrayerRequest.empty.Expiration)
             .SetValueConverter(Converters.ExpirationConverter ())
 
 
@@ -814,8 +761,8 @@ with
         }
 
     /// Get the local date for this group
-    member this.localTimeNow (clock : IClock) =
-        match clock with null -> nullArg "clock" | _ -> ()
+    member this.LocalTimeNow (clock : IClock) =
+        if isNull clock then nullArg (nameof clock)
         let tzId = TimeZoneId.toString this.Preferences.TimeZoneId
         let tz =
             if DateTimeZoneProviders.Tzdb.Ids.Contains tzId then DateTimeZoneProviders.Tzdb[tzId]
@@ -823,21 +770,26 @@ with
         clock.GetCurrentInstant().InZone(tz).ToDateTimeUnspecified ()
 
     /// Get the local date for this group
-    member this.localDateNow clock =
-        (this.localTimeNow clock).Date
+    member this.LocalDateNow clock =
+        (this.LocalTimeNow clock).Date
     
     /// Configure EF for this entity
-    static member internal configureEF (mb : ModelBuilder) =
-        mb.Entity<SmallGroup> (fun m ->
-            m.ToTable "SmallGroup" |> ignore
-            m.Property(fun e -> e.Id).HasColumnName "SmallGroupId" |> ignore
-            m.Property(fun e -> e.ChurchId).HasColumnName "ChurchId" |> ignore
-            m.Property(fun e -> e.Name).HasColumnName("Name").IsRequired() |> ignore
-            m.HasOne(fun e -> e.Preferences) |> ignore)
+    static member internal ConfigureEF (mb : ModelBuilder) =
+        mb.Entity<SmallGroup> (fun it ->
+            seq<obj> {
+                it.ToTable "small_group"
+                it.Property(fun sg -> sg.Id).HasColumnName "id"
+                it.Property(fun sg -> sg.ChurchId).HasColumnName "church_id"
+                it.Property(fun sg -> sg.Name).HasColumnName("group_name").IsRequired ()
+                it.HasOne(fun sg -> sg.Preferences)
+                    .WithOne()
+                    .HasPrincipalKey(fun sg -> sg.Id :> obj)
+                    .HasForeignKey(fun (lp : ListPreferences) -> lp.SmallGroupId :> obj)
+            } |> List.ofSeq |> ignore)
         |> ignore
-        mb.Model.FindEntityType(typeof<SmallGroup>).FindProperty("Id")
+        mb.Model.FindEntityType(typeof<SmallGroup>).FindProperty(nameof SmallGroup.empty.Id)
             .SetValueConverter(Converters.SmallGroupIdConverter ())
-        mb.Model.FindEntityType(typeof<SmallGroup>).FindProperty("ChurchId")
+        mb.Model.FindEntityType(typeof<SmallGroup>).FindProperty(nameof SmallGroup.empty.ChurchId)
             .SetValueConverter(Converters.ChurchIdConverter ())
 
 
@@ -866,15 +818,17 @@ with
         }
     
     /// Configure EF for this entity
-    static member internal configureEF (mb : ModelBuilder) =
-        mb.Entity<TimeZone> ( fun m ->
-            m.ToTable "TimeZone" |> ignore
-            m.Property(fun e -> e.Id).HasColumnName "TimeZoneId" |> ignore
-            m.Property(fun e -> e.Description).HasColumnName("Description").IsRequired() |> ignore
-            m.Property(fun e -> e.SortOrder).HasColumnName "SortOrder" |> ignore
-            m.Property(fun e -> e.IsActive).HasColumnName "IsActive" |> ignore)
+    static member internal ConfigureEF (mb : ModelBuilder) =
+        mb.Entity<TimeZone> (fun it ->
+            seq<obj> {
+                it.ToTable "time_zone"
+                it.Property(fun tz -> tz.Id).HasColumnName "id"
+                it.Property(fun tz -> tz.Description).HasColumnName("description").IsRequired ()
+                it.Property(fun tz -> tz.SortOrder).HasColumnName "sort_order"
+                it.Property(fun tz -> tz.IsActive).HasColumnName "is_active"
+            } |> List.ofSeq |> ignore)
         |> ignore
-        mb.Model.FindEntityType(typeof<TimeZone>).FindProperty("Id")
+        mb.Model.FindEntityType(typeof<TimeZone>).FindProperty(nameof TimeZone.empty.Id)
             .SetValueConverter(Converters.TimeZoneIdConverter ())
 
 
@@ -919,24 +873,27 @@ with
         }
     
     /// The full name of the user
-    member this.fullName =
+    member this.Name =
         $"{this.FirstName} {this.LastName}"
 
     /// Configure EF for this entity
-    static member internal configureEF (mb : ModelBuilder) =
-        mb.Entity<User> (fun m ->
-            m.ToTable "User" |> ignore
-            m.Ignore(fun e -> e.fullName :> obj) |> ignore
-            m.Property(fun e -> e.Id).HasColumnName "UserId" |> ignore
-            m.Property(fun e -> e.FirstName).HasColumnName("FirstName").IsRequired() |> ignore
-            m.Property(fun e -> e.LastName).HasColumnName("LastName").IsRequired() |> ignore
-            m.Property(fun e -> e.Email).HasColumnName("EmailAddress").IsRequired() |> ignore
-            m.Property(fun e -> e.IsAdmin).HasColumnName "IsSystemAdmin" |> ignore
-            m.Property(fun e -> e.PasswordHash).HasColumnName("PasswordHash").IsRequired() |> ignore
-            m.Property(fun e -> e.Salt).HasColumnName "Salt" |> ignore)
+    static member internal ConfigureEF (mb : ModelBuilder) =
+        mb.Entity<User> (fun it ->
+            seq<obj> {
+                it.ToTable "pt_user"
+                it.Ignore(fun u -> u.Name :> obj)
+                it.Property(fun u -> u.Id).HasColumnName "id"
+                it.Property(fun u -> u.FirstName).HasColumnName("first_name").IsRequired ()
+                it.Property(fun u -> u.LastName).HasColumnName("last_name").IsRequired ()
+                it.Property(fun u -> u.Email).HasColumnName("email").IsRequired ()
+                it.Property(fun u -> u.IsAdmin).HasColumnName "is_admin"
+                it.Property(fun u -> u.PasswordHash).HasColumnName("password_hash").IsRequired ()
+                it.Property(fun u -> u.Salt).HasColumnName "salt"
+            } |> List.ofSeq |> ignore)
         |> ignore
-        mb.Model.FindEntityType(typeof<User>).FindProperty("Id").SetValueConverter(Converters.UserIdConverter ())
-        mb.Model.FindEntityType(typeof<User>).FindProperty("Salt")
+        mb.Model.FindEntityType(typeof<User>).FindProperty(nameof User.empty.Id)
+            .SetValueConverter(Converters.UserIdConverter ())
+        mb.Model.FindEntityType(typeof<User>).FindProperty(nameof User.empty.Salt)
             .SetValueConverter(OptionConverter<Guid> ())
 
 
@@ -965,23 +922,23 @@ with
         }
     
     /// Configure EF for this entity
-    static member internal configureEF (mb : ModelBuilder) =
-        mb.Entity<UserSmallGroup> (fun m ->
-            m.ToTable "User_SmallGroup" |> ignore
-            m.HasKey(fun e -> {| UserId = e.UserId; SmallGroupId = e.SmallGroupId |} :> obj) |> ignore
-            m.Property(fun e -> e.UserId).HasColumnName "UserId" |> ignore
-            m.Property(fun e -> e.SmallGroupId).HasColumnName "SmallGroupId" |> ignore
-            m.HasOne(fun e -> e.User)
-                .WithMany(fun e -> e.SmallGroups :> IEnumerable<UserSmallGroup>)
-                .HasForeignKey(fun e -> e.UserId :> obj)
-            |> ignore
-            m.HasOne(fun e -> e.SmallGroup)
-                .WithMany(fun e -> e.Users :> IEnumerable<UserSmallGroup>)
-                .HasForeignKey(fun e -> e.SmallGroupId :> obj)
-            |> ignore)
+    static member internal ConfigureEF (mb : ModelBuilder) =
+        mb.Entity<UserSmallGroup> (fun it ->
+            seq<obj> {
+                it.ToTable "user_small_group"
+                it.HasKey (nameof UserSmallGroup.empty.UserId, nameof UserSmallGroup.empty.SmallGroupId)
+                it.Property(fun usg -> usg.UserId).HasColumnName "user_id"
+                it.Property(fun usg -> usg.SmallGroupId).HasColumnName "small_group_id"
+                it.HasOne(fun usg -> usg.User)
+                    .WithMany(fun u -> u.SmallGroups :> IEnumerable<UserSmallGroup>)
+                    .HasForeignKey(fun usg -> usg.UserId :> obj)
+                it.HasOne(fun usg -> usg.SmallGroup)
+                    .WithMany(fun sg -> sg.Users :> IEnumerable<UserSmallGroup>)
+                    .HasForeignKey(fun usg -> usg.SmallGroupId :> obj)
+            } |> List.ofSeq |> ignore)
         |> ignore
-        mb.Model.FindEntityType(typeof<UserSmallGroup>).FindProperty("UserId")
+        mb.Model.FindEntityType(typeof<UserSmallGroup>).FindProperty(nameof UserSmallGroup.empty.UserId)
             .SetValueConverter(Converters.UserIdConverter ())
-        mb.Model.FindEntityType(typeof<UserSmallGroup>).FindProperty("SmallGroupId")
+        mb.Model.FindEntityType(typeof<UserSmallGroup>).FindProperty(nameof UserSmallGroup.empty.SmallGroupId)
             .SetValueConverter(Converters.SmallGroupIdConverter ())
         

@@ -16,7 +16,7 @@ let private setGroupCookie (ctx : HttpContext) pwHash =
 
 /// GET /small-group/announcement
 let announcement : HttpHandler = requireAccess [ User ] >=> fun next ctx ->
-    { viewInfo ctx DateTime.Now.Ticks with HelpLink = Some Help.sendAnnouncement; Script = [ "ckeditor/ckeditor" ] }
+    { viewInfo ctx DateTime.Now.Ticks with HelpLink = Some Help.sendAnnouncement }
     |> Views.SmallGroup.announcement (currentUser ctx).IsAdmin ctx
     |> renderHtml next ctx
 
@@ -266,7 +266,7 @@ let sendAnnouncement : HttpHandler = requireAccess [ User ] >=> validateCsrf >=>
     | Ok m ->
         let grp = currentGroup ctx
         let usr = currentUser ctx
-        let now = grp.localTimeNow (ctx.GetService<IClock> ())
+        let now = grp.LocalTimeNow (ctx.GetService<IClock> ())
         let s   = Views.I18N.localizer.Force ()
         // Reformat the text to use the class's font stylings
         let requestText = ckEditorToText m.Text

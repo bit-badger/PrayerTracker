@@ -78,13 +78,13 @@ type AppDbContext (options : DbContextOptions<AppDbContext>) =
 
         modelBuilder.HasDefaultSchema "pt" |> ignore
 
-        [ Church.configureEF
-          ListPreferences.configureEF
-          Member.configureEF
-          PrayerRequest.configureEF
-          SmallGroup.configureEF
-          TimeZone.configureEF
-          User.configureEF
-          UserSmallGroup.configureEF
+        [ Church.ConfigureEF
+          ListPreferences.ConfigureEF
+          Member.ConfigureEF
+          PrayerRequest.ConfigureEF
+          SmallGroup.ConfigureEF
+          TimeZone.ConfigureEF
+          User.ConfigureEF
+          UserSmallGroup.ConfigureEF
           ]
         |> List.iter (fun x -> x modelBuilder)

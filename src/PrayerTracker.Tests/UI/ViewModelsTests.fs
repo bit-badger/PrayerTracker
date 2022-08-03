@@ -118,7 +118,6 @@ let appViewInfoTests =
         test "fresh is constructed properly" {
             let vi = AppViewInfo.fresh
             Expect.isEmpty vi.Style "There should have been no styles set"
-            Expect.isEmpty vi.Script "There should have been no scripts set"
             Expect.isNone vi.HelpLink "The help link should have been set to none"
             Expect.isEmpty vi.Messages "There should have been no messages set"
             Expect.equal vi.Version "" "The version should have been blank"
@@ -135,7 +134,7 @@ let assignGroupsTests =
             let usr = { User.empty with Id = (Guid.NewGuid >> UserId) (); FirstName = "Alice"; LastName = "Bob" }
             let asg = AssignGroups.fromUser usr
             Expect.equal asg.UserId (shortGuid usr.Id.Value) "The user ID was not filled correctly"
-            Expect.equal asg.UserName usr.fullName "The user name was not filled correctly"
+            Expect.equal asg.UserName usr.Name "The user's name was not filled correctly"
             Expect.equal asg.SmallGroups "" "The small group string was not filled correctly"
         }
     ]
@@ -150,7 +149,7 @@ let editChurchTests =
                     Name             = "Unit Test"
                     City             = "Testlandia"
                     State            = "UT"
-                    HasInterface     = true
+                    HasVpsInterface  = true
                     InterfaceAddress = Some "https://test-dem-units.test"
                   }
             let edit = EditChurch.fromChurch church
@@ -159,7 +158,7 @@ let editChurchTests =
             Expect.equal edit.City church.City "The church's city was not filled correctly"
             Expect.equal edit.State church.State "The church's state was not filled correctly"
             Expect.isSome edit.HasInterface "The church should show that it has an interface"
-            Expect.equal edit.HasInterface (Some true) "The hasInterface flag should be true"
+            Expect.equal edit.HasInterface (Some true) "The HasVpsInterface flag should be true"
             Expect.isSome edit.InterfaceAddress "The interface address should exist"
             Expect.equal edit.InterfaceAddress church.InterfaceAddress "The interface address was not filled correctly"
         }
@@ -206,7 +205,7 @@ let editChurchTests =
             Expect.equal church.Name edit.Name "The church name was not updated correctly"
             Expect.equal church.City edit.City "The church's city was not updated correctly"
             Expect.equal church.State edit.State "The church's state was not updated correctly"
-            Expect.isTrue church.HasInterface "The church should show that it has an interface"
+            Expect.isTrue church.HasVpsInterface "The church should show that it has an interface"
             Expect.isSome church.InterfaceAddress "The interface address should exist"
             Expect.equal church.InterfaceAddress edit.InterfaceAddress "The interface address was not updated correctly"
         }
@@ -217,7 +216,7 @@ let editChurchTests =
                     City  = "Testerville"
                     State = "TE"
                   }.PopulateChurch Church.empty
-            Expect.isFalse church.HasInterface "The church should show that it has an interface"
+            Expect.isFalse church.HasVpsInterface "The church should show that it has an interface"
             Expect.isNone church.InterfaceAddress "The interface address should exist"
         }
     ]
@@ -284,7 +283,7 @@ let editPreferencesTests =
             Expect.equal edit.TimeZone (TimeZoneId.toString prefs.TimeZoneId) "The time zone was not filled correctly"
             Expect.isSome edit.GroupPassword "The group password should have been set"
             Expect.equal edit.GroupPassword (Some prefs.GroupPassword) "The group password was not filled correctly"
-            Expect.equal edit.Visibility RequestVisibility.``private``
+            Expect.equal edit.Visibility GroupVisibility.PrivateList
                 "The list visibility was not derived correctly"
             Expect.equal edit.PageSize prefs.PageSize "The page size was not filled correctly"
             Expect.equal edit.AsOfDate (AsOfDateDisplay.toCode prefs.AsOfDateDisplay)
@@ -297,7 +296,7 @@ let editPreferencesTests =
             Expect.equal edit.LineColor prefs.LineColor "The heading line color was not filled correctly"
             Expect.isSome edit.GroupPassword "The group password should have been set"
             Expect.equal edit.GroupPassword (Some prefs.GroupPassword) "The group password was not filled correctly"
-            Expect.equal edit.Visibility RequestVisibility.passwordProtected
+            Expect.equal edit.Visibility GroupVisibility.HasPassword
                 "The list visibility was not derived correctly"
         }
         test "fromPreferences succeeds for RGB text color and public list" {
@@ -307,7 +306,7 @@ let editPreferencesTests =
             Expect.equal edit.HeadingColor prefs.HeadingColor "The heading text color was not filled correctly"
             Expect.isSome edit.GroupPassword "The group password should have been set"
             Expect.equal edit.GroupPassword (Some "") "The group password was not filled correctly"
-            Expect.equal edit.Visibility RequestVisibility.``public``
+            Expect.equal edit.Visibility GroupVisibility.PublicList
                 "The list visibility was not derived correctly"
         }
     ]

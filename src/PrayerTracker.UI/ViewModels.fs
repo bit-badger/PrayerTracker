@@ -124,9 +124,6 @@ type AppViewInfo =
     {   /// CSS files for the page
         Style : string list
         
-        /// JavaScript files for the page
-        Script : string list
-        
         /// The link for help on this page
         HelpLink : string option
         
@@ -162,7 +159,6 @@ module AppViewInfo =
     /// A fresh version that can be populated to process the current request
     let fresh =
         {   Style        = []
-            Script       = []
             HelpLink     = None
             Messages     = []
             Version      = ""
@@ -224,7 +220,7 @@ module AssignGroups =
     /// Create an instance of this form from an existing user
     let fromUser (user : User) =
         {   UserId      = shortGuid user.Id.Value
-            UserName    = user.fullName
+            UserName    = user.Name
             SmallGroups = ""
         }
 
@@ -275,7 +271,7 @@ with
             Name             = this.Name
             City             = this.City
             State            = this.State
-            HasInterface     = match this.HasInterface with Some x -> x | None -> false
+            HasVpsInterface  = match this.HasInterface with Some x -> x | None -> false
             InterfaceAddress = match this.HasInterface with Some x when x -> this.InterfaceAddress | _ -> None
         }
 
@@ -288,7 +284,7 @@ module EditChurch =
             Name             = church.Name
             City             = church.City
             State            = church.State
-            HasInterface     = match church.HasInterface with true -> Some true | false -> None
+            HasInterface     = match church.HasVpsInterface with true -> Some true | false -> None
             InterfaceAddress = church.InterfaceAddress
         }
     
@@ -408,11 +404,9 @@ with
     /// Set the properties of a small group based on the form's properties
     member this.PopulatePreferences (prefs : ListPreferences) =
         let isPublic, grpPw =
-            match this.Visibility with
-            | RequestVisibility.``public`` -> true, ""
-            | RequestVisibility.passwordProtected -> false, (defaultArg this.GroupPassword "")
-            | RequestVisibility.``private``
-            | _ -> false, ""
+            if   this.Visibility = GroupVisibility.PublicList  then true, ""
+            elif this.Visibility = GroupVisibility.HasPassword then false, (defaultArg this.GroupPassword "")
+            else (* GroupVisibility.PrivateList *) false, ""
         { prefs with
             DaysToExpire        = this.ExpireDays
             DaysToKeepNew       = this.DaysToKeepNew
@@ -457,10 +451,9 @@ module EditPreferences =
             PageSize            = prefs.PageSize
             AsOfDate            = AsOfDateDisplay.toCode prefs.AsOfDateDisplay
             Visibility          =
-                match true with 
-                | _ when prefs.IsPublic -> RequestVisibility.``public``
-                | _ when prefs.GroupPassword = "" -> RequestVisibility.``private``
-                | _ -> RequestVisibility.passwordProtected
+                if   prefs.IsPublic           then GroupVisibility.PublicList
+                elif prefs.GroupPassword = "" then GroupVisibility.PrivateList
+                else                               GroupVisibility.HasPassword
         }
 
 

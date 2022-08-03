@@ -91,7 +91,7 @@ type AppDbContext with
 
     /// Get all (or active) requests for a small group as of now or the specified date
     member this.AllRequestsForSmallGroup (grp : SmallGroup) clock listDate activeOnly pageNbr = backgroundTask {
-        let theDate = match listDate with Some dt -> dt | _ -> grp.localDateNow clock
+        let theDate = match listDate with Some dt -> dt | _ -> grp.LocalDateNow clock
         let query =
             this.PrayerRequests.Where(fun req -> req.SmallGroupId = grp.Id)
             |> function
@@ -120,15 +120,15 @@ type AppDbContext with
         return! this.PrayerRequests.CountAsync (fun pr -> pr.SmallGroup.ChurchId = churchId)
     }
 
-    /// Get all (or active) requests for a small group as of now or the specified date
+    /// Search requests for a small group using the given case-insensitive search term
     member this.SearchRequestsForSmallGroup (grp : SmallGroup) (searchTerm : string) pageNbr = backgroundTask {
         let sql = """
-            SELECT * FROM pt."PrayerRequest" WHERE "SmallGroupId" = {0} AND "Text" ILIKE {1}
+            SELECT * FROM pt.prayer_request WHERE small_group_id = {0} AND request_text ILIKE {1}
         UNION
-            SELECT * FROM pt."PrayerRequest" WHERE "SmallGroupId" = {0} AND COALESCE("Requestor", '') ILIKE {1}"""
+            SELECT * FROM pt.prayer_request WHERE small_group_id = {0} AND COALESCE(requestor, '') ILIKE {1}"""
         let like  = sprintf "%%%s%%"
         let query =
-            this.PrayerRequests.FromSqlRaw(sql, grp.Id, like searchTerm)
+            this.PrayerRequests.FromSqlRaw (sql, grp.Id.Value, like searchTerm)
             |> reqSort grp.Preferences.RequestSort
             |> paginate pageNbr grp.Preferences.PageSize
         let! reqs = query.ToListAsync ()
@@ -255,7 +255,7 @@ type AppDbContext with
     /// Get all PrayerTracker users as members (used to send e-mails)
     member this.AllUsersAsMembers () = backgroundTask {
         let! users = this.AllUsers ()
-        return users |> List.map (fun u -> { Member.empty with Email = u.Email; Name = u.fullName })
+        return users |> List.map (fun u -> { Member.empty with Email = u.Email; Name = u.Name })
     }
 
     /// Find a user based on their credentials

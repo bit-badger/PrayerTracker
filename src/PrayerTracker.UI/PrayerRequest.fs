@@ -152,14 +152,14 @@ let maintain (model : MaintainRequests) (ctx : HttpContext) viewInfo =
     let l     = I18N.forView "Requests/Maintain"
     use sw    = new StringWriter ()
     let raw   = rawLocText sw
-    let now   = model.SmallGroup.localDateNow (ctx.GetService<IClock> ())
+    let now   = model.SmallGroup.LocalDateNow (ctx.GetService<IClock> ())
     let prefs = model.SmallGroup.Preferences
     let types = ReferenceList.requestTypeList s |> Map.ofList
     let updReq (req : PrayerRequest) =
-        if req.updateRequired now prefs.DaysToExpire prefs.LongTermUpdateWeeks then "pt-request-update" else ""
+        if req.UpdateRequired now prefs.DaysToExpire prefs.LongTermUpdateWeeks then "pt-request-update" else ""
         |> _class 
     let reqExp (req : PrayerRequest) =
-        _class (if req.isExpired now prefs.DaysToExpire then "pt-request-expired" else "")
+        _class (if req.IsExpired now prefs.DaysToExpire then "pt-request-expired" else "")
     /// Iterate the sequence once, before we render, so we can get the count of it at the top of the table
     let requests =
         model.Requests
@@ -180,7 +180,7 @@ let maintain (model : MaintainRequests) (ctx : HttpContext) viewInfo =
                     a [ _href $"/prayer-request/{reqId}/edit"; _title l["Edit This Prayer Request"].Value ] [
                         icon "edit"
                     ]
-                    if req.isExpired now prefs.DaysToExpire then
+                    if req.IsExpired now prefs.DaysToExpire then
                         a [ _href  $"/prayer-request/{reqId}/restore"
                             _title l["Restore This Inactive Request"].Value ] [
                             icon "visibility"
@@ -305,39 +305,40 @@ let view model viewInfo =
     let pageTitle = $"""{s["Prayer Requests"].Value} • {model.SmallGroup.Name}"""
     let spacer    = rawText " &nbsp; &nbsp; &nbsp; "
     let dtString  = model.Date.ToString "yyyy-MM-dd"
-    div [ _class "pt-center-text" ] [
-        br []
-        a [ _class  "pt-icon-link"
-            _href   $"/prayer-requests/print/{dtString}"
-            _target "_blank"
-            _title  s["View Printable"].Value ] [
-            icon "print"; rawText " &nbsp;"; locStr s["View Printable"]
-        ]
-        if model.CanEmail then
-            spacer
-            if model.Date.DayOfWeek <> DayOfWeek.Sunday then
-                let rec findSunday (date : DateTime) =
-                    if date.DayOfWeek = DayOfWeek.Sunday then date else findSunday (date.AddDays 1.)
-                let sunday = findSunday model.Date
-                a [ _class "pt-icon-link"
-                    _href  $"""/prayer-requests/view/{sunday.ToString "yyyy-MM-dd"}"""
-                    _title s["List for Next Sunday"].Value ] [
-                    icon "update"; rawText " &nbsp;"; locStr s["List for Next Sunday"]
-                ]
-                spacer
-            let emailPrompt = s["This will e-mail the current list to every member of your group, without further prompting.  Are you sure this is what you are ready to do?"].Value
-            a [ _class   "pt-icon-link"
-                _href    $"/prayer-requests/email/{dtString}"
-                _title   s["Send via E-mail"].Value
-                _onclick $"return PT.requests.view.promptBeforeEmail('{emailPrompt}')" ] [
-                icon "mail_outline"; rawText " &nbsp;"; locStr s["Send via E-mail"]
+    [   div [ _class "pt-center-text" ] [
+            br []
+            a [ _class  "pt-icon-link"
+                _href   $"/prayer-requests/print/{dtString}"
+                _target "_blank"
+                _title  s["View Printable"].Value ] [
+                icon "print"; rawText " &nbsp;"; locStr s["View Printable"]
             ]
-        spacer
-        a [ _class "pt-icon-link"; _href "/prayer-requests"; _title s["Maintain Prayer Requests"].Value ] [
-            icon "compare_arrows"; rawText " &nbsp;"; locStr s["Maintain Prayer Requests"]
+            if model.CanEmail then
+                spacer
+                if model.Date.DayOfWeek <> DayOfWeek.Sunday then
+                    let rec findSunday (date : DateTime) =
+                        if date.DayOfWeek = DayOfWeek.Sunday then date else findSunday (date.AddDays 1.)
+                    let sunday = findSunday model.Date
+                    a [ _class "pt-icon-link"
+                        _href  $"""/prayer-requests/view/{sunday.ToString "yyyy-MM-dd"}"""
+                        _title s["List for Next Sunday"].Value ] [
+                        icon "update"; rawText " &nbsp;"; locStr s["List for Next Sunday"]
+                    ]
+                    spacer
+                let emailPrompt = s["This will e-mail the current list to every member of your group, without further prompting.  Are you sure this is what you are ready to do?"].Value
+                a [ _class   "pt-icon-link"
+                    _href    $"/prayer-requests/email/{dtString}"
+                    _title   s["Send via E-mail"].Value
+                    _onclick $"return PT.requests.view.promptBeforeEmail('{emailPrompt}')" ] [
+                    icon "mail_outline"; rawText " &nbsp;"; locStr s["Send via E-mail"]
+                ]
+            spacer
+            a [ _class "pt-icon-link"; _href "/prayer-requests"; _title s["Maintain Prayer Requests"].Value ] [
+                icon "compare_arrows"; rawText " &nbsp;"; locStr s["Maintain Prayer Requests"]
+            ]
         ]
+        br []
+        rawText (model.AsHtml s)
     ]
-    |> List.singleton
-    |> List.append [ br []; rawText (model.AsHtml s) ]
     |> Layout.Content.standard
     |> Layout.standard viewInfo pageTitle

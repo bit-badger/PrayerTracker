@@ -85,7 +85,7 @@ let delete usrId : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fu
         ctx.db.RemoveEntry user
         let! _ = ctx.db.SaveChangesAsync ()
         let  s = Views.I18N.localizer.Force ()
-        addInfo ctx s["Successfully deleted user {0}", user.fullName]
+        addInfo ctx s["Successfully deleted user {0}", user.Name]
         return! redirectTo false "/users" next ctx
     | _ -> return! fourOhFour next ctx
 }
@@ -220,10 +220,9 @@ let save : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next c
             if m.IsNew then
                 let h = CommonFunctions.htmlString
                 { UserMessage.info with
-                    Text = h s["Successfully {0} user", s["Added"].Value.ToLower ()]
+                    Text        = h s["Successfully {0} user", s["Added"].Value.ToLower ()]
                     Description = 
-                      h s["Please select at least one group for which this user ({0}) is authorized",
-                          updatedUser.fullName]
+                      h s["Please select at least one group for which this user ({0}) is authorized", updatedUser.Name]
                       |> Some
                 }
                 |> addUserMessage ctx

@@ -349,200 +349,199 @@ let preferences (model : EditPreferences) (tzs : TimeZone list) ctx viewInfo =
             $"@media screen and (max-width: 40rem) {{ {fontsId} {{ width: 100%%; }} }}"
         ]
         |> AppViewInfo.withOnLoadScript "PT.smallGroup.preferences.onPageLoad"
-    form [ _action "/small-group/preferences/save"; _method "post"; _class "pt-center-columns"; Target.content ] [
-        csrfToken ctx
-        fieldset [] [
-            legend [] [ strong [] [ icon "date_range"; rawText " &nbsp;"; locStr s["Dates"] ] ]
-            div [ _fieldRow ] [
-                div [ _inputField ] [
-                    label [ _for (nameof model.ExpireDays) ] [ locStr s["Requests Expire After"] ]
-                    span [] [
-                        inputField "number" (nameof model.ExpireDays) (string model.ExpireDays) [
-                            _min "1"; _max "30"; _required; _autofocus
+    [   form [ _action "/small-group/preferences/save"; _method "post"; _class "pt-center-columns"; Target.content ] [
+            csrfToken ctx
+            fieldset [] [
+                legend [] [ strong [] [ icon "date_range"; rawText " &nbsp;"; locStr s["Dates"] ] ]
+                div [ _fieldRow ] [
+                    div [ _inputField ] [
+                        label [ _for (nameof model.ExpireDays) ] [ locStr s["Requests Expire After"] ]
+                        span [] [
+                            inputField "number" (nameof model.ExpireDays) (string model.ExpireDays) [
+                                _min "1"; _max "30"; _required; _autofocus
+                            ]
+                            space
+                            str (s["Days"].Value.ToLower ())
                         ]
-                        space
-                        str (s["Days"].Value.ToLower ())
                     ]
-                ]
-                div [ _inputField ] [
-                    label [ _for (nameof model.DaysToKeepNew) ] [ locStr s["Requests “New” For"] ]
-                    span [] [
-                        inputField "number" (nameof model.DaysToKeepNew) (string model.DaysToKeepNew) [
-                            _min "1"; _max "30"; _required
+                    div [ _inputField ] [
+                        label [ _for (nameof model.DaysToKeepNew) ] [ locStr s["Requests “New” For"] ]
+                        span [] [
+                            inputField "number" (nameof model.DaysToKeepNew) (string model.DaysToKeepNew) [
+                                _min "1"; _max "30"; _required
+                            ]
+                            space; str (s["Days"].Value.ToLower ())
                         ]
-                        space; str (s["Days"].Value.ToLower ())
                     ]
-                ]
-                div [ _inputField ] [
-                    label [ _for (nameof model.LongTermUpdateWeeks) ] [
-                        locStr s["Long-Term Requests Alerted for Update"]
-                    ]
-                    span [] [
-                        inputField "number" (nameof model.LongTermUpdateWeeks) (string model.LongTermUpdateWeeks) [
-                            _min "1"; _max "30"; _required
+                    div [ _inputField ] [
+                        label [ _for (nameof model.LongTermUpdateWeeks) ] [
+                            locStr s["Long-Term Requests Alerted for Update"]
                         ]
-                        space; str (s["Weeks"].Value.ToLower ())
+                        span [] [
+                            inputField "number" (nameof model.LongTermUpdateWeeks) (string model.LongTermUpdateWeeks) [
+                                _min "1"; _max "30"; _required
+                            ]
+                            space; str (s["Weeks"].Value.ToLower ())
+                        ]
                     ]
                 ]
             ]
-        ]
-        fieldset [] [
-            legend [] [ strong [] [ icon "sort"; rawText " &nbsp;"; locStr s["Request Sorting"] ] ]
-            radio (nameof model.RequestSort) $"{nameof model.RequestSort}_D" "D" model.RequestSort
-            label [ _for $"{nameof model.RequestSort}_D" ] [ locStr s["Sort by Last Updated Date"] ]
-            rawText " &nbsp; "
-            radio (nameof model.RequestSort) $"{nameof model.RequestSort}_R" "R" model.RequestSort
-            label [ _for $"{nameof model.RequestSort}_R" ] [ locStr s["Sort by Requestor Name"] ]
-        ]
-        fieldset [] [
-            legend [] [ strong [] [ icon "mail_outline"; rawText " &nbsp;"; locStr s["E-mail"] ] ]
-            div [ _fieldRow ] [
-                div [ _inputField ] [
-                    label [ _for (nameof model.EmailFromName) ] [ locStr s["From Name"] ]
-                    inputField "text" (nameof model.EmailFromName) model.EmailFromName [ _required ]
+            fieldset [] [
+                legend [] [ strong [] [ icon "sort"; rawText " &nbsp;"; locStr s["Request Sorting"] ] ]
+                radio (nameof model.RequestSort) $"{nameof model.RequestSort}_D" "D" model.RequestSort
+                label [ _for $"{nameof model.RequestSort}_D" ] [ locStr s["Sort by Last Updated Date"] ]
+                rawText " &nbsp; "
+                radio (nameof model.RequestSort) $"{nameof model.RequestSort}_R" "R" model.RequestSort
+                label [ _for $"{nameof model.RequestSort}_R" ] [ locStr s["Sort by Requestor Name"] ]
+            ]
+            fieldset [] [
+                legend [] [ strong [] [ icon "mail_outline"; rawText " &nbsp;"; locStr s["E-mail"] ] ]
+                div [ _fieldRow ] [
+                    div [ _inputField ] [
+                        label [ _for (nameof model.EmailFromName) ] [ locStr s["From Name"] ]
+                        inputField "text" (nameof model.EmailFromName) model.EmailFromName [ _required ]
+                    ]
+                    div [ _inputField ] [
+                        label [ _for (nameof model.EmailFromAddress) ] [ locStr s["From Address"] ]
+                        inputField "email" (nameof model.EmailFromAddress) model.EmailFromAddress [ _required ]
+                    ]
                 ]
-                div [ _inputField ] [
-                    label [ _for (nameof model.EmailFromAddress) ] [ locStr s["From Address"] ]
-                    inputField "email" (nameof model.EmailFromAddress) model.EmailFromAddress [ _required ]
+                div [ _fieldRow ] [
+                    div [ _inputField ] [
+                        label [ _for (nameof model.DefaultEmailType) ] [ locStr s["E-mail Format"] ]
+                        seq {
+                            "", selectDefault s["Select"].Value
+                            yield!
+                                ReferenceList.emailTypeList HtmlFormat s
+                                |> Seq.skip 1
+                                |> Seq.map (fun typ -> fst typ, (snd typ).Value)
+                        }
+                        |> selectList (nameof model.DefaultEmailType) model.DefaultEmailType [ _required ]
+                    ]
                 ]
             ]
-            div [ _fieldRow ] [
-                div [ _inputField ] [
-                    label [ _for (nameof model.DefaultEmailType) ] [ locStr s["E-mail Format"] ]
-                    seq {
-                        "", selectDefault s["Select"].Value
-                        yield!
-                            ReferenceList.emailTypeList HtmlFormat s
-                            |> Seq.skip 1
-                            |> Seq.map (fun typ -> fst typ, (snd typ).Value)
-                    }
-                    |> selectList (nameof model.DefaultEmailType) model.DefaultEmailType [ _required ]
+            fieldset [] [
+                legend [] [ strong [] [ icon "color_lens"; rawText " &nbsp;"; locStr s["Colors"] ]; rawText " ***" ]
+                div [ _fieldRow ] [
+                    div [ _inputField ] [
+                        label [ _class "pt-center-text" ] [ locStr s["Color of Heading Lines"] ]
+                        span [] [
+                            radio (nameof model.LineColorType) $"{nameof model.LineColorType}_Name" "Name"
+                                  model.LineColorType
+                            label [ _for $"{nameof model.LineColorType}_Name" ] [ locStr s["Named Color"] ]
+                            namedColorList (nameof model.LineColor) model.LineColor [
+                                _id $"{nameof model.LineColor}_Select"
+                                if model.LineColor.StartsWith "#" then _disabled ] s
+                            rawText "&nbsp; &nbsp; "; str (s["or"].Value.ToUpper ())
+                            radio (nameof model.LineColorType) $"{nameof model.LineColorType}_RGB" "RGB"
+                                   model.LineColorType
+                            label [ _for $"{nameof model.LineColorType}_RGB" ] [ locStr s["Custom Color"] ]
+                            input [ _type  "color" 
+                                    _name  (nameof model.LineColor)
+                                    _id    $"{nameof model.LineColor}_Color"
+                                    _value model.LineColor // TODO: convert to hex or skip if named
+                                    if not (model.LineColor.StartsWith "#") then _disabled ]
+                        ]
+                    ]
+                ]
+                div [ _fieldRow ] [
+                    div [ _inputField ] [
+                        label [ _class "pt-center-text" ] [ locStr s["Color of Heading Text"] ]
+                        span [] [
+                            radio (nameof model.HeadingColorType) $"{nameof model.HeadingColorType}_Name" "Name"
+                                  model.HeadingColorType
+                            label [ _for $"{nameof model.HeadingColorType}_Name" ] [ locStr s["Named Color"] ]
+                            namedColorList (nameof model.HeadingColor) model.HeadingColor [
+                                _id $"{nameof model.HeadingColor}_Select"
+                                if model.HeadingColor.StartsWith "#" then _disabled ] s
+                            rawText "&nbsp; &nbsp; "; str (s["or"].Value.ToUpper ())
+                            radio (nameof model.HeadingColorType) $"{nameof model.HeadingColorType}_RGB" "RGB"
+                                  model.HeadingColorType
+                            label [ _for $"{nameof model.HeadingColorType}_RGB" ] [ locStr s["Custom Color"] ]
+                            input [ _type  "color"
+                                    _name  (nameof model.HeadingColor)
+                                    _id    $"{nameof model.HeadingColor}_Color"
+                                    _value model.HeadingColor // TODO: convert to hex or skip if named
+                                    if not (model.HeadingColor.StartsWith "#") then _disabled ]
+                        ]
+                    ]
                 ]
             ]
-        ]
-        fieldset [] [
-            legend [] [ strong [] [ icon "color_lens"; rawText " &nbsp;"; locStr s["Colors"] ]; rawText " ***" ]
-            div [ _fieldRow ] [
+            fieldset [] [
+                legend [] [ strong [] [ icon "font_download"; rawText " &nbsp;"; locStr s["Fonts"] ] ]
                 div [ _inputField ] [
-                    label [ _class "pt-center-text" ] [ locStr s["Color of Heading Lines"] ]
+                    label [ _for (nameof model.Fonts) ] [ locStr s["Fonts** for List"] ]
+                    inputField "text" (nameof model.Fonts) model.Fonts [ _required ]
+                ]
+                div [ _fieldRow ] [
+                    div [ _inputField ] [
+                        label [ _for (nameof model.HeadingFontSize) ] [ locStr s["Heading Text Size"] ]
+                        inputField "number" (nameof model.HeadingFontSize) (string model.HeadingFontSize) [
+                            _min "8"; _max "24"; _required
+                        ]
+                    ]
+                    div [ _inputField ] [
+                        label [ _for (nameof model.ListFontSize) ] [ locStr s["List Text Size"] ]
+                        inputField "number" (nameof model.ListFontSize) (string model.ListFontSize) [
+                            _min "8"; _max "24"; _required
+                        ]
+                    ]
+                ]
+            ]
+            fieldset [] [
+                legend [] [ strong [] [ icon "settings"; rawText " &nbsp;"; locStr s["Other Settings"] ] ]
+                div [ _fieldRow ] [
+                    div [ _inputField ] [
+                        label [ _for (nameof model.TimeZone) ] [ locStr s["Time Zone"] ]
+                        seq {
+                            "", selectDefault s["Select"].Value
+                            yield!
+                                tzs
+                                |> List.map (fun tz ->
+                                    TimeZoneId.toString tz.Id, (TimeZones.name tz.Id s).Value)
+                        }
+                        |> selectList (nameof model.TimeZone) model.TimeZone [ _required ]
+                    ]
+                ]
+                div [ _inputField ] [
+                    label [] [ locStr s["Request List Visibility"] ]
                     span [] [
-                        radio (nameof model.LineColorType) $"{nameof model.LineColorType}_Name" "Name"
-                              model.LineColorType
-                        label [ _for $"{nameof model.LineColorType}_Name" ] [ locStr s["Named Color"] ]
-                        namedColorList (nameof model.LineColor) model.LineColor [
-                            _id $"{nameof model.LineColor}_Select"
-                            if model.LineColor.StartsWith "#" then _disabled ] s
-                        rawText "&nbsp; &nbsp; "; str (s["or"].Value.ToUpper ())
-                        radio (nameof model.LineColorType) $"{nameof model.LineColorType}_RGB" "RGB" model.LineColorType
-                        label [ _for $"{nameof model.LineColorType}_RGB" ] [ locStr s["Custom Color"] ]
-                        input [ _type  "color" 
-                                _name  (nameof model.LineColor)
-                                _id    $"{nameof model.LineColor}_Color"
-                                _value model.LineColor // TODO: convert to hex or skip if named
-                                if not (model.LineColor.StartsWith "#") then _disabled ]
+                        let name  = nameof model.Visibility
+                        let value = string model.Visibility
+                        radio name $"{name}_Public" (string GroupVisibility.PublicList) value
+                        label [ _for $"{name}_Public" ] [ locStr s["Public"] ]
+                        rawText " &nbsp;"
+                        radio name $"{name}_Private" (string GroupVisibility.PrivateList) value
+                        label [ _for $"{name}_Private" ] [ locStr s["Private"] ]
+                        rawText " &nbsp;"
+                        radio name $"{name}_Password" (string GroupVisibility.HasPassword) value
+                        label [ _for $"{name}_Password" ] [ locStr s["Password Protected"] ]
+                    ]
+                ]
+                let classSuffix = if model.Visibility = GroupVisibility.HasPassword then [ "pt-show" ] else []
+                div [ _id "divClassPassword"; _fieldRowWith ("pt-fadeable" :: classSuffix) ] [
+                    div [ _inputField ] [
+                        label [ _for (nameof model.GroupPassword) ] [ locStr s["Group Password (Used to Read Online)"] ]
+                        inputField "text" (nameof model.GroupPassword) (defaultArg model.GroupPassword "") []
+                    ]
+                ]
+                div [ _fieldRow ] [
+                    div [ _inputField ] [
+                        label [ _for (nameof model.PageSize) ] [ locStr s["Page Size"] ]
+                        inputField "number" (nameof model.PageSize) (string model.PageSize) [
+                            _min "10"; _max "255"; _required
+                        ]
+                    ]
+                    div [ _inputField ] [
+                        label [ _for (nameof model.AsOfDate) ] [ locStr s["“As of” Date Display"] ]
+                        ReferenceList.asOfDateList s
+                        |> List.map (fun (code, desc) -> code, desc.Value)
+                        |> selectList (nameof model.AsOfDate) model.AsOfDate [ _required ]
                     ]
                 ]
             ]
-            div [ _fieldRow ] [
-                div [ _inputField ] [
-                    label [ _class "pt-center-text" ] [ locStr s["Color of Heading Text"] ]
-                    span [] [
-                        radio (nameof model.HeadingColorType) $"{nameof model.HeadingColorType}_Name" "Name"
-                              model.HeadingColorType
-                        label [ _for $"{nameof model.HeadingColorType}_Name" ] [ locStr s["Named Color"] ]
-                        namedColorList (nameof model.HeadingColor) model.HeadingColor [
-                            _id $"{nameof model.HeadingColor}_Select"
-                            if model.HeadingColor.StartsWith "#" then _disabled ] s
-                        rawText "&nbsp; &nbsp; "; str (s["or"].Value.ToUpper ())
-                        radio (nameof model.HeadingColorType) $"{nameof model.HeadingColorType}_RGB" "RGB"
-                              model.HeadingColorType
-                        label [ _for $"{nameof model.HeadingColorType}_RGB" ] [ locStr s["Custom Color"] ]
-                        input [ _type  "color"
-                                _name  (nameof model.HeadingColor)
-                                _id    $"{nameof model.HeadingColor}_Color"
-                                _value model.HeadingColor // TODO: convert to hex or skip if named
-                                if not (model.HeadingColor.StartsWith "#") then _disabled ]
-                    ]
-                ]
-            ]
+            div [ _fieldRow ] [ submit [] "save" s["Save Preferences"] ]
         ]
-        fieldset [] [
-            legend [] [ strong [] [ icon "font_download"; rawText " &nbsp;"; locStr s["Fonts"] ] ]
-            div [ _inputField ] [
-                label [ _for (nameof model.Fonts) ] [ locStr s["Fonts** for List"] ]
-                inputField "text" (nameof model.Fonts) model.Fonts [ _required ]
-            ]
-            div [ _fieldRow ] [
-                div [ _inputField ] [
-                    label [ _for (nameof model.HeadingFontSize) ] [ locStr s["Heading Text Size"] ]
-                    inputField "number" (nameof model.HeadingFontSize) (string model.HeadingFontSize) [
-                        _min "8"; _max "24"; _required
-                    ]
-                ]
-                div [ _inputField ] [
-                    label [ _for (nameof model.ListFontSize) ] [ locStr s["List Text Size"] ]
-                    inputField "number" (nameof model.ListFontSize) (string model.ListFontSize) [
-                        _min "8"; _max "24"; _required
-                    ]
-                ]
-            ]
-        ]
-        fieldset [] [
-            legend [] [ strong [] [ icon "settings"; rawText " &nbsp;"; locStr s["Other Settings"] ] ]
-            div [ _fieldRow ] [
-                div [ _inputField ] [
-                    label [ _for (nameof model.TimeZone) ] [ locStr s["Time Zone"] ]
-                    seq {
-                        "", selectDefault s["Select"].Value
-                        yield!
-                            tzs
-                            |> List.map (fun tz ->
-                                TimeZoneId.toString tz.Id, (TimeZones.name tz.Id s).Value)
-                    }
-                    |> selectList (nameof model.TimeZone) model.TimeZone [ _required ]
-                ]
-            ]
-            div [ _inputField ] [
-                label [] [ locStr s["Request List Visibility"] ]
-                span [] [
-                    let name  = nameof model.Visibility
-                    let value = string model.Visibility
-                    radio name $"{name}_Public" (string RequestVisibility.``public``) value
-                    label [ _for $"{name}_Public" ] [ locStr s["Public"] ]
-                    rawText " &nbsp;"
-                    radio name $"{name}_Private" (string RequestVisibility.``private``) value
-                    label [ _for $"{name}_Private" ] [ locStr s["Private"] ]
-                    rawText " &nbsp;"
-                    radio name $"{name}_Password" (string RequestVisibility.passwordProtected) value
-                    label [ _for $"{name}_Password" ] [ locStr s["Password Protected"] ]
-                ]
-            ]
-            let classSuffix = if model.Visibility = RequestVisibility.passwordProtected then [ "pt-show" ] else []
-            div [ _id "divClassPassword"; _fieldRowWith ("pt-fadeable" :: classSuffix) ] [
-                div [ _inputField ] [
-                    label [ _for (nameof model.GroupPassword) ] [ locStr s["Group Password (Used to Read Online)"] ]
-                    inputField "text" (nameof model.GroupPassword) (defaultArg model.GroupPassword "") []
-                ]
-            ]
-            div [ _fieldRow ] [
-                div [ _inputField ] [
-                    label [ _for (nameof model.PageSize) ] [ locStr s["Page Size"] ]
-                    inputField "number" (nameof model.PageSize) (string model.PageSize) [
-                        _min "10"; _max "255"; _required
-                    ]
-                ]
-                div [ _inputField ] [
-                    label [ _for (nameof model.AsOfDate) ] [ locStr s["“As of” Date Display"] ]
-                    ReferenceList.asOfDateList s
-                    |> List.map (fun (code, desc) -> code, desc.Value)
-                    |> selectList (nameof model.AsOfDate) model.AsOfDate [ _required ]
-                ]
-            ]
-        ]
-        div [ _fieldRow ] [ submit [] "save" s["Save Preferences"] ]
-    ]
-    |> List.singleton
-    |> List.append [
         p [] [
             rawText "** "
             raw l["List font names, separated by commas."]

@@ -159,7 +159,7 @@ module Navigation =
                         span [ _class "u" ] [ locStr s["Currently Logged On"] ]
                         rawText "&nbsp; &nbsp;"
                         icon "person"
-                        strong [] [ str u.fullName ]
+                        strong [] [ str u.Name ]
                         rawText "&nbsp; &nbsp; "
                     | None ->
                         locStr s["Logged On as a Member of"]
@@ -169,7 +169,6 @@ module Navigation =
                     match m.User with
                     | Some _ -> a [ _href "/small-group"; Target.content ] [ strong [] [ str g.Name ] ]
                     | None -> strong [] [ str g.Name ]
-                    rawText " &nbsp;"
                 ]
             | None -> []
             |> div []
@@ -263,12 +262,12 @@ let private htmlFooter viewInfo =
     let s          = I18N.localizer.Force ()
     let imgText    = $"""%O{s["PrayerTracker"]} %O{s["from Bit Badger Solutions"]}"""
     let resultTime = TimeSpan(DateTime.Now.Ticks - viewInfo.RequestStart).TotalSeconds
-    footer [] [
+    footer [ _class "pt-footer" ] [
         div [ _id "pt-legal" ] [
             a [ _href "/legal/privacy-policy" ] [ locStr s["Privacy Policy"] ]
-            rawText " &bull; "
+            rawText " &nbsp; "
             a [ _href "/legal/terms-of-service" ] [ locStr s["Terms of Service"] ]
-            rawText " &bull; "
+            rawText " &nbsp; "
             a [ _href   "https://github.com/bit-badger/PrayerTracker"
                 _title  s["View source code and get technical support"].Value
                 _target "_blank"
@@ -278,7 +277,10 @@ let private htmlFooter viewInfo =
         ]
         div [ _id "pt-footer" ] [
             a [ _href "/"; _style "line-height:28px;" ] [
-                img [ _src $"""/img/%O{s["footer_en"]}.png"""; _alt imgText; _title imgText ]
+                img [ _src   $"""/img/%O{s["footer_en"]}.png"""
+                      _alt   imgText
+                      _title imgText
+                      _width "331"; _height "28" ]
             ]
             str viewInfo.Version
             space
@@ -286,8 +288,6 @@ let private htmlFooter viewInfo =
                 str "schedule"
             ]
         ]
-        Script.minified
-        script [ _src "/js/app.js" ] []
     ]
 
 /// The content portion of the PrayerTracker layout
@@ -297,13 +297,21 @@ let private contentSection viewInfo pgTitle (content : XmlNode) = [
     yield! messages viewInfo
     match viewInfo.ScopedStyle with
     | [] -> ()
-    | styles -> style [ _scoped ] (styles |> List.map (fun it -> rawText $"{it}; "))
+    | styles -> style [] [ rawText (styles |> String.concat " ") ]
     content
     htmlFooter viewInfo
-    for jsFile in viewInfo.Script do
-        script [ _src $"/js/{jsFile}.js" ] []
     match viewInfo.OnLoadScript with
-    | Some onLoad -> script [] [ rawText $"{onLoad}()" ]
+    | Some onLoad ->
+        script [] [
+            rawText $"""
+                window.doOnLoad = () => {{
+                    if (window.PT) {{
+                        {onLoad}()
+                        delete window.doOnLoad
+                    }} else {{ setTimeout(window.doOnLoad, 500) }}
+                }}
+                window.doOnLoad()"""
+        ]
     | None -> ()
 ]
 
@@ -323,6 +331,12 @@ let private pageLayout viewInfo pgTitle content =
         Navigation.top viewInfo
         div [ _id "pt-body"; Target.content; _hxSwap $"{HxSwap.InnerHtml} show:window:top" ]
             (contentSection viewInfo pgTitle content)
+        match viewInfo.Layout with
+        | FullPage ->
+            Script.minified
+            script [ _src "/js/ckeditor/ckeditor.js" ] []
+            script [ _src "/js/app.js" ] []
+        | _ -> ()
     ]
     
 /// The standard layout(s) for PrayerTracker

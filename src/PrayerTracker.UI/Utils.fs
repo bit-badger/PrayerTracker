@@ -175,19 +175,19 @@ module Key =
 
 
 /// Enumerated values for small group request list visibility (derived from preferences, used in UI)
-module RequestVisibility =
+module GroupVisibility =
     
     /// Requests are publicly accessible
     [<Literal>]
-    let ``public`` = 1
+    let PublicList = 1
     
     /// The small group members can enter a password to view the request list
     [<Literal>]
-    let passwordProtected = 2
+    let HasPassword = 2
     
     /// No one can see the requests for a small group except its administrators ("User" access level)
     [<Literal>]
-    let ``private`` = 3
+    let PrivateList = 3
 
 
 /// Links for help locations

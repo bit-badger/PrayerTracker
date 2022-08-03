@@ -1,10 +1,18 @@
 /**
  * This is the main stylesheet for the PrayerTracker application.
  */
+:root {
+  --dark-blue-hue: 240;
+  --dark-blue-sat: 100%;
+  --darkest: hsl(var(--dark-blue-hue), var(--dark-blue-sat), 6%);
+  --dark: hsl(var(--dark-blue-hue), var(--dark-blue-sat), 13%);
+  --lighter-dark: hsl(var(--dark-blue-hue), var(--dark-blue-sat), 25%);
+  --inverse-backgroud: hsl(0, 0%, 95%);
+  --background: hsla(0, 0%, 0%, .01);
+}
 body {
-  background-color: #222;
+  background-color: var(--background);
   margin: 0;
-  margin-bottom: 25px;
   font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif;
   font-size: 1rem;
 }
@@ -18,10 +26,10 @@ a,
 a:link,
 a:visited {
   text-decoration: none;
-  color: navy;
+  color: var(--dark);
 }
 a:hover {
-  border-bottom: dotted 1px navy;
+  border-bottom: dotted 1px var(--darkest);
 } 
 a > img {
   border: 0;
@@ -32,7 +40,7 @@ a > img {
   justify-content: space-between;
   overflow: hidden;
   width: 100%;
-  background-image: linear-gradient(to bottom, #222, #444);
+  background-image: linear-gradient(to bottom, var(--darkest), var(--dark));
   margin-bottom: 0;
 }
 .pt-title-bar-left,
@@ -46,7 +54,7 @@ a > img {
   float: left;
   font-size: 1.25rem;
   font-weight: bold;
-  padding: .5rem 1rem 0 1rem;
+  padding: .5rem 1rem 0 .75rem;
 }
 .pt-title-bar-home a:link,
 .pt-title-bar-home a:visited {
@@ -87,7 +95,7 @@ a > img {
 .pt-title-bar .dropdown-content {
   display: none;
   position: absolute;
-  background-image: linear-gradient(to bottom, #444, #888);
+  background-image: linear-gradient(to bottom, var(--dark), var(--lighter-dark));
   min-width: 160px;
   box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);
   z-index: 1;
@@ -100,14 +108,14 @@ a > img {
   text-align: left;
 }
 .pt-title-bar .dropdown-content a:hover {
-  background-color: #222;
+  background-color: var(--inverse-backgroud);
+  color: var(--lighter-dark);
 }
 .pt-title-bar .dropdown:hover .dropdown-content {
   display: block;
 }
 #pt-body {
-  background-color: #fcfcfc;
-  padding-bottom: 10px;
+  padding-bottom: 1rem;
 }
 #pt-language {
   background-color: lightgray;
@@ -116,31 +124,31 @@ a > img {
   justify-content: space-between;
   border-bottom: solid 1px darkgray;
   border-top: solid 1px darkgray;
+  padding: 0 .75rem;
 }
 #pt-page-title {
   text-align: center;
   border-bottom: dotted 1px lightgray;
 }
 .pt-content {
-  margin: auto;
+  margin: auto auto 1.5rem auto;
   max-width: 60rem;
 }
 .pt-content.pt-full-width {
   max-width: unset;
-  margin-left: .5%;
-  margin-right: .5%;
+  margin-left: .75rem;
+  margin-right: .75rem;
 }
 @media screen and (max-width: 60rem) {
   .pt-content {
-    margin-left: .5%;
-    margin-right: .5%;
+    margin-left: .75rem;
+    margin-right: .75rem;
   }
 }
 fieldset {
-  margin: auto;
+  margin: auto auto 1rem auto;
   border: solid 1px #ccc;
   border-radius: 1rem;
-  margin-bottom: 1rem;
 }
 input[type=email],
 input[type=text],
@@ -148,7 +156,8 @@ input[type=password],
 input[type=date],
 input[type=number],
 select {
-  border-radius: 5px;
+  border-radius: .25rem;
+  border-color: var(--lighter-dark);
   font-size: 1rem;
   padding: .2rem;
   font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif;
@@ -160,30 +169,40 @@ button[type=submit] {
   border-radius: 10px;
   padding: .2rem 1rem;
   margin-top: .5rem;
-  background-color: #444;
-  border: none;
+  background-color: var(--lighter-dark);
+  border: solid 1px var(--lighter-dark);
   color: white;
 }
 button[type=submit]:hover {
-  background-color: #222;
-  cursor:pointer;
+  color: var(--lighter-dark);
+  background-color: var(--inverse-backgroud);
+  cursor: pointer;
 }
-footer {
+footer.pt-footer {
   position: fixed;
   bottom: 0;
   width: 100%;
-  border-bottom: solid 10px #222;
+  padding-top: .5rem;
+  background-image: linear-gradient(to bottom, var(--background), var(--darkest));
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: space-between;
+  align-items: end;
 }
 #pt-legal {
-  background-color: #222;
-  margin: 0 0 -30px 0;
-  padding-left: 10px;
+  padding-left: .75rem;
 }
 #pt-legal a:link,
 #pt-legal a:visited {
-  color: lightgray;
-  color: rgba(255, 255, 255, .5);
+  color: white;
   font-size: 10pt;
+  background-color: var(--darkest);
+  padding: 0 .5rem;
+  border-top-left-radius: .5rem;
+  border-top-right-radius: .5rem;
+}
+#pt-legal a:hover {
+  background-color: var(--lighter-dark);
 }
 #pt-footer {
   border: solid 2px navy;
@@ -191,12 +210,10 @@ footer {
   border-top-left-radius: 7px;
   border-top-right-radius: 7px;
   padding: 2px 5px 0 5px;
-  margin: 0 10px -11px auto;
+  margin-right: .75rem;
   font-size: 70%;
   color: navy;
   background-color: #eee;
-  float:right;
-  vertical-align: bottom;
 }
 #pt-footer img {
   vertical-align: bottom;
@@ -300,7 +317,7 @@ article.pt-overview section header {
   text-align: center;
   border-top-left-radius: 1rem;
   border-top-right-radius: 1rem;
-  background-image: linear-gradient(to bottom, #444, #888);
+  background-image: linear-gradient(to bottom, var(--dark), var(--lighter-dark));
   padding: .5rem 1rem;
   color: white;
 }
@@ -308,7 +325,7 @@ article.pt-overview section div {
   padding: .5rem;
 }
 article.pt-overview section div hr {
-  color: #444;
+  color: var(--dark);
   margin: .5rem -.5rem;
 }
 article.pt-overview section div p {

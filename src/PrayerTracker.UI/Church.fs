@@ -84,7 +84,7 @@ let maintain (churches : Church list) (stats : Map<string, ChurchStats>) ctx vi 
                         td [ _class "pt-right-text" ] [ rawText (stats[chId].SmallGroups.ToString "N0") ]
                         td [ _class "pt-right-text" ] [ rawText (stats[chId].PrayerRequests.ToString "N0") ]
                         td [ _class "pt-right-text" ] [ rawText (stats[chId].Users.ToString "N0") ]
-                        td [ _class "pt-center-text" ] [ locStr s[if ch.HasInterface then "Yes" else "No"] ]
+                        td [ _class "pt-center-text" ] [ locStr s[if ch.HasVpsInterface then "Yes" else "No"] ]
                     ])
                 |> tbody []
             ]
