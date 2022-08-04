@@ -48,7 +48,7 @@ open PrayerTracker
 open PrayerTracker.ViewModels
 
 /// Create the common view information heading
-let viewInfo (ctx : HttpContext) startTicks =
+let viewInfo (ctx : HttpContext) =
     let msg =
         match ctx.Session.Messages with
         | [] -> []
@@ -63,9 +63,9 @@ let viewInfo (ctx : HttpContext) startTicks =
     { AppViewInfo.fresh with
         Version      = appVersion
         Messages     = msg
-        RequestStart = startTicks
-        User         = ctx.CurrentUser
-        Group        = ctx.CurrentGroup
+        RequestStart = ctx.Items[Key.startTime] :?> int64
+        User         = ctx.Session.CurrentUser
+        Group        = ctx.Session.CurrentGroup
         Layout       = layout
     }
 
@@ -141,7 +141,9 @@ open PrayerTracker.Entities
 
 /// Require one of the given access roles
 let requireAccess levels : HttpHandler = fun next ctx -> task {
-    match ctx.CurrentUser, ctx.CurrentGroup with
+    let! user  = ctx.CurrentUser  ()
+    let! group = ctx.CurrentGroup ()
+    match user, group with
     | _, _      when List.contains Public levels              -> return! next ctx
     | Some _, _ when List.contains User   levels              -> return! next ctx
     | _, Some _ when List.contains Group  levels              -> return! next ctx

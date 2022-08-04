@@ -139,7 +139,10 @@ let makeUrl url qs =
 /// "Magic string" repository
 [<RequireQualifiedAccess>]
 module Key =
-
+    
+    /// The request start time (added via middleware, read when rendering the footer)
+    let startTime = "StartTime"
+    
     /// This contains constants for session-stored objects within PrayerTracker
     module Session =
         
@@ -154,24 +157,6 @@ module Key =
         
         /// The URL to which the user should be redirected once they have logged in
         let redirectUrl = "RedirectUrl"
-
-    /// Names and value names for use with cookies
-    module Cookie =
-        
-        /// The name of the user cookie
-        let user = "LoggedInUser"
-        
-        /// The name of the class cookie
-        let group = "LoggedInClass"
-        
-        /// The name of the culture cookie
-        let culture = "CurrentCulture"
-        
-        /// The name of the idle timeout cookie
-        let timeout = "TimeoutCookie"
-        
-        /// The cookies that should be cleared when a user or group logs off
-        let logOffCookies = [ user; group; timeout ]
 
 
 /// Enumerated values for small group request list visibility (derived from preferences, used in UI)

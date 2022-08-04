@@ -9,13 +9,13 @@ open PrayerTracker
 
 /// GET /error/[error-code]
 let error code : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx ->
-    viewInfo ctx DateTime.Now.Ticks
+    viewInfo ctx
     |> Views.Home.error code
     |> renderHtml next ctx
 
 /// GET /
 let homePage : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx ->
-    viewInfo ctx DateTime.Now.Ticks
+    viewInfo ctx
     |> Views.Home.index
     |> renderHtml next ctx
 
@@ -44,13 +44,13 @@ let language culture : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fu
 
 /// GET /legal/privacy-policy
 let privacyPolicy : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx ->
-    viewInfo ctx DateTime.Now.Ticks
+    viewInfo ctx
     |> Views.Home.privacyPolicy
     |> renderHtml next ctx
 
 /// GET /legal/terms-of-service
 let tos : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx ->
-    viewInfo ctx DateTime.Now.Ticks
+    viewInfo ctx
     |> Views.Home.termsOfService
     |> renderHtml next ctx
 
@@ -68,6 +68,6 @@ let logOff : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx
 
 /// GET /unauthorized
 let unauthorized : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx ->
-    viewInfo ctx DateTime.Now.Ticks
+    viewInfo ctx
     |> Views.Home.unauthorized
     |> renderHtml next ctx

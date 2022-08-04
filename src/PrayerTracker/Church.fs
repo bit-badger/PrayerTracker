@@ -33,17 +33,16 @@ open System
 
 /// GET /church/[church-id]/edit
 let edit churchId : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> task {
-    let startTicks = DateTime.Now.Ticks
     if churchId = Guid.Empty then
         return!
-            viewInfo ctx startTicks
+            viewInfo ctx
             |> Views.Church.edit EditChurch.empty ctx
             |> renderHtml next ctx
     else
         match! ctx.Db.TryChurchById (ChurchId churchId) with
         | Some church -> 
             return!
-                viewInfo ctx startTicks
+                viewInfo ctx
                 |> Views.Church.edit (EditChurch.fromChurch church) ctx
                 |> renderHtml next ctx
         | None -> return! fourOhFour ctx
@@ -51,12 +50,11 @@ let edit churchId : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> ta
 
 /// GET /churches
 let maintain : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> task {
-    let  startTicks = DateTime.Now.Ticks
-    let  await      = Async.AwaitTask >> Async.RunSynchronously
-    let! churches   = ctx.Db.AllChurches ()
-    let  stats      = churches |> List.map (fun c -> await (findStats ctx.Db c.Id))
+    let  await    = Async.AwaitTask >> Async.RunSynchronously
+    let! churches = ctx.Db.AllChurches ()
+    let  stats    = churches |> List.map (fun c -> await (findStats ctx.Db c.Id))
     return!
-        viewInfo ctx startTicks
+        viewInfo ctx
         |> Views.Church.maintain churches (stats |> Map.ofList) ctx
         |> renderHtml next ctx
 }

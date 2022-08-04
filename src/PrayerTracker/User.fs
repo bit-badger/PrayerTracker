@@ -37,14 +37,15 @@ let changePassword : HttpHandler = requireAccess [ User ] >=> validateCsrf >=> f
     match! ctx.TryBindFormAsync<ChangePassword> () with
     | Ok model ->
         let  s      = Views.I18N.localizer.Force ()
-        let  curUsr = ctx.CurrentUser.Value
+        let  curUsr = ctx.Session.CurrentUser.Value
         let! dbUsr  = ctx.Db.TryUserById curUsr.Id
+        let  group  = ctx.Session.CurrentGroup.Value
         let! user   =
             match dbUsr with
             | Some usr ->
                 // Check the old password against a possibly non-salted hash
                 (match usr.Salt with Some salt -> pbkdf2Hash salt | None -> sha1Hash) model.OldPassword
-                |> ctx.Db.TryUserLogOnByCookie curUsr.Id ctx.CurrentGroup.Value.Id
+                |> ctx.Db.TryUserLogOnByCookie curUsr.Id group.Id
             | _ -> Task.FromResult None
         match user with
         | Some _ when model.NewPassword = model.NewPasswordConfirm ->
@@ -96,8 +97,8 @@ let doLogOn : HttpHandler = requireAccess [ AccessLevel.Public ] >=> validateCsr
             let! nextUrl = backgroundTask {
                 match usr with
                 | Some user ->
-                    ctx.CurrentUser  <- usr
-                    ctx.CurrentGroup <- Some group
+                    ctx.Session.CurrentUser  <- usr
+                    ctx.Session.CurrentGroup <- Some group
                     let claims = seq {
                         Claim (ClaimTypes.NameIdentifier, shortGuid user.Id.Value)
                         Claim (ClaimTypes.GroupSid, shortGuid group.Id.Value)
@@ -144,18 +145,17 @@ let doLogOn : HttpHandler = requireAccess [ AccessLevel.Public ] >=> validateCsr
 
 /// GET /user/[user-id]/edit
 let edit usrId : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> task {
-    let startTicks = DateTime.Now.Ticks
     let userId = UserId usrId
     if userId.Value = Guid.Empty then
         return!
-            viewInfo ctx startTicks
+            viewInfo ctx
             |> Views.User.edit EditUser.empty ctx
             |> renderHtml next ctx
     else
         match! ctx.Db.TryUserById userId with
         | Some user ->
             return!
-                viewInfo ctx startTicks
+                viewInfo ctx
                 |> Views.User.edit (EditUser.fromUser user) ctx
                 |> renderHtml next ctx
         | _ -> return! fourOhFour ctx
@@ -164,17 +164,16 @@ let edit usrId : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> task 
 
 /// GET /user/log-on
 let logOn : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx -> task {
-    let  startTicks = DateTime.Now.Ticks
-    let  s          = Views.I18N.localizer.Force ()
-    let! groups     = ctx.Db.GroupList ()
-    let  url        = Option.ofObj <| ctx.Session.GetString Key.Session.redirectUrl
+    let  s      = Views.I18N.localizer.Force ()
+    let! groups = ctx.Db.GroupList ()
+    let  url    = Option.ofObj <| ctx.Session.GetString Key.Session.redirectUrl
     match url with
     | Some _ ->
         ctx.Session.Remove Key.Session.redirectUrl
         addWarning ctx s["The page you requested requires authentication; please log on below."]
     | None -> ()
     return!
-        { viewInfo ctx startTicks with HelpLink = Some Help.logOn }
+        { viewInfo ctx with HelpLink = Some Help.logOn }
         |> Views.User.logOn { UserLogOn.empty with RedirectUrl = url } groups ctx
         |> renderHtml next ctx
 }
@@ -182,10 +181,9 @@ let logOn : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx 
 
 /// GET /users
 let maintain : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> task {
-    let  startTicks = DateTime.Now.Ticks
-    let! users      = ctx.Db.AllUsers ()
+    let! users = ctx.Db.AllUsers ()
     return!
-        viewInfo ctx startTicks
+        viewInfo ctx
         |> Views.User.maintain users ctx
         |> renderHtml next ctx
 }
@@ -193,7 +191,7 @@ let maintain : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> task {
 
 /// GET /user/password
 let password : HttpHandler = requireAccess [ User ] >=> fun next ctx ->
-    { viewInfo ctx DateTime.Now.Ticks with HelpLink = Some Help.changePassword }
+    { viewInfo ctx with HelpLink = Some Help.changePassword }
     |> Views.User.changePassword ctx
     |> renderHtml next ctx
 
@@ -201,15 +199,15 @@ let password : HttpHandler = requireAccess [ User ] >=> fun next ctx ->
 /// POST /user/save
 let save : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next ctx -> task {
     match! ctx.TryBindFormAsync<EditUser> () with
-    | Ok m ->
+    | Ok model ->
         let! user =
-            if m.IsNew then Task.FromResult (Some { User.empty with Id = (Guid.NewGuid >> UserId) () })
-            else ctx.Db.TryUserById (idFromShort UserId m.UserId)
+            if model.IsNew then Task.FromResult (Some { User.empty with Id = (Guid.NewGuid >> UserId) () })
+            else ctx.Db.TryUserById (idFromShort UserId model.UserId)
         let saltedUser = 
             match user with
             | Some u ->
                 match u.Salt with
-                | None when m.Password <> "" ->
+                | None when model.Password <> "" ->
                     // Generate salt so that a new password hash can be generated
                     Some { u with Salt = Some (Guid.NewGuid ()) }
                 | _ ->
@@ -218,11 +216,11 @@ let save : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next c
             | _ -> user
         match saltedUser with
         | Some u ->
-            let updatedUser = m.PopulateUser u (pbkdf2Hash (Option.get u.Salt))
-            updatedUser |> if m.IsNew then ctx.Db.AddEntry else ctx.Db.UpdateEntry
+            let updatedUser = model.PopulateUser u (pbkdf2Hash (Option.get u.Salt))
+            updatedUser |> if model.IsNew then ctx.Db.AddEntry else ctx.Db.UpdateEntry
             let! _ = ctx.Db.SaveChangesAsync ()
             let  s = Views.I18N.localizer.Force ()
-            if m.IsNew then
+            if model.IsNew then
                 let h = CommonFunctions.htmlString
                 { UserMessage.info with
                     Text        = h s["Successfully {0} user", s["Added"].Value.ToLower ()]
@@ -275,14 +273,13 @@ let saveGroups : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun 
 
 /// GET /user/[user-id]/small-groups
 let smallGroups usrId : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> task {
-    let startTicks = DateTime.Now.Ticks
-    let userId     = UserId usrId
+    let userId = UserId usrId
     match! ctx.Db.TryUserByIdWithGroups userId with
     | Some user ->
         let! groups    = ctx.Db.GroupList ()
         let  curGroups = user.SmallGroups |> Seq.map (fun g -> shortGuid g.SmallGroupId.Value) |> List.ofSeq
         return! 
-            viewInfo ctx startTicks
+            viewInfo ctx
             |> Views.User.assignGroups (AssignGroups.fromUser user) groups curGroups ctx
             |> renderHtml next ctx
     | None -> return! fourOhFour ctx

@@ -1,5 +1,17 @@
 namespace PrayerTracker
 
+open System
+open Microsoft.AspNetCore.Http
+
+/// Middleware to add the starting ticks for the request
+type RequestStartMiddleware (next : RequestDelegate) =
+    
+    member this.InvokeAsync (ctx : HttpContext) = task {
+        ctx.Items[Key.startTime] <- DateTime.Now.Ticks
+        return! next.Invoke ctx
+    }
+
+
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting
 
@@ -23,7 +35,6 @@ module Configure =
     let kestrel (ctx : WebHostBuilderContext) (opts : KestrelServerOptions) =
         (ctx.Configuration.GetSection >> opts.Configure >> ignore) "Kestrel"
 
-    open System
     open System.Globalization
     open Microsoft.AspNetCore.Authentication.Cookies
     open Microsoft.AspNetCore.Localization
@@ -54,19 +65,19 @@ module Configure =
         let _ = svc.AddSession()
         let _ = svc.AddAntiforgery()
         let _ = svc.AddRouting()
-        let _ = svc.AddSingleton<IClock>(SystemClock.Instance)
+        let _ = svc.AddSingleton<IClock> SystemClock.Instance
         
-        let config = svc.BuildServiceProvider().GetRequiredService<IConfiguration>()
-        let _      = svc.AddDbContext<AppDbContext>(
-            (fun options ->
-              options.UseNpgsql (config.GetConnectionString "PrayerTracker") |> ignore),
-            ServiceLifetime.Scoped, ServiceLifetime.Singleton)
+        let config = svc.BuildServiceProvider().GetRequiredService<IConfiguration> ()
+        let _      =
+            svc.AddDbContext<AppDbContext>(
+                (fun options -> options.UseNpgsql (config.GetConnectionString "PrayerTracker") |> ignore),
+                ServiceLifetime.Scoped, ServiceLifetime.Singleton)
         ()
     
     open Giraffe
     
     let noWeb : HttpHandler = fun next ctx ->
-        redirectTo true ($"""/{string ctx.Request.RouteValues["path"]}""") next ctx
+        redirectTo true $"""/{string ctx.Request.RouteValues["path"]}""" next ctx
         
     open Giraffe.EndpointRouting
     
@@ -186,6 +197,8 @@ module Configure =
         
         let _ = app.UseStatusCodePagesWithReExecute "/error/{0}"
         let _ = app.UseStaticFiles ()
+        let _ = app.UseCookiePolicy (CookiePolicyOptions (MinimumSameSitePolicy = SameSiteMode.Strict))
+        let _ = app.UseMiddleware<RequestStartMiddleware> ()
         let _ = app.UseRouting ()
         let _ = app.UseSession ()
         let _ = app.UseRequestLocalization
