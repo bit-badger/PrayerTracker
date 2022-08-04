@@ -7,20 +7,7 @@ open Microsoft.AspNetCore.Hosting
 [<RequireQualifiedAccess>]
 module Configure =
   
-    open Cookies
-    open Giraffe
-    open Giraffe.EndpointRouting
-    open Microsoft.AspNetCore.Localization
-    open Microsoft.AspNetCore.Server.Kestrel.Core
-    open Microsoft.EntityFrameworkCore
     open Microsoft.Extensions.Configuration
-    open Microsoft.Extensions.DependencyInjection
-    open Microsoft.Extensions.Hosting
-    open Microsoft.Extensions.Localization
-    open Microsoft.Extensions.Logging
-    open Microsoft.Extensions.Options
-    open NodaTime
-    open System.Globalization
 
     /// Set up the configuration for the app
     let configuration (ctx : WebHostBuilderContext) (cfg : IConfigurationBuilder) =
@@ -30,10 +17,21 @@ module Configure =
             .AddEnvironmentVariables()
         |> ignore
 
+    open Microsoft.AspNetCore.Server.Kestrel.Core
+    
     /// Configure Kestrel from appsettings.json
     let kestrel (ctx : WebHostBuilderContext) (opts : KestrelServerOptions) =
         (ctx.Configuration.GetSection >> opts.Configure >> ignore) "Kestrel"
 
+    open System
+    open System.Globalization
+    open Microsoft.AspNetCore.Authentication.Cookies
+    open Microsoft.AspNetCore.Localization
+    open Microsoft.EntityFrameworkCore
+    open Microsoft.Extensions.DependencyInjection
+    open NodaTime
+    
+    /// Configure ASP.NET Core's service collection (dependency injection container)
     let services (svc : IServiceCollection) =
         let _ = svc.AddOptions()
         let _ = svc.AddLocalization(fun options -> options.ResourcesPath <- "Resources")
@@ -46,6 +44,12 @@ module Configure =
                 opts.DefaultRequestCulture <- RequestCulture ("en-US", "en-US")
                 opts.SupportedCultures     <- supportedCultures
                 opts.SupportedUICultures   <- supportedCultures)
+        let _ =
+            svc.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+                .AddCookie(fun opts ->
+                    opts.ExpireTimeSpan    <- TimeSpan.FromMinutes 120.
+                    opts.SlidingExpiration <- true
+                    opts.AccessDeniedPath  <- "/error/403")
         let _ = svc.AddDistributedMemoryCache()
         let _ = svc.AddSession()
         let _ = svc.AddAntiforgery()
@@ -53,18 +57,19 @@ module Configure =
         let _ = svc.AddSingleton<IClock>(SystemClock.Instance)
         
         let config = svc.BuildServiceProvider().GetRequiredService<IConfiguration>()
-        let crypto = config.GetSection "CookieCrypto"
-        CookieCrypto (crypto["Key"], crypto["IV"]) |> setCrypto
-        
-        let _ = svc.AddDbContext<AppDbContext>(
+        let _      = svc.AddDbContext<AppDbContext>(
             (fun options ->
               options.UseNpgsql (config.GetConnectionString "PrayerTracker") |> ignore),
             ServiceLifetime.Scoped, ServiceLifetime.Singleton)
         ()
     
+    open Giraffe
+    
     let noWeb : HttpHandler = fun next ctx ->
         redirectTo true ($"""/{string ctx.Request.RouteValues["path"]}""") next ctx
         
+    open Giraffe.EndpointRouting
+    
     /// Routes for PrayerTracker
     let routes = [
         route "/web/{**path}" noWeb
@@ -146,10 +151,14 @@ module Configure =
         ]
     ]
 
+    open Microsoft.Extensions.Logging
+
     /// Giraffe error handler
     let errorHandler (ex : exn) (logger : ILogger) =
         logger.LogError (EventId(), ex, "An unhandled exception has occurred while executing the request.")
         clearResponse >=> setStatusCode 500 >=> text ex.Message
+    
+    open Microsoft.Extensions.Hosting
     
     /// Configure logging
     let logging (log : ILoggingBuilder) =
@@ -158,6 +167,10 @@ module Configure =
         |> function l -> l.AddConsole().AddDebug()
         |> ignore
     
+    open Microsoft.Extensions.Localization
+    open Microsoft.Extensions.Options
+    
+    /// Configure the application
     let app (app : IApplicationBuilder) =
         let env = app.ApplicationServices.GetRequiredService<IWebHostEnvironment>()
         if env.IsDevelopment () then

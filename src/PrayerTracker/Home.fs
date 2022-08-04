@@ -13,13 +13,11 @@ let error code : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next
     |> Views.Home.error code
     |> renderHtml next ctx
 
-
 /// GET /
 let homePage : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx ->
     viewInfo ctx DateTime.Now.Ticks
     |> Views.Home.index
     |> renderHtml next ctx
-
 
 /// GET /language/[culture]
 let language culture : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx ->
@@ -44,13 +42,11 @@ let language culture : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fu
     let url = match string ctx.Request.Headers["Referer"] with null | "" -> "/" | r -> r
     redirectTo false url next ctx
 
-
 /// GET /legal/privacy-policy
 let privacyPolicy : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx ->
     viewInfo ctx DateTime.Now.Ticks
     |> Views.Home.privacyPolicy
     |> renderHtml next ctx
-
 
 /// GET /legal/terms-of-service
 let tos : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx ->
@@ -58,16 +54,17 @@ let tos : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx ->
     |> Views.Home.termsOfService
     |> renderHtml next ctx
 
+open Microsoft.AspNetCore.Authentication
+open Microsoft.AspNetCore.Authentication.Cookies
 
 /// GET /log-off
-let logOff : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx ->
+let logOff : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx -> task {
     ctx.Session.Clear ()
-    // Remove cookies if they exist
-    Key.Cookie.logOffCookies |> List.iter ctx.Response.Cookies.Delete
+    do! ctx.SignOutAsync CookieAuthenticationDefaults.AuthenticationScheme
     let s = Views.I18N.localizer.Force ()
     addHtmlInfo ctx s["Log Off Successful • Have a nice day!"]
-    redirectTo false "/" next ctx
-
+    return! redirectTo false "/" next ctx
+}
 
 /// GET /unauthorized
 let unauthorized : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx ->

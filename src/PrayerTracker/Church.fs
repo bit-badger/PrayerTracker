@@ -16,17 +16,17 @@ let private findStats (db : AppDbContext) churchId = task {
 /// POST /church/[church-id]/delete
 let delete chId : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next ctx -> task {
     let churchId = ChurchId chId
-    match! ctx.db.TryChurchById churchId with
+    match! ctx.Db.TryChurchById churchId with
     | Some church ->
-        let! _, stats = findStats ctx.db churchId
-        ctx.db.RemoveEntry church
-        let! _ = ctx.db.SaveChangesAsync ()
+        let! _, stats = findStats ctx.Db churchId
+        ctx.Db.RemoveEntry church
+        let! _ = ctx.Db.SaveChangesAsync ()
         let  s = Views.I18N.localizer.Force ()
         addInfo ctx
           s["The church {0} and its {1} small groups (with {2} prayer request(s)) were deleted successfully; revoked access from {3} user(s)",
               church.Name, stats.SmallGroups, stats.PrayerRequests, stats.Users]
         return! redirectTo false "/churches" next ctx
-    | None -> return! fourOhFour next ctx
+    | None -> return! fourOhFour ctx
 }
 
 open System
@@ -40,21 +40,21 @@ let edit churchId : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> ta
             |> Views.Church.edit EditChurch.empty ctx
             |> renderHtml next ctx
     else
-        match! ctx.db.TryChurchById (ChurchId churchId) with
+        match! ctx.Db.TryChurchById (ChurchId churchId) with
         | Some church -> 
             return!
                 viewInfo ctx startTicks
                 |> Views.Church.edit (EditChurch.fromChurch church) ctx
                 |> renderHtml next ctx
-        | None -> return! fourOhFour next ctx
+        | None -> return! fourOhFour ctx
 }
 
 /// GET /churches
 let maintain : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> task {
     let  startTicks = DateTime.Now.Ticks
     let  await      = Async.AwaitTask >> Async.RunSynchronously
-    let! churches   = ctx.db.AllChurches ()
-    let  stats      = churches |> List.map (fun c -> await (findStats ctx.db c.Id))
+    let! churches   = ctx.Db.AllChurches ()
+    let  stats      = churches |> List.map (fun c -> await (findStats ctx.Db c.Id))
     return!
         viewInfo ctx startTicks
         |> Views.Church.maintain churches (stats |> Map.ofList) ctx
@@ -69,16 +69,16 @@ let save : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next c
     | Ok model ->
         let! church =
             if model.IsNew then Task.FromResult (Some { Church.empty with Id = (Guid.NewGuid >> ChurchId) () })
-            else ctx.db.TryChurchById (idFromShort ChurchId model.ChurchId)
+            else ctx.Db.TryChurchById (idFromShort ChurchId model.ChurchId)
         match church with
         | Some ch ->
             model.PopulateChurch ch
-            |> (if model.IsNew then ctx.db.AddEntry else ctx.db.UpdateEntry)
-            let! _   = ctx.db.SaveChangesAsync ()
+            |> (if model.IsNew then ctx.Db.AddEntry else ctx.Db.UpdateEntry)
+            let! _   = ctx.Db.SaveChangesAsync ()
             let  s   = Views.I18N.localizer.Force ()
             let  act = s[if model.IsNew then "Added" else "Updated"].Value.ToLower ()
             addInfo ctx s["Successfully {0} church “{1}”", act, model.Name]
             return! redirectTo false "/churches" next ctx
-        | None -> return! fourOhFour next ctx
+        | None -> return! fourOhFour ctx
     | Result.Error e -> return! bindError e next ctx
 }
