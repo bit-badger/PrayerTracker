@@ -276,10 +276,16 @@ let sendAnnouncement : HttpHandler = requireAccess [ User ] >=> validateCsrf >=>
             | "N" when usr.IsAdmin -> ctx.Db.AllUsersAsMembers ()
             | _ -> ctx.Db.AllMembersForSmallGroup group.Id
         use! client = Email.getConnection ()
-        do! Email.sendEmails client recipients group
-                s["Announcement for {0} - {1:MMMM d, yyyy} {2}", group.Name, now.Date,
-                  (now.ToString "h:mm tt").ToLower ()].Value
-                htmlText plainText s
+        do! Email.sendEmails
+                {   Client        = client
+                    Recipients    = recipients
+                    Group         = group
+                    Subject       = s["Announcement for {0} - {1:MMMM d, yyyy} {2}", group.Name, now.Date,
+                                      (now.ToString "h:mm tt").ToLower ()].Value
+                    HtmlBody      = htmlText
+                    PlainTextBody = plainText
+                    Strings       = s
+                }
         // Add to the request list if desired
         match model.SendToClass, model.AddToRequestList with
         | "N", _

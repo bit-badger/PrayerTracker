@@ -141,6 +141,7 @@ open PrayerTracker.Entities
 
 /// Require one of the given access roles
 let requireAccess levels : HttpHandler = fun next ctx -> task {
+    // These calls fill the user and group in the session, making .Value safe to use for the rest of the request
     let! user  = ctx.CurrentUser  ()
     let! group = ctx.CurrentGroup ()
     match user, group with
@@ -154,11 +155,10 @@ let requireAccess levels : HttpHandler = fun next ctx -> task {
         return! redirectTo false "/unauthorized" next ctx
     | _, _ when List.contains User levels ->
         // Redirect to the user log on page
-        ctx.Session.SetString (Key.Session.redirectUrl, ctx.Request.GetEncodedUrl ())
+        ctx.Session.SetString (Key.Session.redirectUrl, ctx.Request.GetEncodedPathAndQuery ())
         return! redirectTo false "/user/log-on" next ctx
     | _, _ when List.contains Group levels ->
         // Redirect to the small group log on page
-        ctx.Session.SetString (Key.Session.redirectUrl, ctx.Request.GetEncodedUrl ())
         return! redirectTo false "/small-group/log-on" next ctx
     | _, _ ->
         let s = Views.I18N.localizer.Force ()

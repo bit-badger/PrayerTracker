@@ -142,7 +142,6 @@ let doLogOn : HttpHandler = requireAccess [ AccessLevel.Public ] >=> validateCsr
     | Result.Error e -> return! bindError e next ctx
 }
 
-
 /// GET /user/[user-id]/edit
 let edit usrId : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> task {
     let userId = UserId usrId
@@ -161,7 +160,6 @@ let edit usrId : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> task 
         | _ -> return! fourOhFour ctx
 }
 
-
 /// GET /user/log-on
 let logOn : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx -> task {
     let  s      = Views.I18N.localizer.Force ()
@@ -178,7 +176,6 @@ let logOn : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx 
         |> renderHtml next ctx
 }
 
-
 /// GET /users
 let maintain : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> task {
     let! users = ctx.Db.AllUsers ()
@@ -188,13 +185,11 @@ let maintain : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> task {
         |> renderHtml next ctx
 }
 
-
 /// GET /user/password
 let password : HttpHandler = requireAccess [ User ] >=> fun next ctx ->
     { viewInfo ctx with HelpLink = Some Help.changePassword }
     |> Views.User.changePassword ctx
     |> renderHtml next ctx
-
 
 /// POST /user/save
 let save : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next ctx -> task {
@@ -237,7 +232,6 @@ let save : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next c
     | Result.Error e -> return! bindError e next ctx
 }
 
-
 /// POST /user/small-groups/save
 let saveGroups : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next ctx -> task {
     match! ctx.TryBindFormAsync<AssignGroups> () with
@@ -269,7 +263,6 @@ let saveGroups : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun 
               | _ -> return! fourOhFour ctx
     | Result.Error e -> return! bindError e next ctx
 }
-
 
 /// GET /user/[user-id]/small-groups
 let smallGroups usrId : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> task {

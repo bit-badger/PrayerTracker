@@ -73,7 +73,7 @@ a > img {
   float: left;
 }
 .pt-title-bar li a,
-.pt-title-bar .dropbtn,
+.pt-title-bar .dropdown-btn,
 .pt-title-bar .home-link {
   display: inline-block;
   color: #9d9d9d;
@@ -85,7 +85,7 @@ a > img {
   font-size: 1.1rem;
 }
 .pt-title-bar li a:hover,
-.pt-title-bar .dropdown:hover .dropbtn {
+.pt-title-bar .dropdown:hover .dropdown-btn {
   color: white;
   border-bottom: none;
 }
@@ -215,8 +215,13 @@ footer.pt-footer {
   color: navy;
   background-color: #eee;
 }
-#pt-footer img {
+#pt-footer img,
+#pt-footer span,
+#pt-footer i {
   vertical-align: bottom;
+}
+#pt-version {
+  padding-left: .25rem;
 }
 footer a:hover {
   border-bottom: 0;

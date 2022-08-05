@@ -17,7 +17,7 @@ module Navigation =
     let top m =
         let s          = I18N.localizer.Force ()
         let menuSpacer = rawText "&nbsp; "
-        let _dropdown  = _class "dropbtn"
+        let _dropdown  = _class "dropdown-btn"
         let leftLinks = [
             match m.User with
             | Some u ->
@@ -282,7 +282,7 @@ let private htmlFooter viewInfo =
                       _title imgText
                       _width "331"; _height "28" ]
             ]
-            str viewInfo.Version
+            span [ _id "pt-version" ] [ str viewInfo.Version ]
             space
             i [ _title s["This page loaded in {0:N3} seconds", resultTime].Value; _class "material-icons md-18" ] [
                 str "schedule"

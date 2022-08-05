@@ -61,6 +61,7 @@ module Configure =
                     opts.ExpireTimeSpan    <- TimeSpan.FromMinutes 120.
                     opts.SlidingExpiration <- true
                     opts.AccessDeniedPath  <- "/error/403")
+        let _ = svc.AddAuthorization ()
         let _ = svc.AddDistributedMemoryCache()
         let _ = svc.AddSession()
         let _ = svc.AddAntiforgery()
@@ -203,6 +204,8 @@ module Configure =
         let _ = app.UseSession ()
         let _ = app.UseRequestLocalization
                     (app.ApplicationServices.GetService<IOptions<RequestLocalizationOptions>>().Value)
+        let _ = app.UseAuthentication ()
+        let _ = app.UseAuthorization ()
         let _ = app.UseEndpoints (fun e -> e.MapGiraffeEndpoints routes)
         Views.I18N.setUpFactories <| app.ApplicationServices.GetRequiredService<IStringLocalizerFactory> ()
 

@@ -78,9 +78,15 @@ let email date : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task {
     let! list       = generateRequestList ctx listDate
     let! recipients = ctx.Db.AllMembersForSmallGroup group.Id
     use! client     = Email.getConnection ()
-    do! Email.sendEmails client recipients
-          group s["Prayer Requests for {0} - {1:MMMM d, yyyy}", group.Name, list.Date].Value
-          (list.AsHtml s) (list.AsText s) s
+    do! Email.sendEmails
+            {   Client        = client
+                Recipients    = recipients
+                Group         = group
+                Subject       = s["Prayer Requests for {0} - {1:MMMM d, yyyy}", group.Name, list.Date].Value
+                HtmlBody      = list.AsHtml s
+                PlainTextBody = list.AsText s
+                Strings       = s
+            }
     return!
         viewInfo ctx
         |> Views.PrayerRequest.email { list with Recipients = recipients }

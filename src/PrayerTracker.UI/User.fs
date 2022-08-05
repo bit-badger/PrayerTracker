@@ -52,11 +52,9 @@ let changePassword ctx viewInfo =
                 toHtmlIds [ nameof model.OldPassword; nameof model.NewPassword; nameof model.NewPasswordConfirm ]
             $"{fields} {{ width: 10rem; }}"
         ]
-    p [ _class "pt-center-text" ] [
-        locStr s["To change your password, enter your current password in the specified box below, then enter your new password twice."]
-    ]
-    |> List.singleton
-    |> List.append [
+    [   p [ _class "pt-center-text" ] [
+            locStr s["To change your password, enter your current password in the specified box below, then enter your new password twice."]
+        ]
         form [ _action   "/user/password/change"
                _method   "post"
                _onsubmit $"""return PT.compareValidation('{nameof model.NewPassword}','{nameof model.NewPasswordConfirm}','%A{s["The passwords do not match"]}')"""
@@ -79,8 +77,9 @@ let changePassword ctx viewInfo =
                 ]
             ]
             div [ _fieldRow ] [
-                submit [ _onclick $"document.getElementById('{nameof model.NewPasswordConfirm}').setCustomValidity('')" ]
-                       "done" s["Change Your Password"]
+                submit [
+                    _onclick $"document.getElementById('{nameof model.NewPasswordConfirm}').setCustomValidity('')"
+                ] "done" s["Change Your Password"]
             ]
         ]
     ]
@@ -147,7 +146,7 @@ let edit (model : EditUser) ctx viewInfo =
 /// View for the user log on page
 let logOn (model : UserLogOn) groups ctx viewInfo =
     let s  = I18N.localizer.Force ()
-    let vi = AppViewInfo.withScopedStyles [ "#email { width: 20rem; }" ] viewInfo
+    let vi = AppViewInfo.withScopedStyles [ $"#{nameof model.Email} {{ width: 20rem; }}" ] viewInfo
     form [ _action "/user/log-on"; _method "post"; _class "pt-center-columns"; Target.body ] [
         csrfToken ctx
         inputField "hidden" (nameof model.RedirectUrl) (defaultArg model.RedirectUrl "") []
