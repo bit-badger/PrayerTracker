@@ -231,7 +231,7 @@ type AppDbContext with
         let! usr = this.Users.Include(fun u -> u.SmallGroups).SingleOrDefaultAsync (fun u -> u.Id = userId)
         return Option.fromObject usr
     }
-
+    
     /// Get a list of all users
     member this.AllUsers () = backgroundTask {
         let! users = this.Users.OrderBy(fun u -> u.LastName).ThenBy(fun u -> u.FirstName).ToListAsync ()

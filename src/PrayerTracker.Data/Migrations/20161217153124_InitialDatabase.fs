@@ -48,13 +48,14 @@ type InitialDatabase () =
             name    = "pt_user",
             schema  = "pt",
             columns = (fun table ->
-                {|  Id           = table.Column<Guid>   (name = "id",            nullable = false)
-                    Email        = table.Column<string> (name = "email",         nullable = false)
-                    FirstName    = table.Column<string> (name = "first_name",    nullable = false)
-                    IsAdmin      = table.Column<bool>   (name = "is_admin",      nullable = false)
-                    LastName     = table.Column<string> (name = "last_name",     nullable = false)
-                    PasswordHash = table.Column<string> (name = "password_hash", nullable = false)
-                    Salt         = table.Column<Guid>   (name = "salt",          nullable = true)
+                {|  Id           = table.Column<Guid>     (name = "id",            nullable = false)
+                    Email        = table.Column<string>   (name = "email",         nullable = false)
+                    FirstName    = table.Column<string>   (name = "first_name",    nullable = false)
+                    IsAdmin      = table.Column<bool>     (name = "is_admin",      nullable = false)
+                    LastName     = table.Column<string>   (name = "last_name",     nullable = false)
+                    PasswordHash = table.Column<string>   (name = "password_hash", nullable = false)
+                    Salt         = table.Column<Guid>     (name = "salt",          nullable = true)
+                    LastSeen     = table.Column<DateTime> (name = "last_seen",     nullable = true)
                 |}),
             constraints = fun table ->
                 table.PrimaryKey("pk_pt_user", fun x -> upcast x.Id) |> ignore)
@@ -321,6 +322,7 @@ type InitialDatabase () =
             b.Property<string>("LastName").HasColumnName("last_name").IsRequired() |> ignore
             b.Property<string>("PasswordHash").HasColumnName("password_hash").IsRequired() |> ignore
             b.Property<Guid>("Salt").HasColumnName("salt") |> ignore
+            b.Property<DateTime>("LastSeen").HasColumnName("last_seen") |> ignore
             b.HasKey("Id") |> ignore
             b.ToTable("pt_user") |> ignore)
         |> ignore

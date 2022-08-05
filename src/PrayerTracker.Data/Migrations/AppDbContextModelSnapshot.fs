@@ -106,6 +106,7 @@ type AppDbContextModelSnapshot () =
             b.Property<string>("LastName").HasColumnName("last_name").IsRequired() |> ignore
             b.Property<string>("PasswordHash").HasColumnName("password_hash").IsRequired() |> ignore
             b.Property<Guid>("Salt").HasColumnName("salt") |> ignore
+            b.Property<DateTime>("LastSeen").HasColumnName("last_seen") |> ignore
             b.HasKey("Id") |> ignore
             b.ToTable("pt_user") |> ignore)
         |> ignore

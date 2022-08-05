@@ -375,7 +375,6 @@ type ChurchStats =
 
 (*-- ENTITIES --*)
 
-open System.Collections.Generic
 open FSharp.EFCore.OptionConverter
 open Microsoft.EntityFrameworkCore
 open NodaTime
@@ -401,7 +400,7 @@ type [<CLIMutable; NoComparison; NoEquality>] Church =
         InterfaceAddress : string option
         
         /// Small groups for this church
-        SmallGroups : ICollection<SmallGroup>
+        SmallGroups : ResizeArray<SmallGroup>
     }
 with
     /// An empty church
@@ -413,7 +412,7 @@ with
             State            = ""
             HasVpsInterface  = false
             InterfaceAddress = None
-            SmallGroups      = List<SmallGroup> ()
+            SmallGroups      = ResizeArray<SmallGroup> ()
         }
     
     /// Configure EF for this entity
@@ -430,9 +429,9 @@ with
             } |> List.ofSeq |> ignore)
         |> ignore
         mb.Model.FindEntityType(typeof<Church>).FindProperty(nameof Church.empty.Id)
-            .SetValueConverter(Converters.ChurchIdConverter ())
+            .SetValueConverter (Converters.ChurchIdConverter ())
         mb.Model.FindEntityType(typeof<Church>).FindProperty(nameof Church.empty.InterfaceAddress)
-            .SetValueConverter(OptionConverter<string> ())
+            .SetValueConverter (OptionConverter<string> ())
 
 
 /// Preferences for the form and format of the prayer request list
@@ -556,15 +555,15 @@ with
             } |> List.ofSeq |> ignore)
         |> ignore
         mb.Model.FindEntityType(typeof<ListPreferences>).FindProperty(nameof ListPreferences.empty.SmallGroupId)
-            .SetValueConverter(Converters.SmallGroupIdConverter ())
+            .SetValueConverter (Converters.SmallGroupIdConverter ())
         mb.Model.FindEntityType(typeof<ListPreferences>).FindProperty(nameof ListPreferences.empty.RequestSort)
-            .SetValueConverter(Converters.RequestSortConverter ())
+            .SetValueConverter (Converters.RequestSortConverter ())
         mb.Model.FindEntityType(typeof<ListPreferences>).FindProperty(nameof ListPreferences.empty.DefaultEmailType)
-            .SetValueConverter(Converters.EmailFormatConverter ())
+            .SetValueConverter (Converters.EmailFormatConverter ())
         mb.Model.FindEntityType(typeof<ListPreferences>).FindProperty(nameof ListPreferences.empty.TimeZoneId)
-            .SetValueConverter(Converters.TimeZoneIdConverter ())
+            .SetValueConverter (Converters.TimeZoneIdConverter ())
         mb.Model.FindEntityType(typeof<ListPreferences>).FindProperty(nameof ListPreferences.empty.AsOfDateDisplay)
-            .SetValueConverter(Converters.AsOfDateDisplayConverter ())
+            .SetValueConverter (Converters.AsOfDateDisplayConverter ())
 
 
 /// A member of a small group
@@ -612,11 +611,11 @@ with
             } |> List.ofSeq |> ignore)
         |> ignore
         mb.Model.FindEntityType(typeof<Member>).FindProperty(nameof Member.empty.Id)
-            .SetValueConverter(Converters.MemberIdConverter ())
+            .SetValueConverter (Converters.MemberIdConverter ())
         mb.Model.FindEntityType(typeof<Member>).FindProperty(nameof Member.empty.SmallGroupId)
-            .SetValueConverter(Converters.SmallGroupIdConverter ())
+            .SetValueConverter (Converters.SmallGroupIdConverter ())
         mb.Model.FindEntityType(typeof<Member>).FindProperty(nameof Member.empty.Format)
-            .SetValueConverter(Converters.EmailFormatOptionConverter ())
+            .SetValueConverter (Converters.EmailFormatOptionConverter ())
 
 
 /// This represents a single prayer request
@@ -707,17 +706,17 @@ with
             } |> List.ofSeq |> ignore)
         |> ignore
         mb.Model.FindEntityType(typeof<PrayerRequest>).FindProperty(nameof PrayerRequest.empty.Id)
-            .SetValueConverter(Converters.PrayerRequestIdConverter ())
+            .SetValueConverter (Converters.PrayerRequestIdConverter ())
         mb.Model.FindEntityType(typeof<PrayerRequest>).FindProperty(nameof PrayerRequest.empty.RequestType)
-            .SetValueConverter(Converters.PrayerRequestTypeConverter ())
+            .SetValueConverter (Converters.PrayerRequestTypeConverter ())
         mb.Model.FindEntityType(typeof<PrayerRequest>).FindProperty(nameof PrayerRequest.empty.UserId)
-            .SetValueConverter(Converters.UserIdConverter ())
+            .SetValueConverter (Converters.UserIdConverter ())
         mb.Model.FindEntityType(typeof<PrayerRequest>).FindProperty(nameof PrayerRequest.empty.SmallGroupId)
-            .SetValueConverter(Converters.SmallGroupIdConverter ())
+            .SetValueConverter (Converters.SmallGroupIdConverter ())
         mb.Model.FindEntityType(typeof<PrayerRequest>).FindProperty(nameof PrayerRequest.empty.Requestor)
-            .SetValueConverter(OptionConverter<string> ())
+            .SetValueConverter (OptionConverter<string> ())
         mb.Model.FindEntityType(typeof<PrayerRequest>).FindProperty(nameof PrayerRequest.empty.Expiration)
-            .SetValueConverter(Converters.ExpirationConverter ())
+            .SetValueConverter (Converters.ExpirationConverter ())
 
 
 /// This represents a small group (Sunday School class, Bible study group, etc.)
@@ -738,13 +737,13 @@ and [<CLIMutable; NoComparison; NoEquality>] SmallGroup =
         Preferences : ListPreferences
         
         /// The members of the group
-        Members : ICollection<Member>
+        Members : ResizeArray<Member>
         
         /// Prayer requests for this small group
-        PrayerRequests : ICollection<PrayerRequest>
+        PrayerRequests : ResizeArray<PrayerRequest>
         
         /// The users authorized to manage this group
-        Users : ICollection<UserSmallGroup>
+        Users : ResizeArray<UserSmallGroup>
     }
 with
     
@@ -755,9 +754,9 @@ with
             Name           = "" 
             Church         = Church.empty
             Preferences    = ListPreferences.empty
-            Members        = List<Member> ()
-            PrayerRequests = List<PrayerRequest> ()
-            Users          = List<UserSmallGroup> ()
+            Members        = ResizeArray<Member> ()
+            PrayerRequests = ResizeArray<PrayerRequest> ()
+            Users          = ResizeArray<UserSmallGroup> ()
         }
 
     /// Get the local date for this group
@@ -788,9 +787,9 @@ with
             } |> List.ofSeq |> ignore)
         |> ignore
         mb.Model.FindEntityType(typeof<SmallGroup>).FindProperty(nameof SmallGroup.empty.Id)
-            .SetValueConverter(Converters.SmallGroupIdConverter ())
+            .SetValueConverter (Converters.SmallGroupIdConverter ())
         mb.Model.FindEntityType(typeof<SmallGroup>).FindProperty(nameof SmallGroup.empty.ChurchId)
-            .SetValueConverter(Converters.ChurchIdConverter ())
+            .SetValueConverter (Converters.ChurchIdConverter ())
 
 
 /// This represents a time zone in which a class may reside
@@ -829,7 +828,7 @@ with
             } |> List.ofSeq |> ignore)
         |> ignore
         mb.Model.FindEntityType(typeof<TimeZone>).FindProperty(nameof TimeZone.empty.Id)
-            .SetValueConverter(Converters.TimeZoneIdConverter ())
+            .SetValueConverter (Converters.TimeZoneIdConverter ())
 
 
 /// This represents a user of PrayerTracker
@@ -855,8 +854,11 @@ and [<CLIMutable; NoComparison; NoEquality>] User =
         /// The salt for the user's hashed password
         Salt : Guid option
         
+        /// The last time the user was seen (set whenever the user is loaded into a session)
+        LastSeen : DateTime option
+        
         /// The small groups which this user is authorized
-        SmallGroups : ICollection<UserSmallGroup>
+        SmallGroups : ResizeArray<UserSmallGroup>
     }
 with
     
@@ -869,7 +871,8 @@ with
             IsAdmin      = false
             PasswordHash = ""
             Salt         = None
-            SmallGroups  = List<UserSmallGroup> ()
+            LastSeen     = None
+            SmallGroups  = ResizeArray<UserSmallGroup> ()
         }
     
     /// The full name of the user
@@ -889,12 +892,15 @@ with
                 it.Property(fun u -> u.IsAdmin).HasColumnName "is_admin"
                 it.Property(fun u -> u.PasswordHash).HasColumnName("password_hash").IsRequired ()
                 it.Property(fun u -> u.Salt).HasColumnName "salt"
+                it.Property(fun u -> u.LastSeen).HasColumnName "last_seen"
             } |> List.ofSeq |> ignore)
         |> ignore
         mb.Model.FindEntityType(typeof<User>).FindProperty(nameof User.empty.Id)
-            .SetValueConverter(Converters.UserIdConverter ())
+            .SetValueConverter (Converters.UserIdConverter ())
         mb.Model.FindEntityType(typeof<User>).FindProperty(nameof User.empty.Salt)
-            .SetValueConverter(OptionConverter<Guid> ())
+            .SetValueConverter (OptionConverter<Guid> ())
+        mb.Model.FindEntityType(typeof<User>).FindProperty(nameof User.empty.LastSeen)
+            .SetValueConverter (OptionConverter<DateTime> ())
 
 
 /// Cross-reference between user and small group
@@ -930,15 +936,15 @@ with
                 it.Property(fun usg -> usg.UserId).HasColumnName "user_id"
                 it.Property(fun usg -> usg.SmallGroupId).HasColumnName "small_group_id"
                 it.HasOne(fun usg -> usg.User)
-                    .WithMany(fun u -> u.SmallGroups :> IEnumerable<UserSmallGroup>)
+                    .WithMany(fun u -> u.SmallGroups :> seq<UserSmallGroup>)
                     .HasForeignKey(fun usg -> usg.UserId :> obj)
                 it.HasOne(fun usg -> usg.SmallGroup)
-                    .WithMany(fun sg -> sg.Users :> IEnumerable<UserSmallGroup>)
+                    .WithMany(fun sg -> sg.Users :> seq<UserSmallGroup>)
                     .HasForeignKey(fun usg -> usg.SmallGroupId :> obj)
             } |> List.ofSeq |> ignore)
         |> ignore
         mb.Model.FindEntityType(typeof<UserSmallGroup>).FindProperty(nameof UserSmallGroup.empty.UserId)
-            .SetValueConverter(Converters.UserIdConverter ())
+            .SetValueConverter (Converters.UserIdConverter ())
         mb.Model.FindEntityType(typeof<UserSmallGroup>).FindProperty(nameof UserSmallGroup.empty.SmallGroupId)
-            .SetValueConverter(Converters.SmallGroupIdConverter ())
+            .SetValueConverter (Converters.SmallGroupIdConverter ())
         

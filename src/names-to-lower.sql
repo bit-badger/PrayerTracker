@@ -94,6 +94,7 @@ ALTER TABLE pt."User" RENAME COLUMN "PasswordHash" TO password_hash;
 ALTER TABLE pt."User" RENAME COLUMN "Salt" TO salt;
 ALTER TABLE pt."User" RENAME CONSTRAINT "PK_User" TO pk_pt_user;
 ALTER TABLE pt."User" RENAME TO pt_user;
+ALTER TABLE pt.pt_user ADD COLUMN last_seen timestamp;
 
 -- User / Small Group
 ALTER TABLE pt."User_SmallGroup" RENAME COLUMN "UserId" TO user_id;

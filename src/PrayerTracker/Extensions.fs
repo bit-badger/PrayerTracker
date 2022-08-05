@@ -1,6 +1,7 @@
 ﻿[<AutoOpen>]
 module PrayerTracker.Extensions
 
+open System
 open Microsoft.AspNetCore.Http
 open Microsoft.FSharpLu
 open Newtonsoft.Json
@@ -98,7 +99,11 @@ type HttpContext with
             | Some userId ->
                 match! this.Db.TryUserById userId with
                 | Some user ->
-                    this.Session.CurrentUser <- Some user
+                    // Set last seen for user
+                    this.Db.UpdateEntry { user with LastSeen = Some DateTime.UtcNow }
+                    let! _ = this.Db.SaveChangesAsync ()
+                    this.Session.CurrentUser <-
+                        Some { user with PasswordHash = ""; SmallGroups = ResizeArray<UserSmallGroup> () }
                     return Some user
                 | None -> return None
             | None -> return None

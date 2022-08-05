@@ -192,7 +192,7 @@ let maintain (users : User list) ctx viewInfo =
         | [] -> space
         | _ ->
             table [ _class "pt-table pt-action-table" ] [
-                tableHeadings s [ "Actions"; "Name"; "Admin?" ]
+                tableHeadings s [ "Actions"; "Name"; "Last Seen"; "Admin?" ]
                 users
                 |> List.map (fun user ->
                     let userId    = shortGuid user.Id.Value
@@ -212,6 +212,9 @@ let maintain (users : User list) ctx viewInfo =
                             ]
                         ]
                         td [] [ str user.Name ]
+                        td [] [
+                            str (match user.LastSeen with Some dt -> dt.ToString s["MMMM d, yyyy"] | None -> "--")
+                        ]
                         td [ _class "pt-center-text" ] [
                             if user.IsAdmin then strong [] [ locStr s["Yes"] ] else locStr s["No"]
                         ]

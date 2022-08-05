@@ -825,4 +825,7 @@
   <data name="State or Province" xml:space="preserve">
     <value>Estado o Provincia</value>
   </data>
+  <data name="Last Seen" xml:space="preserve">
+    <value>Ultima vez Visto</value>
+  </data>
 </root>
