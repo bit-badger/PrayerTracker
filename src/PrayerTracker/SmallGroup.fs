@@ -107,13 +107,14 @@ let logOnSubmit : HttpHandler = requireAccess [ AccessLevel.Public ] >=> validat
         match! ctx.Db.TryGroupLogOnByPassword (idFromShort SmallGroupId model.SmallGroupId) model.Password with
         | Some group ->
             ctx.Session.CurrentGroup <- Some group
-            let claims   = Claim (ClaimTypes.GroupSid, shortGuid group.Id.Value) |> Seq.singleton
-            let identity = ClaimsIdentity (claims, CookieAuthenticationDefaults.AuthenticationScheme)
-            do! ctx.SignInAsync
-                    (identity.AuthenticationType, ClaimsPrincipal identity,
-                     AuthenticationProperties (
-                         IssuedUtc    = DateTimeOffset.UtcNow,
-                         IsPersistent = defaultArg model.RememberMe false))
+            let identity = ClaimsIdentity (
+                Seq.singleton (Claim (ClaimTypes.GroupSid, shortGuid group.Id.Value)),
+                CookieAuthenticationDefaults.AuthenticationScheme)
+            do! ctx.SignInAsync (
+                    identity.AuthenticationType, ClaimsPrincipal identity,
+                    AuthenticationProperties (
+                        IssuedUtc    = DateTimeOffset.UtcNow,
+                        IsPersistent = defaultArg model.RememberMe false))
             addInfo ctx s["Log On Successful • Welcome to {0}", s["PrayerTracker"]]
             return! redirectTo false "/prayer-requests/view" next ctx
         | None ->

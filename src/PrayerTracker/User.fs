@@ -1,36 +1,78 @@
 ﻿module PrayerTracker.Handlers.User
 
 open System
-open System.Collections.Generic
 open Giraffe
 open Microsoft.AspNetCore.Http
+open Microsoft.AspNetCore.Identity
 open PrayerTracker
 open PrayerTracker.Entities
 open PrayerTracker.ViewModels
 
-/// Retrieve a user from the database by password
-// If the hashes do not match, determine if it matches a previous scheme, and upgrade them if it does
+/// Password hashing implementation extending ASP.NET Core's identity implementation
+[<AutoOpen>]
+module Hashing =
+    
+    open System.Security.Cryptography
+    open System.Text
+    
+    /// Custom password hasher used to verify and upgrade old password hashes
+    type PrayerTrackerPasswordHasher () =
+        inherit PasswordHasher<User> ()
+        
+        override this.VerifyHashedPassword (user, hashedPassword, providedPassword) =
+            if isNull hashedPassword   then nullArg (nameof hashedPassword)
+            if isNull providedPassword then nullArg (nameof providedPassword)
+            
+            let hashBytes = Convert.FromBase64String hashedPassword
+            
+            match hashBytes[0] with
+            | 255uy ->
+                // v2 hashes - PBKDF2 (RFC 2898), 1,024 rounds
+                if hashBytes.Length < 49 then PasswordVerificationResult.Failed
+                else
+                    let v2Hash =
+                        use alg = new Rfc2898DeriveBytes (
+                            providedPassword, Encoding.UTF8.GetBytes ((Guid hashBytes[1..16]).ToString "N"), 1024)
+                        (alg.GetBytes >> Convert.ToBase64String) 64
+                    if Encoding.UTF8.GetString hashBytes[17..] = v2Hash then
+                        PasswordVerificationResult.SuccessRehashNeeded
+                    else PasswordVerificationResult.Failed
+            | 254uy ->
+                // v1 hashes - SHA-1
+                let v1Hash =
+                    use alg = SHA1.Create ()
+                    alg.ComputeHash (Encoding.ASCII.GetBytes providedPassword)
+                    |> Seq.map (fun byt -> byt.ToString "x2")
+                    |> String.concat ""
+                if Encoding.UTF8.GetString hashBytes[1..] = v1Hash then
+                    PasswordVerificationResult.SuccessRehashNeeded
+                else
+                    PasswordVerificationResult.Failed
+            | _ -> base.VerifyHashedPassword (user, hashedPassword, providedPassword)
+
+    
+/// Retrieve a user from the database by password, upgrading password hashes if required
 let private findUserByPassword model (db : AppDbContext) = task {
+    let bareUser user = Some { user with PasswordHash = ""; SmallGroups = ResizeArray<UserSmallGroup>() }
     match! db.TryUserByEmailAndGroup model.Email (idFromShort SmallGroupId model.SmallGroupId) with
-    | Some u when Option.isSome u.Salt ->
-        // Already upgraded; match = success
-        let pwHash = pbkdf2Hash (Option.get u.Salt) model.Password
-        if u.PasswordHash = pwHash then
-            return Some { u with PasswordHash = ""; Salt = None; SmallGroups = List<UserSmallGroup>() }
-        else return None
-    | Some u when u.PasswordHash = sha1Hash model.Password ->
-        // Not upgraded, but password is good; upgrade 'em!
-        // Upgrade 'em!
-        let salt     = Guid.NewGuid ()
-        let pwHash   = pbkdf2Hash salt model.Password
-        let upgraded = { u with Salt = Some salt; PasswordHash = pwHash }
-        db.UpdateEntry upgraded
-        let! _ = db.SaveChangesAsync ()
-        return Some { u with PasswordHash = ""; Salt = None; SmallGroups = List<UserSmallGroup>() }
-    | _ -> return None
+    | Some user ->
+        let hasher = PrayerTrackerPasswordHasher ()
+        match hasher.VerifyHashedPassword (user, user.PasswordHash, model.Password) with
+        | PasswordVerificationResult.Success -> return bareUser user
+        | PasswordVerificationResult.SuccessRehashNeeded ->
+            db.UpdateEntry { user with PasswordHash = hasher.HashPassword (user, model.Password) }
+            let! _ = db.SaveChangesAsync ()
+            return bareUser user
+        | _ -> return None
+    | None -> return None
 }
 
-open System.Threading.Tasks
+/// Return a default URL if the given URL is non-local or otherwise questionable
+let sanitizeUrl providedUrl defaultUrl =
+    let url = match defaultArg providedUrl "" with "" -> defaultUrl | it -> it
+    if url.IndexOf "\\" >= 0 || url.IndexOf "//" >= 0 then defaultUrl
+    elif Seq.exists Char.IsControl url then defaultUrl
+    else url
 
 /// POST /user/password/change
 let changePassword : HttpHandler = requireAccess [ User ] >=> validateCsrf >=> fun next ctx -> task {
@@ -38,25 +80,21 @@ let changePassword : HttpHandler = requireAccess [ User ] >=> validateCsrf >=> f
     | Ok model ->
         let  s      = Views.I18N.localizer.Force ()
         let  curUsr = ctx.Session.CurrentUser.Value
-        let! dbUsr  = ctx.Db.TryUserById curUsr.Id
-        let  group  = ctx.Session.CurrentGroup.Value
-        let! user   =
-            match dbUsr with
+        let  hasher = PrayerTrackerPasswordHasher ()
+        let! user   = task {
+            match! ctx.Db.TryUserById curUsr.Id with
             | Some usr ->
-                // Check the old password against a possibly non-salted hash
-                (match usr.Salt with Some salt -> pbkdf2Hash salt | None -> sha1Hash) model.OldPassword
-                |> ctx.Db.TryUserLogOnByCookie curUsr.Id group.Id
-            | _ -> Task.FromResult None
+                if hasher.VerifyHashedPassword (usr, usr.PasswordHash, model.OldPassword)
+                       = PasswordVerificationResult.Success then
+                    return Some usr
+                else return None
+            | _ -> return None
+        }
         match user with
-        | Some _ when model.NewPassword = model.NewPasswordConfirm ->
-            match dbUsr with
-            | Some usr ->
-                // Generate new salt whenever the password is changed
-                let salt = Guid.NewGuid ()
-                ctx.Db.UpdateEntry { usr with PasswordHash = pbkdf2Hash salt model.NewPassword; Salt = Some salt }
-                let! _ = ctx.Db.SaveChangesAsync ()
-                addInfo ctx s["Your password was changed successfully"]
-            | None -> addError ctx s["Unable to change password"]
+        | Some usr when model.NewPassword = model.NewPasswordConfirm ->
+            ctx.Db.UpdateEntry { usr with PasswordHash = hasher.HashPassword (usr, model.NewPassword) }
+            let! _ = ctx.Db.SaveChangesAsync ()
+            addInfo ctx s["Your password was changed successfully"]
             return! redirectTo false "/" next ctx
         | Some _ ->
             addError ctx s["The new passwords did not match - your password was NOT changed"]
@@ -90,55 +128,41 @@ open Microsoft.AspNetCore.Html
 let doLogOn : HttpHandler = requireAccess [ AccessLevel.Public ] >=> validateCsrf >=> fun next ctx -> task {
     match! ctx.TryBindFormAsync<UserLogOn> () with
     | Ok model -> 
-        let  s   = Views.I18N.localizer.Force ()
-        let! usr = findUserByPassword model ctx.Db
-        match! ctx.Db.TryGroupById (idFromShort SmallGroupId model.SmallGroupId) with
-        | Some group ->
-            let! nextUrl = backgroundTask {
-                match usr with
-                | Some user ->
-                    ctx.Session.CurrentUser  <- usr
-                    ctx.Session.CurrentGroup <- Some group
-                    let claims = seq {
+        let s = Views.I18N.localizer.Force ()
+        match! findUserByPassword model ctx.Db with
+        | Some user ->
+            match! ctx.Db.TryGroupById (idFromShort SmallGroupId model.SmallGroupId) with
+            | Some group ->
+                ctx.Session.CurrentUser  <- Some user
+                ctx.Session.CurrentGroup <- Some group
+                let identity = ClaimsIdentity (
+                    seq {
                         Claim (ClaimTypes.NameIdentifier, shortGuid user.Id.Value)
                         Claim (ClaimTypes.GroupSid, shortGuid group.Id.Value)
-                        Claim (ClaimTypes.Role, if user.IsAdmin then "Admin" else "User")
-                    }
-                    let identity = ClaimsIdentity (claims, CookieAuthenticationDefaults.AuthenticationScheme)
-                    do! ctx.SignInAsync
-                            (identity.AuthenticationType, ClaimsPrincipal identity,
-                             AuthenticationProperties (
-                                 IssuedUtc    = DateTimeOffset.UtcNow,
-                                 IsPersistent = defaultArg model.RememberMe false))
-                    addHtmlInfo ctx s["Log On Successful • Welcome to {0}", s["PrayerTracker"]]
-                    return
-                        match model.RedirectUrl with
-                        | None -> "/small-group"
-                        | Some x when x = ""-> "/small-group"
-                        | Some x when x.IndexOf "://" < 0 -> x
-                        | _ -> "/small-group"
-                | _ ->
-                    { UserMessage.error with
-                        Text        = htmlLocString s["Invalid credentials - log on unsuccessful"]
-                        Description =
-                            [   s["This is likely due to one of the following reasons"].Value
-                                ":<ul><li>"
-                                s["The e-mail address “{0}” is invalid.", WebUtility.HtmlEncode model.Email].Value
-                                "</li><li>"
-                                s["The password entered does not match the password for the given e-mail address."].Value
-                                "</li><li>"
-                                s["You are not authorized to administer the group “{0}”.",
-                                    WebUtility.HtmlEncode group.Name].Value
-                                "</li></ul>"
-                            ]
-                            |> String.concat ""
-                            |> (HtmlString >> Some)
-                    }
-                    |> addUserMessage ctx
-                    return "/user/log-on"
+                    }, CookieAuthenticationDefaults.AuthenticationScheme)
+                do! ctx.SignInAsync (
+                        identity.AuthenticationType, ClaimsPrincipal identity,
+                        AuthenticationProperties (
+                            IssuedUtc    = DateTimeOffset.UtcNow,
+                            IsPersistent = defaultArg model.RememberMe false))
+                addHtmlInfo ctx s["Log On Successful • Welcome to {0}", s["PrayerTracker"]]
+                return! redirectTo false (sanitizeUrl model.RedirectUrl "/small-group") next ctx
+            | None -> return! fourOhFour ctx
+        | None ->
+            { UserMessage.error with
+                Text        = htmlLocString s["Invalid credentials - log on unsuccessful"]
+                Description =
+                    let detail =
+                        [   "This is likely due to one of the following reasons:<ul>"
+                            "<li>The e-mail address “{0}” is invalid.</li>"
+                            "<li>The password entered does not match the password for the given e-mail address.</li>"
+                            "<li>You are not authorized to administer the selected group.</li></ul>"
+                        ]
+                        |> String.concat ""
+                    Some (HtmlString (s[detail, WebUtility.HtmlEncode model.Email].Value))
             }
-            return! redirectTo false nextUrl next ctx
-        | None -> return! fourOhFour ctx
+            |> addUserMessage ctx
+            return! redirectTo false "/user/log-on" next ctx
     | Result.Error e -> return! bindError e next ctx
 }
 
@@ -191,6 +215,8 @@ let password : HttpHandler = requireAccess [ User ] >=> fun next ctx ->
     |> Views.User.changePassword ctx
     |> renderHtml next ctx
 
+open System.Threading.Tasks
+
 /// POST /user/save
 let save : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next ctx -> task {
     match! ctx.TryBindFormAsync<EditUser> () with
@@ -198,20 +224,10 @@ let save : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next c
         let! user =
             if model.IsNew then Task.FromResult (Some { User.empty with Id = (Guid.NewGuid >> UserId) () })
             else ctx.Db.TryUserById (idFromShort UserId model.UserId)
-        let saltedUser = 
-            match user with
-            | Some u ->
-                match u.Salt with
-                | None when model.Password <> "" ->
-                    // Generate salt so that a new password hash can be generated
-                    Some { u with Salt = Some (Guid.NewGuid ()) }
-                | _ ->
-                    // Leave the user with no salt, so prior hash can be validated/upgraded
-                    user
-            | _ -> user
-        match saltedUser with
-        | Some u ->
-            let updatedUser = model.PopulateUser u (pbkdf2Hash (Option.get u.Salt))
+        match user with
+        | Some usr ->
+            let hasher      = PrayerTrackerPasswordHasher ()
+            let updatedUser = model.PopulateUser usr (fun pw -> hasher.HashPassword (usr, pw))
             updatedUser |> if model.IsNew then ctx.Db.AddEntry else ctx.Db.UpdateEntry
             let! _ = ctx.Db.SaveChangesAsync ()
             let  s = Views.I18N.localizer.Force ()
@@ -224,7 +240,7 @@ let save : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next c
                       |> Some
                 }
                 |> addUserMessage ctx
-                return! redirectTo false $"/user/{shortGuid u.Id.Value}/small-groups" next ctx
+                return! redirectTo false $"/user/{shortGuid usr.Id.Value}/small-groups" next ctx
             else
                 addInfo ctx s["Successfully {0} user", s["Updated"].Value.ToLower ()]
                 return! redirectTo false "/users" next ctx

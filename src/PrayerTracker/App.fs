@@ -49,9 +49,9 @@ module Configure =
         let _ =
             svc.Configure<RequestLocalizationOptions>(fun (opts : RequestLocalizationOptions) ->
                 let supportedCultures =[|
-                     CultureInfo "en-US"; CultureInfo "en-GB"; CultureInfo "en-AU"; CultureInfo "en"
-                     CultureInfo "es-MX"; CultureInfo "es-ES"; CultureInfo "es"
-                    |]
+                    CultureInfo "en-US"; CultureInfo "en-GB"; CultureInfo "en-AU"; CultureInfo "en"
+                    CultureInfo "es-MX"; CultureInfo "es-ES"; CultureInfo "es"
+                |]
                 opts.DefaultRequestCulture <- RequestCulture ("en-US", "en-US")
                 opts.SupportedCultures     <- supportedCultures
                 opts.SupportedUICultures   <- supportedCultures)
@@ -212,20 +212,55 @@ module Configure =
 
 /// The web application
 module App =
-  
+    
+    open System.Text
+    open Microsoft.EntityFrameworkCore
+    open Microsoft.Extensions.DependencyInjection
+    
+    let migratePasswords (app : IWebHost) =
+        task {
+            use db = app.Services.GetService<AppDbContext>()
+            let! v1Users = db.Users.FromSqlRaw("SELECT * FROM pt.pt_user WHERE salt IS NULL").ToListAsync ()
+            for user in v1Users do
+                let pw =
+                    [|  254uy 
+                        yield! (Encoding.UTF8.GetBytes user.PasswordHash)
+                    |]
+                    |> Convert.ToBase64String
+                db.UpdateEntry { user with PasswordHash = pw }
+            let! v1Count = db.SaveChangesAsync ()
+            printfn $"Updated {v1Count} users with version 1 password"
+            let! v2Users =
+                db.Users.FromSqlRaw("SELECT * FROM pt.pt_user WHERE salt IS NOT NULL").ToListAsync ()
+            for user in v2Users do
+                let pw =
+                    [|  255uy
+                        yield! (user.Salt.Value.ToByteArray ())
+                        yield! (Encoding.UTF8.GetBytes user.PasswordHash)
+                    |]
+                    |> Convert.ToBase64String
+                db.UpdateEntry { user with PasswordHash = pw }
+            let! v2Count = db.SaveChangesAsync ()
+            printfn $"Updated {v2Count} users with version 2 password"
+        } |> Async.AwaitTask |> Async.RunSynchronously
+    
     open System.IO
 
     [<EntryPoint>]
-    let main _ =
+    let main args =
         let contentRoot = Directory.GetCurrentDirectory ()
-        WebHostBuilder()
-            .UseContentRoot(contentRoot)
-            .ConfigureAppConfiguration(Configure.configuration)
-            .UseKestrel(Configure.kestrel)
-            .UseWebRoot(Path.Combine (contentRoot, "wwwroot"))
-            .ConfigureServices(Configure.services)
-            .ConfigureLogging(Configure.logging)
-            .Configure(System.Action<IApplicationBuilder> Configure.app)
-            .Build()
-            .Run ()
+        let app =
+            WebHostBuilder()
+                .UseContentRoot(contentRoot)
+                .ConfigureAppConfiguration(Configure.configuration)
+                .UseKestrel(Configure.kestrel)
+                .UseWebRoot(Path.Combine (contentRoot, "wwwroot"))
+                .ConfigureServices(Configure.services)
+                .ConfigureLogging(Configure.logging)
+                .Configure(System.Action<IApplicationBuilder> Configure.app)
+                .Build()
+        if args.Length > 0 then
+            if args[0] = "migrate-passwords" then migratePasswords app
+            else printfn $"Unrecognized option {args[0]}"
+        else app.Run ()
         0

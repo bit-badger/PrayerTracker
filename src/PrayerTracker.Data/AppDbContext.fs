@@ -65,10 +65,6 @@ type AppDbContext (options : DbContextOptions<AppDbContext>) =
       with get() = this.userGroupXref
        and set v = this.userGroupXref <- v
 
-    /// F#-style async for saving changes
-    member this.AsyncSaveChanges () =
-        this.SaveChangesAsync () |> Async.AwaitTask
-
     override _.OnConfiguring (optionsBuilder : DbContextOptionsBuilder) =
         base.OnConfiguring optionsBuilder
         optionsBuilder.UseQueryTrackingBehavior QueryTrackingBehavior.NoTracking |> ignore

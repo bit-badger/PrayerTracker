@@ -5,18 +5,6 @@ open System
 open System.Security.Cryptography
 open System.Text
 
-/// Hash a string with a SHA1 hash
-let sha1Hash (x : string) =
-    use alg = SHA1.Create ()
-    alg.ComputeHash (Encoding.ASCII.GetBytes x)
-    |> Seq.map (fun chr -> chr.ToString "x2")
-    |> String.concat ""
-
-/// Hash a string using 1,024 rounds of PBKDF2 and a salt
-let pbkdf2Hash (salt : Guid) (x : string) =
-    use alg = new Rfc2898DeriveBytes (x, Encoding.UTF8.GetBytes (salt.ToString "N"), 1024)
-    (alg.GetBytes >> Convert.ToBase64String) 64
-
 open Giraffe
 
 /// Parse a short-GUID-based ID from a string

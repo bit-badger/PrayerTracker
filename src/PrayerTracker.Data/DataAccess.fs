@@ -25,7 +25,6 @@ module private Helpers =
 
 
 open System
-open System.Collections.Generic
 open Microsoft.EntityFrameworkCore
 open Microsoft.FSharpLu
 
@@ -198,25 +197,12 @@ type AppDbContext with
         | _ -> return None
     }
 
-    /// Check a cookie log on for a small group
-    member this.TryGroupLogOnByCookie groupId pwHash (hasher : string -> string) = backgroundTask {
-        match! this.TryGroupById groupId with
-        | None -> return None
-        | Some grp -> return if pwHash = hasher grp.Preferences.GroupPassword then Some grp else None
-    }
-
     /// Count small groups for the given church Id
     member this.CountGroupsByChurch churchId = backgroundTask {
         return! this.SmallGroups.CountAsync (fun sg -> sg.ChurchId = churchId)
     }
         
     (*-- TIME ZONE EXTENSIONS --*)
-
-    /// Get a time zone by its Id
-    member this.TryTimeZoneById tzId = backgroundTask {
-        let! zone = this.TimeZones.SingleOrDefaultAsync (fun tz -> tz.Id = tzId)
-        return Option.fromObject zone
-    }
 
     /// Get all time zones
     member this.AllTimeZones () = backgroundTask {
@@ -256,26 +242,6 @@ type AppDbContext with
     member this.AllUsersAsMembers () = backgroundTask {
         let! users = this.AllUsers ()
         return users |> List.map (fun u -> { Member.empty with Email = u.Email; Name = u.Name })
-    }
-
-    /// Find a user based on their credentials
-    member this.TryUserLogOnByPassword email pwHash groupId = backgroundTask {
-        let! usr =
-            this.Users.SingleOrDefaultAsync (fun u ->
-                   u.Email = email
-                && u.PasswordHash = pwHash
-                && u.SmallGroups.Any (fun xref -> xref.SmallGroupId = groupId))
-        return Option.fromObject usr
-    }
-
-    /// Find a user based on credentials stored in a cookie
-    member this.TryUserLogOnByCookie uId gId pwHash = backgroundTask {
-        match! this.TryUserByIdWithGroups uId with
-        | None -> return None
-        | Some usr ->
-            if pwHash = usr.PasswordHash && usr.SmallGroups |> Seq.exists (fun xref -> xref.SmallGroupId = gId) then
-                return Some { usr with PasswordHash = ""; Salt = None; SmallGroups = List<UserSmallGroup>() }
-            else return None
     }
 
     /// Count the number of users for a small group

@@ -417,8 +417,8 @@
   <data name="There are no classes with passwords defined" xml:space="preserve">
     <value>No hay clases con contraseñas se define</value>
   </data>
-  <data name="This is likely due to one of the following reasons:&lt;ul&gt;&lt;li&gt;The e-mail address “{0}” is invalid.&lt;/li&gt;&lt;li&gt;The password entered does not match the password for the given e-mail address.&lt;/li&gt;&lt;li&gt;You are not authorized to administer the group “{1}”.&lt;/li&gt;&lt;/ul&gt;" xml:space="preserve">
-    <value>Esto es probablemente debido a una de las siguientes razones:&lt;ul&gt;&lt;li&gt;La dirección de correo electrónico “{0}” no es válida.&lt;/li&gt;&lt;li&gt;La contraseña introducida no coincide con la contraseña de la determinada dirección de correo electrónico.&lt;/li&gt;&lt;li&gt;Usted no está autorizado para administrar el grupo “{1}”.&lt;/li&gt;&lt;/ul&gt;</value>
+  <data name="This is likely due to one of the following reasons:&lt;ul&gt;&lt;li&gt;The e-mail address “{0}” is invalid.&lt;/li&gt;&lt;li&gt;The password entered does not match the password for the given e-mail address.&lt;/li&gt;&lt;li&gt;You are not authorized to administer the selected group.&lt;/li&gt;&lt;/ul&gt;" xml:space="preserve">
+    <value>Esto es probablemente debido a una de las siguientes razones:&lt;ul&gt;&lt;li&gt;La dirección de correo electrónico “{0}” no es válida.&lt;/li&gt;&lt;li&gt;La contraseña introducida no coincide con la contraseña de la determinada dirección de correo electrónico.&lt;/li&gt;&lt;li&gt;Usted no está autorizado para administrar el grupo seleccionado.&lt;/li&gt;&lt;/ul&gt;</value>
   </data>
   <data name="This page loaded in {0:N3} seconds" xml:space="preserve">
     <value>Esta página cargada en {0:N3} segundos</value>
