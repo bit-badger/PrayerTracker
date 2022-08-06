@@ -336,15 +336,8 @@ type AppDbContext with
   /// Get all PrayerTracker users as members (used to send e-mails)
   member this.AllUsersAsMembers () =
     task {
-      let q =
-        query {
-          for usr in this.Users.AsNoTracking () do
-            sortBy usr.lastName
-            thenBy usr.firstName
-            select { Member.empty with email = usr.emailAddress; memberName = usr.fullName }
-          }
-      let! usrs = q.ToListAsync ()
-      return List.ofSeq usrs
+      let! users = this.AllUsers ()
+      return users |> List.map (fun u -> { Member.empty with email = u.emailAddress; memberName = u.fullName })
       }
 
   /// Find a user based on their credentials
