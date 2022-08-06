@@ -36,18 +36,20 @@ module Configure =
         (ctx.Configuration.GetSection >> opts.Configure >> ignore) "Kestrel"
 
     open System.Globalization
+    open System.IO
     open Microsoft.AspNetCore.Authentication.Cookies
     open Microsoft.AspNetCore.Localization
     open Microsoft.EntityFrameworkCore
     open Microsoft.Extensions.DependencyInjection
+    open NeoSmart.Caching.Sqlite
     open NodaTime
     
     /// Configure ASP.NET Core's service collection (dependency injection container)
     let services (svc : IServiceCollection) =
-        let _ = svc.AddOptions()
-        let _ = svc.AddLocalization(fun options -> options.ResourcesPath <- "Resources")
+        let _ = svc.AddOptions ()
+        let _ = svc.AddLocalization (fun options -> options.ResourcesPath <- "Resources")
         let _ =
-            svc.Configure<RequestLocalizationOptions>(fun (opts : RequestLocalizationOptions) ->
+            svc.Configure<RequestLocalizationOptions> (fun (opts : RequestLocalizationOptions) ->
                 let supportedCultures =[|
                     CultureInfo "en-US"; CultureInfo "en-GB"; CultureInfo "en-AU"; CultureInfo "en"
                     CultureInfo "es-MX"; CultureInfo "es-ES"; CultureInfo "es"
@@ -57,20 +59,20 @@ module Configure =
                 opts.SupportedUICultures   <- supportedCultures)
         let _ =
             svc.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-                .AddCookie(fun opts ->
+                .AddCookie (fun opts ->
                     opts.ExpireTimeSpan    <- TimeSpan.FromMinutes 120.
                     opts.SlidingExpiration <- true
                     opts.AccessDeniedPath  <- "/error/403")
         let _ = svc.AddAuthorization ()
-        let _ = svc.AddDistributedMemoryCache()
-        let _ = svc.AddSession()
-        let _ = svc.AddAntiforgery()
-        let _ = svc.AddRouting()
+        let _ = svc.AddSqliteCache (fun opts -> opts.CachePath <- Path.Combine (".", "session.db"))
+        let _ = svc.AddSession ()
+        let _ = svc.AddAntiforgery ()
+        let _ = svc.AddRouting ()
         let _ = svc.AddSingleton<IClock> SystemClock.Instance
         
         let config = svc.BuildServiceProvider().GetRequiredService<IConfiguration> ()
         let _      =
-            svc.AddDbContext<AppDbContext>(
+            svc.AddDbContext<AppDbContext> (
                 (fun options -> options.UseNpgsql (config.GetConnectionString "PrayerTracker") |> ignore),
                 ServiceLifetime.Scoped, ServiceLifetime.Singleton)
         ()

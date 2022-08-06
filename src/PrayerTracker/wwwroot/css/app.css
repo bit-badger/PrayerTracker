@@ -262,6 +262,20 @@ footer a:hover {
 .pt-right-text {
   text-align: right;
 }
+
+.pt-data-list {
+  display: grid;
+  justify-content: center;
+  grid-row-gap: .5rem;
+  grid-column-gap: 1rem;
+}
+.pt-data-list .row {
+  display: contents;
+}
+.pt-data-list .row:hover > * {
+  background-color: purple;
+}
+
 .pt-table {
   margin: auto;
   border-collapse: collapse;

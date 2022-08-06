@@ -1,6 +1,7 @@
 ﻿module PrayerTracker.Views.Church
 
 open Giraffe.ViewEngine
+open Giraffe.ViewEngine.Accessibility
 open PrayerTracker
 open PrayerTracker.Entities
 open PrayerTracker.ViewModels
@@ -56,38 +57,72 @@ let edit (model : EditChurch) ctx viewInfo =
 
 
 /// View for church maintenance page
-let maintain (churches : Church list) (stats : Map<string, ChurchStats>) ctx vi =
+let maintain (churches : Church list) (stats : Map<string, ChurchStats>) ctx viewInfo =
     let s     = I18N.localizer.Force ()
+    let vi =
+        AppViewInfo.withScopedStyles [
+            "#churchList { grid-template-columns: repeat(7, auto); }"
+        ] viewInfo
     let chTbl =
         match churches with
         | [] -> space
         | _ ->
-            table [ _class "pt-table pt-action-table" ] [
-                tableHeadings s [ "Actions"; "Name"; "Location"; "Groups"; "Requests"; "Users"; "Interface?" ]
-                churches
-                |> List.map (fun ch ->
-                    let chId      = shortGuid ch.Id.Value
-                    let delAction = $"/church/{chId}/delete"
+            section [ _id "churchList"; _class "pt-data-list"; _ariaLabel "Church list" ] [
+                header [] [ locStr s["Actions"] ]
+                header [] [ locStr s["Name"] ]
+                header [] [ locStr s["Location"] ]
+                header [] [ locStr s["Groups"] ]
+                header [] [ locStr s["Requests"] ]
+                header [] [ locStr s["Users"] ]
+                header [] [ locStr s["Interface?"] ]
+                for church in churches do
+                    let churchId  = shortGuid church.Id.Value
+                    let delAction = $"/church/{churchId}/delete"
                     let delPrompt = s["Are you sure you want to delete this {0}?  This action cannot be undone.",
-                                      $"""{s["Church"].Value.ToLower ()} ({ch.Name})"""]
-                    tr [] [
-                        td [] [
-                            a [ _href $"/church/{chId}/edit"; _title s["Edit This Church"].Value ] [ icon "edit" ]
+                                      $"""{s["Church"].Value.ToLower ()} ({church.Name})"""]
+                    div [ _class "row" ] [
+                        div [] [
+                            a [ _href $"/church/{churchId}/edit"; _title s["Edit This Church"].Value ] [ icon "edit" ]
                             a [ _href    delAction
                                 _title   s["Delete This Church"].Value
                                 _onclick $"return PT.confirmDelete('{delAction}','{delPrompt}')" ] [
                                 icon "delete_forever"
                             ]
                         ]
-                        td [] [ str ch.Name ]
-                        td [] [ str ch.City; rawText ", "; str ch.State ]
-                        td [ _class "pt-right-text" ] [ rawText (stats[chId].SmallGroups.ToString "N0") ]
-                        td [ _class "pt-right-text" ] [ rawText (stats[chId].PrayerRequests.ToString "N0") ]
-                        td [ _class "pt-right-text" ] [ rawText (stats[chId].Users.ToString "N0") ]
-                        td [ _class "pt-center-text" ] [ locStr s[if ch.HasVpsInterface then "Yes" else "No"] ]
-                    ])
-                |> tbody []
+                        div [] [ str church.Name ]
+                        div [] [ str church.City; rawText ", "; str church.State ]
+                        div [ _class "pt-right-text" ] [ rawText (stats[churchId].SmallGroups.ToString "N0") ]
+                        div [ _class "pt-right-text" ] [ rawText (stats[churchId].PrayerRequests.ToString "N0") ]
+                        div [ _class "pt-right-text" ] [ rawText (stats[churchId].Users.ToString "N0") ]
+                        div [ _class "pt-center-text" ] [ locStr s[if church.HasVpsInterface then "Yes" else "No"] ]
+                    ]
             ]
+            // table [ _class "pt-table pt-action-table" ] [
+            //     tableHeadings s [ "Actions"; "Name"; "Location"; "Groups"; "Requests"; "Users"; "Interface?" ]
+            //     churches
+            //     |> List.map (fun ch ->
+            //         let chId      = shortGuid ch.Id.Value
+            //         let delAction = $"/church/{chId}/delete"
+            //         let delPrompt = s["Are you sure you want to delete this {0}?  This action cannot be undone.",
+            //                           $"""{s["Church"].Value.ToLower ()} ({ch.Name})"""]
+            //         tr [] [
+            //             td [] [
+            //                 a [ _href $"/church/{chId}/edit"; _title s["Edit This Church"].Value ] [ icon "edit" ]
+            //                 a [ _href    delAction
+            //                     _title   s["Delete This Church"].Value
+            //                     _onclick $"return PT.confirmDelete('{delAction}','{delPrompt}')" ] [
+            //                     icon "delete_forever"
+            //                 ]
+            //             ]
+            //             td [] [ str ch.Name ]
+            //             td [] [ str ch.City; rawText ", "; str ch.State ]
+            //             td [ _class "pt-right-text" ] [ rawText (stats[chId].SmallGroups.ToString "N0") ]
+            //             td [ _class "pt-right-text" ] [ rawText (stats[chId].PrayerRequests.ToString "N0") ]
+            //             td [ _class "pt-right-text" ] [ rawText (stats[chId].Users.ToString "N0") ]
+            //             td [ _class "pt-center-text" ] [ locStr s[if ch.HasVpsInterface then "Yes" else "No"] ]
+            //         ])
+            //     |> tbody []
+            // ]
     [   div [ _class "pt-center-text" ] [
             br []
             a [ _href $"/church/{emptyGuid}/edit"; _title s["Add a New Church"].Value ] [
