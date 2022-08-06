@@ -32,7 +32,8 @@ type ISession with
       with get () = this.GetObject<User> Key.Session.currentUser |> Option.fromObject
        and set (v : User option) =
           match v with
-          | Some user -> this.SetObject Key.Session.currentUser user
+          | Some user ->
+              this.SetObject Key.Session.currentUser { user with PasswordHash = ""; SmallGroups = ResizeArray() }
           | None -> this.Remove Key.Session.currentUser
     
     /// Current messages for the session
@@ -102,8 +103,7 @@ type HttpContext with
                     // Set last seen for user
                     this.Db.UpdateEntry { user with LastSeen = Some DateTime.UtcNow }
                     let! _ = this.Db.SaveChangesAsync ()
-                    this.Session.CurrentUser <-
-                        Some { user with PasswordHash = ""; SmallGroups = ResizeArray<UserSmallGroup> () }
+                    this.Session.CurrentUser <- Some user
                     return Some user
                 | None -> return None
             | None -> return None

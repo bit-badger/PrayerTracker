@@ -234,25 +234,25 @@ let private renderPageTitle viewInfo pgTitle =
 /// Render the messages that may need to be displayed to the user
 let private messages viewInfo =
     let s = I18N.localizer.Force ()
-    viewInfo.Messages
-    |> List.map (fun msg ->
-        table [ _class $"pt-msg {MessageLevel.toCssClass msg.Level}" ] [
-            tr [] [
-                td [] [
-                    match msg.Level with
-                    | Info -> ()
-                    | lvl ->
-                        strong [] [ locStr s[MessageLevel.toString lvl] ]
-                        rawText " &#xbb; "
-                    rawText msg.Text.Value
-                    match msg.Description with
-                    | Some desc ->
-                        br []
-                        div [ _class "description" ] [ rawText desc.Value ]
-                    | None -> ()
-                ]
-            ]
-        ])
+    if List.isEmpty viewInfo.Messages then []
+    else
+        viewInfo.Messages
+        |> List.map (fun msg ->
+            div [ _class $"pt-msg {MessageLevel.toCssClass msg.Level}" ] [
+                match msg.Level with
+                | Info -> ()
+                | lvl ->
+                    strong [] [ locStr s[MessageLevel.toString lvl] ]
+                    rawText " &#xbb; "
+                rawText msg.Text.Value
+                match msg.Description with
+                | Some desc ->
+                    br []
+                    div [ _class "description" ] [ rawText desc.Value ]
+                | None -> ()
+            ])
+        |> div [ _class "pt-messages" ]
+        |> List.singleton
 
 
 open System

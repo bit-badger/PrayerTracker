@@ -53,16 +53,16 @@ module Hashing =
     
 /// Retrieve a user from the database by password, upgrading password hashes if required
 let private findUserByPassword model (db : AppDbContext) = task {
-    let bareUser user = Some { user with PasswordHash = ""; SmallGroups = ResizeArray<UserSmallGroup>() }
     match! db.TryUserByEmailAndGroup model.Email (idFromShort SmallGroupId model.SmallGroupId) with
     | Some user ->
         let hasher = PrayerTrackerPasswordHasher ()
         match hasher.VerifyHashedPassword (user, user.PasswordHash, model.Password) with
-        | PasswordVerificationResult.Success -> return bareUser user
+        | PasswordVerificationResult.Success -> return Some user
         | PasswordVerificationResult.SuccessRehashNeeded ->
-            db.UpdateEntry { user with PasswordHash = hasher.HashPassword (user, model.Password) }
+            let upgraded = { user with PasswordHash = hasher.HashPassword (user, model.Password) }
+            db.UpdateEntry upgraded
             let! _ = db.SaveChangesAsync ()
-            return bareUser user
+            return Some upgraded
         | _ -> return None
     | None -> return None
 }
@@ -145,6 +145,8 @@ let doLogOn : HttpHandler = requireAccess [ AccessLevel.Public ] >=> validateCsr
                         AuthenticationProperties (
                             IssuedUtc    = DateTimeOffset.UtcNow,
                             IsPersistent = defaultArg model.RememberMe false))
+                ctx.Db.UpdateEntry { user with LastSeen = Some DateTime.UtcNow }
+                let! _ = ctx.Db.SaveChangesAsync ()
                 addHtmlInfo ctx s["Log On Successful • Welcome to {0}", s["PrayerTracker"]]
                 return! redirectTo false (sanitizeUrl model.RedirectUrl "/small-group") next ctx
             | None -> return! fourOhFour ctx

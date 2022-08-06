@@ -266,31 +266,35 @@ footer a:hover {
   margin: auto;
   border-collapse: collapse;
 }
-.pt-table tr:hover {
+.pt-table thead {
+  background-image: linear-gradient(to bottom, var(--dark), var(--lighter-dark));
+  color: white;
+}
+.pt-table tbody tr:hover {
   background-color: #eee;
 }
 .pt-table tr th,
 .pt-table tr td {
   padding: .25rem .5rem;
 }
-.pt-table tr td {
-  border-bottom: dotted 1px #444;
+.pt-table tbody tr td {
+  border-bottom: solid 1px var(--lighter-dark);
 }
-.pt-action-table tr td:first-child {
+.pt-action-table tbody tr td:first-child {
   white-space: nowrap;
   border-bottom: 0;
 }
-.pt-action-table tr td:first-child a {
-  background-color: lightgray;
+.pt-action-table tbody tr td:first-child a {
+  background-color: gray;
   color: white;
   border-radius: .5rem;
   padding: .125rem .5rem .5rem .5rem;
   margin: 0 .125rem;
 }
-.pt-action-table tr:hover td:first-child a {
-  background-color: navy;
+.pt-action-table tbody tr:hover td:first-child a {
+  background-color: var(--dark);
 }
-.pt-action-table tr td:first-child a:hover {
+.pt-action-table tbody tr td:first-child a:hover {
   border-bottom: 0;
 }
 /* TODO: Figure out nice CSS transitions for these; these don't work */
@@ -339,6 +343,12 @@ article.pt-overview section div p {
 .pt-editor {
   width: 100%;
 }
+.pt-messages {
+  display: flex;
+  flex-flow: column;
+  justify-content: center;
+  align-items: center;
+}
 .pt-msg {
   margin: .5rem auto;
   border-top-right-radius: .5rem;
@@ -346,14 +356,11 @@ article.pt-overview section div p {
   border-width: 2px;
   border-style: solid;
   border-collapse: inherit;
+  padding: 5px 30px;
+  text-align: center;
 }
 .pt-msg ul {
   text-align: left;
-}
-.pt-msg td {
-  padding: 5px 30px;
-  margin-bottom: 2px;
-  text-align: center;
 }
 .pt-msg.error {
   background-color: #ffb6c1;
