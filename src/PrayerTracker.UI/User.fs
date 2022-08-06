@@ -1,6 +1,8 @@
 ﻿module PrayerTracker.Views.User
 
 open Giraffe.ViewEngine
+open Giraffe.ViewEngine.Accessibility
+open Giraffe.ViewEngine.Htmx
 open PrayerTracker
 open PrayerTracker.ViewModels
 
@@ -8,37 +10,33 @@ open PrayerTracker.ViewModels
 let assignGroups model groups curGroups ctx viewInfo =
     let s         = I18N.localizer.Force ()
     let pageTitle = sprintf "%s • %A" model.UserName s["Assign Groups"]
+    let vi        = AppViewInfo.withScopedStyles [ "#groupList { grid-template-columns: auto; }" ] viewInfo
     form [ _action "/user/small-groups/save"; _method "post"; _class "pt-center-columns"; Target.content ] [
         csrfToken ctx
         inputField "hidden" (nameof model.UserId) model.UserId []
         inputField "hidden" (nameof model.UserName) model.UserName []
-        table [ _class "pt-table" ] [
-            thead [] [
-                tr [] [
-                    th [] [ rawText "&nbsp;" ]
-                    th [] [ locStr s["Group"] ]
-                ]
+        section [ _id "groupList"; _class "pt-table"; _ariaLabel "Assigned small groups" ] [
+            div [ _class "row head" ] [
+                header [ _class "cell" ] [ locStr s["Group"] ]
             ]
-            groups
-            |> List.map (fun (grpId, grpName) ->
-                let inputId = $"id-{grpId}"
-                tr [] [
-                    td [] [
+            for groupId, name in groups do
+                div [ _class "row" ] [
+                    div [ _class "cell" ] [
                         input [ _type  "checkbox"
                                 _name  (nameof model.SmallGroups)
-                                _id    inputId
-                                _value grpId
-                                if List.contains grpId curGroups then _checked ]
+                                _id    groupId
+                                _value groupId
+                                if List.contains groupId curGroups then _checked ]
+                        space
+                        label [ _for groupId ] [ str name ]
                     ]
-                    td [] [ label [ _for inputId ] [ str grpName ] ]
-                ])
-            |> tbody []
+                ]
         ]
         div [ _fieldRow ] [ submit [] "save" s["Save Group Assignments"] ]
     ]
     |> List.singleton
     |> Layout.Content.standard
-    |> Layout.standard viewInfo pageTitle
+    |> Layout.standard vi pageTitle
 
 
 /// View for the password change page
@@ -186,40 +184,45 @@ open PrayerTracker.Entities
 
 /// View for the user maintenance page
 let maintain (users : User list) ctx viewInfo =
-    let s      = I18N.localizer.Force ()
-    let usrTbl =
+    let s  = I18N.localizer.Force ()
+    let vi = AppViewInfo.withScopedStyles [ "#userList { grid-template-columns: repeat(4, auto); }" ] viewInfo
+    let userTable =
         match users with
         | [] -> space
         | _ ->
-            table [ _class "pt-table pt-action-table" ] [
-                tableHeadings s [ "Actions"; "Name"; "Last Seen"; "Admin?" ]
-                users
-                |> List.map (fun user ->
+            section [ _id "userList"; _class "pt-table"; _ariaLabel "User list" ] [
+                div [ _class "row head" ] [
+                    header [ _class "cell" ] [ locStr s["Actions"] ]
+                    header [ _class "cell" ] [ locStr s["Name"] ]
+                    header [ _class "cell" ] [ locStr s["Last Seen"] ]
+                    header [ _class "cell" ] [ locStr s["Admin?"] ]  
+                ]
+                for user in users do
                     let userId    = shortGuid user.Id.Value
                     let delAction = $"/user/{userId}/delete"
                     let delPrompt = s["Are you sure you want to delete this {0}?  This action cannot be undone.",
                                       $"""{s["User"].Value.ToLower ()} ({user.Name})"""].Value
-                    tr [] [
-                        td [] [
-                            a [ _href $"/user/{userId}/edit"; _title s["Edit This User"].Value ] [ icon "edit" ]
+                    div [ _class "row" ] [
+                        div [ _class "cell actions" ] [
+                            a [ _href $"/user/{userId}/edit"; _title s["Edit This User"].Value ] [ iconSized 18 "edit" ]
                             a [ _href $"/user/{userId}/small-groups"; _title s["Assign Groups to This User"].Value ] [
-                                icon "group"
+                                iconSized 18 "group"
                             ]
-                            a [ _href     delAction
-                                _title   s["Delete This User"].Value
-                                _onclick $"return PT.confirmDelete('{delAction}','{delPrompt}')" ] [
-                                icon "delete_forever"
+                            a [ _href      delAction
+                                _title     s["Delete This User"].Value
+                                _hxPost    delAction
+                                _hxConfirm delPrompt ] [
+                                iconSized 18 "delete_forever"
                             ]
                         ]
-                        td [] [ str user.Name ]
-                        td [] [
+                        div [ _class "cell" ] [ str user.Name ]
+                        div [ _class "cell" ] [
                             str (match user.LastSeen with Some dt -> dt.ToString s["MMMM d, yyyy"] | None -> "--")
                         ]
-                        td [ _class "pt-center-text" ] [
+                        div [ _class "cell pt-center-text" ] [
                             if user.IsAdmin then strong [] [ locStr s["Yes"] ] else locStr s["No"]
                         ]
-                    ])
-              |> tbody []
+                    ]
             ]
     [   div [ _class "pt-center-text" ] [
             br []
@@ -230,8 +233,10 @@ let maintain (users : User list) ctx viewInfo =
             br []
         ]
         tableSummary users.Length s
-        usrTbl
-        form [ _id "DeleteForm"; _action ""; _method "post" ] [ csrfToken ctx ]
+        form [ _method "post" ] [
+            csrfToken ctx
+            userTable
+        ]
     ]
     |> Layout.Content.standard
-    |> Layout.standard viewInfo "Maintain Users"
+    |> Layout.standard vi "Maintain Users"

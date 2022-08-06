@@ -263,54 +263,48 @@ footer a:hover {
   text-align: right;
 }
 
-.pt-data-list {
+.pt-table {
   display: grid;
   justify-content: center;
-  grid-row-gap: .5rem;
-  grid-column-gap: 1rem;
 }
-.pt-data-list .row {
+.pt-table .row.head,
+.pt-table .row {
   display: contents;
 }
-.pt-data-list .row:hover > * {
-  background-color: purple;
-}
-
-.pt-table {
-  margin: auto;
-  border-collapse: collapse;
-}
-.pt-table thead {
-  background-image: linear-gradient(to bottom, var(--dark), var(--lighter-dark));
-  color: white;
-}
-.pt-table tbody tr:hover {
+.pt-table .row:hover > * {
   background-color: #eee;
 }
-.pt-table tr th,
-.pt-table tr td {
+.pt-table .row.head .cell {
+  background-image: linear-gradient(to bottom, var(--dark), var(--lighter-dark));
+  font-weight: bold;
+  color: white;
+  text-align: center;
+  font-size: .85rem;
+}
+.pt-table .row.head .cell:first-of-type {
+  border-top-left-radius: .5rem;
+}
+.pt-table .row.head .cell:last-of-type {
+  border-top-right-radius: .5rem;
+}
+.pt-table .cell {
   padding: .25rem .5rem;
+  border-bottom: dotted 1px var(--lighter-dark);
 }
-.pt-table tbody tr td {
-  border-bottom: solid 1px var(--lighter-dark);
+.pt-table .cell.actions {
+  border-bottom-color: var(--background);
 }
-.pt-action-table tbody tr td:first-child {
-  white-space: nowrap;
-  border-bottom: 0;
-}
-.pt-action-table tbody tr td:first-child a {
+.pt-table .cell.actions a {
   background-color: gray;
   color: white;
   border-radius: .5rem;
-  padding: .125rem .5rem .5rem .5rem;
+  padding: 0 .5rem .25rem;
   margin: 0 .125rem;
 }
-.pt-action-table tbody tr:hover td:first-child a {
+.pt-table .row:hover .cell.actions a {
   background-color: var(--dark);
 }
-.pt-action-table tbody tr td:first-child a:hover {
-  border-bottom: 0;
-}
+
 /* TODO: Figure out nice CSS transitions for these; these don't work */
 .pt-fadeable {
   height: 0;

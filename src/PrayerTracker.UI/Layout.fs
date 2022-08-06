@@ -141,15 +141,15 @@ module Navigation =
         let s = I18N.localizer.Force ()
         header [ _id "pt-language"; Target.body ] [
             div [] [
-                span [ _class "u" ] [ locStr s["Language"]; rawText ": " ]
+                span [ _title s["Language"].Value ] [ icon "record_voice_over"; space ]
                 match langCode () with
                 | "es" -> 
-                    locStr s["Spanish"]
-                    rawText " &nbsp; &bull; &nbsp; "
+                    strong [] [ locStr s["Spanish"] ]
+                    rawText " &nbsp; &nbsp; "
                     a [ _href "/language/en" ] [ locStr s["Change to English"] ]
                 | _ ->
-                    locStr s["English"]
-                    rawText " &nbsp; &bull; &nbsp; "
+                    strong [] [ locStr s["English"] ]
+                    rawText " &nbsp; &nbsp; "
                     a [ _href "/language/es" ] [ locStr s["Cambie a Español"] ]
             ]
             match m.Group with

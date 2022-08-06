@@ -1,6 +1,8 @@
 ﻿module PrayerTracker.Views.SmallGroup
 
 open Giraffe.ViewEngine
+open Giraffe.ViewEngine.Accessibility
+open Giraffe.ViewEngine.Htmx
 open Microsoft.Extensions.Localization
 open PrayerTracker
 open PrayerTracker.Entities
@@ -179,33 +181,40 @@ let logOn (groups : SmallGroup list) grpId ctx viewInfo =
 
 /// View for the small group maintenance page
 let maintain (groups : SmallGroup list) ctx viewInfo =
-    let s      = I18N.localizer.Force ()
-    let grpTbl =
+    let s  = I18N.localizer.Force ()
+    let vi = AppViewInfo.withScopedStyles [ "#groupList { grid-template-columns: repeat(4, auto); }" ] viewInfo
+    let groupTable =
         match groups with
         | [] -> space
         | _ ->
-            table [ _class "pt-table pt-action-table" ] [
-                tableHeadings s [ "Actions"; "Name"; "Church"; "Time Zone"]
-                groups
-                |> List.map (fun g ->
-                    let grpId     = shortGuid g.Id.Value
+            section [ _id "groupList"; _class "pt-table"; _ariaLabel "Small group list" ] [
+                div [ _class "row head" ] [
+                    header [ _class "cell" ] [ locStr s["Actions"] ]
+                    header [ _class "cell" ] [ locStr s["Name"] ]
+                    header [ _class "cell" ] [ locStr s["Church"] ]
+                    header [ _class "cell" ] [ locStr s["Time Zone"] ]
+                ]
+                for group in groups do
+                    let grpId     = shortGuid group.Id.Value
                     let delAction = $"/small-group/{grpId}/delete"
                     let delPrompt = s["Are you sure you want to delete this {0}?  This action cannot be undone.",
-                                         $"""{s["Small Group"].Value.ToLower ()} ({g.Name})""" ].Value
-                    tr [] [
-                        td [] [
-                            a [ _href $"/small-group/{grpId}/edit"; _title s["Edit This Group"].Value ] [ icon "edit" ]
-                            a [ _href    delAction
-                                _title   s["Delete This Group"].Value
-                                _onclick $"return PT.confirmDelete('{delAction}','{delPrompt}')" ] [
-                                icon "delete_forever"
+                                         $"""{s["Small Group"].Value.ToLower ()} ({group.Name})""" ].Value
+                    div [ _class "row" ] [
+                        div [ _class "cell actions" ] [
+                            a [ _href $"/small-group/{grpId}/edit"; _title s["Edit This Group"].Value ] [
+                                iconSized 18 "edit"
+                            ]
+                            a [ _href      delAction
+                                _title     s["Delete This Group"].Value
+                                _hxDelete  delAction
+                                _hxConfirm delPrompt ] [
+                                iconSized 18 "delete_forever"
                             ]
                         ]
-                        td [] [ str g.Name ]
-                        td [] [ str g.Church.Name ]
-                        td [] [ locStr (TimeZones.name g.Preferences.TimeZoneId s) ]
-                    ])
-                |> tbody []
+                        div [ _class "cell" ] [ str group.Name ]
+                        div [ _class "cell" ] [ str group.Church.Name ]
+                        div [ _class "cell" ] [ locStr (TimeZones.name group.Preferences.TimeZoneId s) ]
+                    ]
             ]
     [   div [ _class "pt-center-text" ] [
             br []
@@ -216,45 +225,54 @@ let maintain (groups : SmallGroup list) ctx viewInfo =
             br []
         ]
         tableSummary groups.Length s
-        grpTbl
-        form [ _id "DeleteForm"; _action ""; _method "post" ] [ csrfToken ctx ]
+        form [ _method "post" ] [
+            csrfToken ctx
+            groupTable
+        ]
     ]
     |> Layout.Content.standard
-    |> Layout.standard viewInfo "Maintain Groups"
+    |> Layout.standard vi "Maintain Groups"
 
 
 /// View for the member maintenance page
 let members (members : Member list) (emailTypes : Map<string, LocalizedString>) ctx viewInfo =
-    let s      = I18N.localizer.Force ()
-    let mbrTbl =
+    let s  = I18N.localizer.Force ()
+    let vi = AppViewInfo.withScopedStyles [ "#memberList { grid-template-columns: repeat(4, auto); }" ] viewInfo
+    let memberTable =
         match members with
         | [] -> space
         | _ ->
-            table [ _class "pt-table pt-action-table" ] [
-                tableHeadings s [ "Actions"; "Name"; "E-mail Address"; "Format"]
-                members
-                |> List.map (fun mbr ->
+            section [ _id "memberList"; _class "pt-table"; _ariaLabel "Small group member list" ] [
+                div [ _class "row head" ] [
+                    header [ _class "cell"] [ locStr s["Actions"] ]
+                    header [ _class "cell"] [ locStr s["Name"] ]
+                    header [ _class "cell"] [ locStr s["E-mail Address"] ]
+                    header [ _class "cell"] [ locStr s["Format"] ]
+                ]
+                for mbr in members do
                     let mbrId     = shortGuid mbr.Id.Value
                     let delAction = $"/small-group/member/{mbrId}/delete"
                     let delPrompt =
                         s["Are you sure you want to delete this {0}?  This action cannot be undone.", s["group member"]]
                             .Value.Replace("?", $" ({mbr.Name})?")
-                    tr [] [
-                        td [] [
+                    div [ _class "row" ] [
+                        div [ _class "cell actions" ] [
                             a [ _href $"/small-group/member/{mbrId}/edit"; _title s["Edit This Group Member"].Value ] [
-                                icon "edit"
+                                iconSized 18 "edit"
                             ]
-                            a [ _href    delAction
-                                _title   s["Delete This Group Member"].Value
-                                _onclick $"return PT.confirmDelete('{delAction}','{delPrompt}')" ] [
-                                icon "delete_forever"
+                            a [ _href      delAction
+                                _title     s["Delete This Group Member"].Value
+                                _hxPost    delAction
+                                _hxConfirm delPrompt ] [
+                                iconSized 18 "delete_forever"
                             ]
                         ]
-                        td [] [ str mbr.Name ]
-                        td [] [ str mbr.Email ]
-                        td [] [ locStr emailTypes[defaultArg (mbr.Format |> Option.map EmailFormat.toCode) ""] ]
-                    ])
-                |> tbody []
+                        div [ _class "cell" ] [ str mbr.Name ]
+                        div [ _class "cell" ] [ str mbr.Email ]
+                        div [ _class "cell" ] [
+                            locStr emailTypes[defaultArg (mbr.Format |> Option.map EmailFormat.toCode) ""]
+                        ]
+                    ]
             ]
     [   div [ _class"pt-center-text" ] [
             br []
@@ -265,14 +283,14 @@ let members (members : Member list) (emailTypes : Map<string, LocalizedString>) 
             br []
         ]
         tableSummary members.Length s
-        mbrTbl
-        form [ _id "DeleteForm"; _action ""; _method "post" ] [ csrfToken ctx ]
+        form [ _method "post" ] [
+            csrfToken ctx
+            memberTable
+        ]
     ]
     |> Layout.Content.standard
-    |> Layout.standard viewInfo "Maintain Group Members"
+    |> Layout.standard vi "Maintain Group Members"
 
-
-open Giraffe.ViewEngine.Accessibility
 
 /// View for the small group overview page
 let overview model viewInfo =

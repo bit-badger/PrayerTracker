@@ -4,6 +4,8 @@ open System
 open System.IO
 open Giraffe
 open Giraffe.ViewEngine
+open Giraffe.ViewEngine.Accessibility
+open Giraffe.ViewEngine.Htmx
 open Microsoft.AspNetCore.Http
 open NodaTime
 open PrayerTracker
@@ -156,10 +158,11 @@ let maintain (model : MaintainRequests) (ctx : HttpContext) viewInfo =
     let prefs = model.SmallGroup.Preferences
     let types = ReferenceList.requestTypeList s |> Map.ofList
     let updReq (req : PrayerRequest) =
-        if req.UpdateRequired now prefs.DaysToExpire prefs.LongTermUpdateWeeks then "pt-request-update" else ""
+        if req.UpdateRequired now prefs.DaysToExpire prefs.LongTermUpdateWeeks then "cell pt-request-update" else "cell"
         |> _class 
     let reqExp (req : PrayerRequest) =
-        _class (if req.IsExpired now prefs.DaysToExpire then "pt-request-expired" else "")
+        _class (if req.IsExpired now prefs.DaysToExpire then "cell pt-request-expired" else "cell")
+    let vi = AppViewInfo.withScopedStyles [ "#requestList { grid-template-columns: repeat(5, auto); }" ] viewInfo
     /// Iterate the sequence once, before we render, so we can get the count of it at the top of the table
     let requests =
         model.Requests
@@ -175,33 +178,34 @@ let maintain (model : MaintainRequests) (ctx : HttpContext) viewInfo =
                         .Value
                 ]
                 |> String.concat ""
-            tr [] [
-                td [] [
+            div [ _class "row" ] [
+                div [ _class "cell actions" ] [
                     a [ _href $"/prayer-request/{reqId}/edit"; _title l["Edit This Prayer Request"].Value ] [
-                        icon "edit"
+                        iconSized 18 "edit"
                     ]
                     if req.IsExpired now prefs.DaysToExpire then
                         a [ _href  $"/prayer-request/{reqId}/restore"
                             _title l["Restore This Inactive Request"].Value ] [
-                            icon "visibility"
+                            iconSized 18 "visibility"
                         ]
                     else
                         a [ _href  $"/prayer-request/{reqId}/expire"
                             _title l["Expire This Request Immediately"].Value ] [
-                            icon "visibility_off"
+                            iconSized 18 "visibility_off"
                         ]
-                    a [ _href    delAction
-                        _title   l["Delete This Request"].Value
-                        _onclick $"return PT.confirmDelete('{delAction}','{delPrompt}')" ] [
-                        icon "delete_forever"
+                    a [ _href      delAction
+                        _title     l["Delete This Request"].Value
+                        _hxPost    delAction
+                        _hxConfirm delPrompt ] [
+                        iconSized 18 "delete_forever"
                     ]
                 ]
-                td [ updReq req ] [
+                div [ updReq req ] [
                     str (req.UpdatedDate.ToString(s["MMMM d, yyyy"].Value, Globalization.CultureInfo.CurrentUICulture))
                 ]
-                td [] [ locStr types[req.RequestType] ]
-                td [ reqExp req ] [ str (match req.Requestor with Some r -> r | None -> " ") ]
-                td [] [
+                div [ _class "cell" ] [ locStr types[req.RequestType] ]
+                div [ reqExp req ] [ str (match req.Requestor with Some r -> r | None -> " ") ]
+                div [ _class "cell" ] [
                     match reqText.Length with
                     | len when len < 60 -> rawText reqText
                     | _ -> rawText $"{reqText[0..59]}&hellip;"
@@ -235,9 +239,18 @@ let maintain (model : MaintainRequests) (ctx : HttpContext) viewInfo =
         match requests.Length with
         | 0 -> ()
         | _ ->
-            table [ _class "pt-table pt-action-table" ] [
-                tableHeadings s [ "Actions"; "Updated Date"; "Type"; "Requestor"; "Request"]
-                tbody [] requests
+            form [ _method "post" ] [
+                csrfToken ctx
+                section [ _id "requestList"; _class "pt-table"; _ariaLabel "Prayer request list" ] [
+                    div [ _class "row head" ] [
+                        header [ _class "cell" ] [ locStr s["Actions"] ]
+                        header [ _class "cell" ] [ locStr s["Updated Date"] ]
+                        header [ _class "cell" ] [ locStr s["Type"] ]
+                        header [ _class "cell" ] [ locStr s["Requestor"] ]
+                        header [ _class "cell" ] [ locStr s["Request"] ]
+                    ]
+                    yield! requests
+                ]
             ]
         div [ _class "pt-center-text" ] [
             br []
@@ -272,10 +285,9 @@ let maintain (model : MaintainRequests) (ctx : HttpContext) viewInfo =
                     ]
                 | false -> ()
         ]
-        form [ _id "DeleteForm"; _action ""; _method "post" ] [ csrfToken ctx ]
     ]
     |> Layout.Content.wide
-    |> Layout.standard viewInfo (match model.SearchTerm with Some _ -> "Search Results" | None -> "Maintain Requests")
+    |> Layout.standard vi (match model.SearchTerm with Some _ -> "Search Results" | None -> "Maintain Requests")
 
 
 /// View for the printable prayer request list
