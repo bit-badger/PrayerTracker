@@ -9,11 +9,12 @@
   --lighter-dark: hsl(var(--dark-blue-hue), var(--dark-blue-sat), 25%);
   --inverse-backgroud: hsl(0, 0%, 95%);
   --background: hsla(0, 0%, 0%, .01);
+  --native-fonts: system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,"Liberation Sans",Cantarell,"Helvetica Neue",sans-serif;
 }
 body {
   background-color: var(--background);
   margin: 0;
-  font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif;
+  font-family: var(--native-fonts);
   font-size: 1rem;
 }
 acronym {
@@ -156,17 +157,18 @@ input[type=password],
 input[type=date],
 input[type=number],
 select {
-  border-radius: .25rem;
+  border-radius: .2rem;
   border-color: var(--lighter-dark);
   font-size: 1rem;
-  padding: .2rem;
-  font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif;
+  padding: .25rem;
+  font-family: var(--native-fonts);
+  border-width: 1px;
 }
 input:nth-of-type(2) {
   margin-left: 2rem;
 }
 button[type=submit] {
-  border-radius: 10px;
+  border-radius: .6rem;
   padding: .2rem 1rem;
   margin-top: .5rem;
   background-color: var(--lighter-dark);
