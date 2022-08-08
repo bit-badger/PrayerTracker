@@ -261,14 +261,14 @@ let sendAnnouncement : HttpHandler = requireAccess [ User ] >=> validateCsrf >=>
     match! ctx.TryBindFormAsync<Announcement> () with
     | Ok model ->
         let group = ctx.Session.CurrentGroup.Value
-        let prefs = group.Preferences
+        let pref  = group.Preferences
         let usr   = ctx.Session.CurrentUser.Value
-        let now   = group.LocalTimeNow ctx.Clock
+        let now   = SmallGroup.localTimeNow ctx.Clock group
         let s     = Views.I18N.localizer.Force ()
         // Reformat the text to use the class's font stylings
         let requestText = ckEditorToText model.Text
         let htmlText =
-            p [ _style $"font-family:{prefs.Fonts};font-size:%d{prefs.TextFontSize}pt;" ] [ rawText requestText ]
+            p [ _style $"font-family:{pref.Fonts};font-size:%d{pref.TextFontSize}pt;" ] [ rawText requestText ]
             |> renderHtmlNode
         let plainText = (htmlToPlainText >> wordWrap 74) htmlText
         // Send the e-mails
@@ -282,7 +282,7 @@ let sendAnnouncement : HttpHandler = requireAccess [ User ] >=> validateCsrf >=>
                     Recipients    = recipients
                     Group         = group
                     Subject       = s["Announcement for {0} - {1:MMMM d, yyyy} {2}", group.Name, now.Date,
-                                      (now.ToString "h:mm tt").ToLower ()].Value
+                                      (now.ToString ("h:mm tt", null)).ToLower ()].Value
                     HtmlBody      = htmlText
                     PlainTextBody = plainText
                     Strings       = s
@@ -293,14 +293,15 @@ let sendAnnouncement : HttpHandler = requireAccess [ User ] >=> validateCsrf >=>
         | _, None  -> ()
         | _, Some x when not x -> ()
         | _, _ ->
+            let zone = SmallGroup.timeZone group
             { PrayerRequest.empty with
                 Id           = (Guid.NewGuid >> PrayerRequestId) ()
                 SmallGroupId = group.Id
                 UserId       = usr.Id
                 RequestType  = (Option.get >> PrayerRequestType.fromCode) model.RequestType
                 Text         = requestText
-                EnteredDate  = now
-                UpdatedDate  = now
+                EnteredDate  = now.Date.AtStartOfDayInZone(zone).ToInstant()
+                UpdatedDate  = now.InZoneLeniently(zone).ToInstant()
             }
             |> ctx.Db.AddEntry
             let! _ = ctx.Db.SaveChangesAsync ()

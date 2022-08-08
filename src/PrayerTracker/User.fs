@@ -145,7 +145,7 @@ let doLogOn : HttpHandler = requireAccess [ AccessLevel.Public ] >=> validateCsr
                         AuthenticationProperties (
                             IssuedUtc    = DateTimeOffset.UtcNow,
                             IsPersistent = defaultArg model.RememberMe false))
-                ctx.Db.UpdateEntry { user with LastSeen = Some DateTime.UtcNow }
+                ctx.Db.UpdateEntry { user with LastSeen = Some ctx.Now }
                 let! _ = ctx.Db.SaveChangesAsync ()
                 addHtmlInfo ctx s["Log On Successful • Welcome to {0}", s["PrayerTracker"]]
                 return! redirectTo false (sanitizeUrl model.RedirectUrl "/small-group") next ctx

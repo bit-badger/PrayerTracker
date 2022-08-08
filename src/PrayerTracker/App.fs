@@ -1,17 +1,17 @@
 namespace PrayerTracker
 
-open System
 open Microsoft.AspNetCore.Http
 
 /// Middleware to add the starting ticks for the request
 type RequestStartMiddleware (next : RequestDelegate) =
     
     member this.InvokeAsync (ctx : HttpContext) = task {
-        ctx.Items[Key.startTime] <- DateTime.Now.Ticks
+        ctx.Items[Key.startTime] <- ctx.Now
         return! next.Invoke ctx
     }
 
 
+open System
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting
 
@@ -71,9 +71,13 @@ module Configure =
         let _ = svc.AddSingleton<IClock> SystemClock.Instance
         
         let config = svc.BuildServiceProvider().GetRequiredService<IConfiguration> ()
+        //NpgsqlConnection.GlobalTypeMapper.
         let _      =
             svc.AddDbContext<AppDbContext> (
-                (fun options -> options.UseNpgsql (config.GetConnectionString "PrayerTracker") |> ignore),
+                (fun options ->
+                    options.UseNpgsql (
+                        config.GetConnectionString "PrayerTracker", fun o -> o.UseNodaTime () |> ignore)
+                    |> ignore),
                 ServiceLifetime.Scoped, ServiceLifetime.Singleton)
         ()
     

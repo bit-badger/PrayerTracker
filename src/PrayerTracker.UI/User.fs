@@ -217,7 +217,10 @@ let maintain (users : User list) ctx viewInfo =
                         ]
                         div [ _class "cell" ] [ str user.Name ]
                         div [ _class "cell" ] [
-                            str (match user.LastSeen with Some dt -> dt.ToString s["MMMM d, yyyy"] | None -> "--")
+                            match user.LastSeen with
+                            | Some dt -> dt.ToString (s["MMMM d, yyyy"].Value, null)
+                            | None -> "--"
+                            |> str
                         ]
                         div [ _class "cell pt-center-text" ] [
                             if user.IsAdmin then strong [] [ locStr s["Yes"] ] else locStr s["No"]

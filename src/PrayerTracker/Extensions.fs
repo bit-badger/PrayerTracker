@@ -1,7 +1,6 @@
 ﻿[<AutoOpen>]
 module PrayerTracker.Extensions
 
-open System
 open Microsoft.AspNetCore.Http
 open Microsoft.FSharpLu
 open Newtonsoft.Json
@@ -76,6 +75,9 @@ type HttpContext with
     /// The system clock (via DI)
     member this.Clock = this.GetService<IClock> ()
     
+    /// The current instant
+    member this.Now = this.Clock.GetCurrentInstant ()
+    
     /// The currently logged on small group (sets the value in the session if it is missing)
     member this.CurrentGroup () = task {
         match this.Session.CurrentGroup with
@@ -101,7 +103,7 @@ type HttpContext with
                 match! this.Db.TryUserById userId with
                 | Some user ->
                     // Set last seen for user
-                    this.Db.UpdateEntry { user with LastSeen = Some DateTime.UtcNow }
+                    this.Db.UpdateEntry { user with LastSeen = Some this.Now }
                     let! _ = this.Db.SaveChangesAsync ()
                     this.Session.CurrentUser <- Some user
                     return Some user

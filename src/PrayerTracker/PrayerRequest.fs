@@ -20,7 +20,7 @@ let private findRequest (ctx : HttpContext) reqId = task {
 /// Generate a list of requests for the given date
 let private generateRequestList (ctx : HttpContext) date = task {
     let  group    = ctx.Session.CurrentGroup.Value
-    let  listDate = match date with Some d -> d | None -> group.LocalDateNow ctx.Clock
+    let  listDate = match date with Some d -> d | None -> SmallGroup.localDateNow ctx.Clock group
     let! reqs     = ctx.Db.AllRequestsForSmallGroup group ctx.Clock (Some listDate) true 0
     return
         {   Requests   = reqs
@@ -32,29 +32,31 @@ let private generateRequestList (ctx : HttpContext) date = task {
         }
 }
 
-open System
+open NodaTime.Text
 
 /// Parse a string into a date (optionally, of course)
 let private parseListDate (date : string option) =
     match date with
-    | Some dt -> match DateTime.TryParse dt with true, d -> Some d | false, _ -> None
+    | Some dt -> match LocalDatePattern.Iso.Parse dt with it when it.Success -> Some it.Value | _ -> None
     | None -> None
+
+open System
 
 /// GET /prayer-request/[request-id]/edit
 let edit reqId : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task {
     let group     = ctx.Session.CurrentGroup.Value
-    let now       = group.LocalDateNow ctx.Clock
+    let now       = SmallGroup.localDateNow ctx.Clock group
     let requestId = PrayerRequestId reqId
     if requestId.Value = Guid.Empty then
         return!
             { viewInfo ctx with HelpLink = Some Help.editRequest }
-            |> Views.PrayerRequest.edit EditRequest.empty (now.ToString "yyyy-MM-dd") ctx
+            |> Views.PrayerRequest.edit EditRequest.empty (now.ToString ("R", null)) ctx
             |> renderHtml next ctx
     else
         match! findRequest ctx requestId with
         | Ok req ->
             let s = Views.I18N.localizer.Force ()
-            if req.IsExpired now group.Preferences.DaysToExpire then
+            if PrayerRequest.isExpired now group req then
                 { UserMessage.warning with
                     Text        = htmlLocString s["This request is expired."]
                     Description =
@@ -128,7 +130,7 @@ let list groupId : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun ne
             viewInfo ctx
             |> Views.PrayerRequest.list
                 {   Requests   = reqs
-                    Date       = group.LocalDateNow ctx.Clock
+                    Date       = SmallGroup.localDateNow ctx.Clock group
                     SmallGroup = group
                     ShowHeader = true
                     CanEmail   = Option.isSome ctx.User.UserId
@@ -199,7 +201,7 @@ let restore reqId : HttpHandler = requireAccess [ User ] >=> fun next ctx -> tas
     match! findRequest ctx requestId with
     | Ok req ->
         let s  = Views.I18N.localizer.Force ()
-        ctx.Db.UpdateEntry { req with Expiration = Automatic; UpdatedDate = DateTime.Now }
+        ctx.Db.UpdateEntry { req with Expiration = Automatic; UpdatedDate = ctx.Now }
         let! _ = ctx.Db.SaveChangesAsync ()
         addInfo ctx s["Successfully {0} prayer request", s["Restored"].Value.ToLower ()]
         return! redirectTo false "/prayer-requests" next ctx
@@ -226,10 +228,13 @@ let save : HttpHandler = requireAccess [ User ] >=> validateCsrf >=> fun next ct
                     Expiration  = Expiration.fromCode model.Expiration
                 }
             let group = ctx.Session.CurrentGroup.Value
-            let now   = group.LocalDateNow ctx.Clock
+            let now   = SmallGroup.localDateNow ctx.Clock group
             match model.IsNew with
             | true ->
-                let dt = defaultArg model.EnteredDate now
+                let dt =
+                    (defaultArg (parseListDate model.EnteredDate) now)
+                        .AtStartOfDayInZone(SmallGroup.timeZone group)
+                        .ToInstant()
                 { upd8 with
                     SmallGroupId = group.Id
                     UserId       = ctx.User.UserId.Value
@@ -237,7 +242,7 @@ let save : HttpHandler = requireAccess [ User ] >=> validateCsrf >=> fun next ct
                     UpdatedDate  = dt
                   }
             | false when defaultArg model.SkipDateUpdate false -> upd8
-            | false -> { upd8 with UpdatedDate = now }
+            | false -> { upd8 with UpdatedDate = ctx.Now }
             |> if model.IsNew then ctx.Db.AddEntry else ctx.Db.UpdateEntry
             let! _   = ctx.Db.SaveChangesAsync ()
             let  s   = Views.I18N.localizer.Force ()

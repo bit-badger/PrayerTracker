@@ -116,7 +116,7 @@ type LayoutType =
     | ContentOnly
 
 
-open System
+open NodaTime
 
 /// View model required by the layout template, given as first parameter for all pages in PrayerTracker
 [<NoComparison; NoEquality>]
@@ -134,7 +134,7 @@ type AppViewInfo =
         Version : string
         
         /// The ticks when the request started
-        RequestStart : int64
+        RequestStart : Instant
         
         /// The currently logged on user, if there is one
         User : User option
@@ -151,7 +151,6 @@ type AppViewInfo =
         /// A JavaScript function to run on page load
         OnLoadScript : string option
     }
-    // TODO: add onload script option to this, modify layout to add it 
 
 /// Support for the AppViewInfo type
 module AppViewInfo =
@@ -162,7 +161,7 @@ module AppViewInfo =
             HelpLink     = None
             Messages     = []
             Version      = ""
-            RequestStart = DateTime.Now.Ticks
+            RequestStart = Instant.MinValue
             User         = None
             Group        = None
             Layout       = FullPage
@@ -467,7 +466,7 @@ type EditRequest =
         RequestType : string
         
         /// The date of the request
-        EnteredDate : DateTime option
+        EnteredDate : string option
         
         /// Whether to update the date or not
         SkipDateUpdate : bool option
@@ -724,6 +723,7 @@ module UserLogOn =
         }
 
 
+open System
 open Giraffe.ViewEngine
 
 /// This represents a list of requests
@@ -732,7 +732,7 @@ type RequestList =
         Requests : PrayerRequest list
         
         /// The date for which this list is being generated
-        Date : DateTime
+        Date : LocalDate
         
         /// The small group to which this list belongs
         SmallGroup : SmallGroup
@@ -767,30 +767,31 @@ with
     
     /// Is this request new?
     member this.IsNew (req : PrayerRequest) =
-        (this.Date - req.UpdatedDate).Days <= this.SmallGroup.Preferences.DaysToKeepNew
+        let reqDate = req.UpdatedDate.InZone(SmallGroup.timeZone this.SmallGroup).Date
+        Period.Between(this.Date, reqDate, PeriodUnits.Days).Days <= this.SmallGroup.Preferences.DaysToKeepNew
     
     /// Generate this list as HTML
     member this.AsHtml (s : IStringLocalizer) =
-        let prefs    = this.SmallGroup.Preferences
-        let asOfSize = Math.Round (float prefs.TextFontSize * 0.8, 2)
+        let p        = this.SmallGroup.Preferences
+        let asOfSize = Math.Round (float p.TextFontSize * 0.8, 2)
         [   if this.ShowHeader then
-                div [ _style $"text-align:center;font-family:{prefs.Fonts}" ] [
-                    span [ _style $"font-size:%i{prefs.HeadingFontSize}pt;" ] [
+                div [ _style $"text-align:center;font-family:{p.Fonts}" ] [
+                    span [ _style $"font-size:%i{p.HeadingFontSize}pt;" ] [
                         strong [] [ str s["Prayer Requests"].Value ]
                     ]
                     br []
-                    span [ _style $"font-size:%i{prefs.TextFontSize}pt;" ] [
+                    span [ _style $"font-size:%i{p.TextFontSize}pt;" ] [
                         strong [] [ str this.SmallGroup.Name ]
                         br []
-                        str (this.Date.ToString s["MMMM d, yyyy"].Value)
+                        str (this.Date.ToString (s["MMMM d, yyyy"].Value, null))
                     ]
                 ]
                 br []
             for _, name, reqs in this.RequestsByType s do
                 div [ _style "padding-left:10px;padding-bottom:.5em;" ] [
-                    table [ _style $"font-family:{prefs.Fonts};page-break-inside:avoid;" ] [
+                    table [ _style $"font-family:{p.Fonts};page-break-inside:avoid;" ] [
                         tr [] [
-                            td [ _style $"font-size:%i{prefs.HeadingFontSize}pt;color:{prefs.HeadingColor};padding:3px 0;border-top:solid 3px {prefs.LineColor};border-bottom:solid 3px {prefs.LineColor};font-weight:bold;" ] [
+                            td [ _style $"font-size:%i{p.HeadingFontSize}pt;color:{p.HeadingColor};padding:3px 0;border-top:solid 3px {p.LineColor};border-bottom:solid 3px {p.LineColor};font-weight:bold;" ] [
                                 rawText "&nbsp; &nbsp; "; str name.Value; rawText "&nbsp; &nbsp; "
                             ]
                         ]
@@ -799,7 +800,7 @@ with
                 reqs
                 |> List.map (fun req ->
                     let bullet = if this.IsNew req then "circle" else "disc"
-                    li [ _style $"list-style-type:{bullet};font-family:{prefs.Fonts};font-size:%i{prefs.TextFontSize}pt;padding-bottom:.25em;" ] [
+                    li [ _style $"list-style-type:{bullet};font-family:{p.Fonts};font-size:%i{p.TextFontSize}pt;padding-bottom:.25em;" ] [
                         match req.Requestor with
                         | Some r when r <> "" ->
                             strong [] [ str r ]
@@ -807,14 +808,14 @@ with
                         | Some _ -> ()
                         | None -> ()
                         rawText req.Text
-                        match prefs.AsOfDateDisplay with
+                        match p.AsOfDateDisplay with
                         | NoDisplay -> ()
                         | ShortDate
                         | LongDate ->
                             let dt =
-                                match prefs.AsOfDateDisplay with
-                                | ShortDate -> req.UpdatedDate.ToShortDateString ()
-                                | LongDate -> req.UpdatedDate.ToLongDateString ()
+                                match p.AsOfDateDisplay with
+                                | ShortDate -> req.UpdatedDate.ToString ("d", null)
+                                | LongDate -> req.UpdatedDate.ToString ("D", null)
                                 | _ -> ""
                             i [ _style $"font-size:%.2f{asOfSize}pt" ] [
                                 rawText "&nbsp; ("; str s["as of"].Value; str " "; str dt; rawText ")"
@@ -830,7 +831,7 @@ with
         seq {
             this.SmallGroup.Name
             s["Prayer Requests"].Value
-            this.Date.ToString s["MMMM d, yyyy"].Value
+            this.Date.ToString (s["MMMM d, yyyy"].Value, null)
             " "
             for _, name, reqs in this.RequestsByType s do
                 let dashes = String.replicate (name.Value.Length + 4) "-"
@@ -845,8 +846,8 @@ with
                     | _ ->
                         let dt =
                             match this.SmallGroup.Preferences.AsOfDateDisplay with
-                            | ShortDate -> req.UpdatedDate.ToShortDateString ()
-                            | LongDate -> req.UpdatedDate.ToLongDateString ()
+                            | ShortDate -> req.UpdatedDate.ToString ("d", null)
+                            | LongDate -> req.UpdatedDate.ToString ("D", null)
                             | _ -> ""
                         $"""  ({s["as of"].Value} {dt})"""
                     |> sprintf "  %s %s%s%s" bullet requestor (htmlToPlainText req.Text)

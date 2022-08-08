@@ -44,6 +44,7 @@ let appVersion =
 open Giraffe
 open Giraffe.Htmx
 open Microsoft.AspNetCore.Http
+open NodaTime
 open PrayerTracker
 open PrayerTracker.ViewModels
 
@@ -63,7 +64,7 @@ let viewInfo (ctx : HttpContext) =
     { AppViewInfo.fresh with
         Version      = appVersion
         Messages     = msg
-        RequestStart = ctx.Items[Key.startTime] :?> int64
+        RequestStart = ctx.Items[Key.startTime] :?> Instant
         User         = ctx.Session.CurrentUser
         Group        = ctx.Session.CurrentGroup
         Layout       = layout

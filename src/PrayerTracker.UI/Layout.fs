@@ -255,13 +255,13 @@ let private messages viewInfo =
         |> List.singleton
 
 
-open System
+open NodaTime
 
 /// Render the <footer> at the bottom of the page
 let private htmlFooter viewInfo =
     let s          = I18N.localizer.Force ()
     let imgText    = $"""%O{s["PrayerTracker"]} %O{s["from Bit Badger Solutions"]}"""
-    let resultTime = TimeSpan(DateTime.Now.Ticks - viewInfo.RequestStart).TotalSeconds
+    let resultTime = (SystemClock.Instance.GetCurrentInstant () - viewInfo.RequestStart).TotalSeconds
     footer [ _class "pt-footer" ] [
         div [ _id "pt-legal" ] [
             a [ _href "/legal/privacy-policy" ] [ locStr s["Privacy Policy"] ]

@@ -94,7 +94,7 @@ ALTER TABLE pt."User" RENAME COLUMN "PasswordHash" TO password_hash;
 ALTER TABLE pt."User" RENAME COLUMN "Salt" TO salt;
 ALTER TABLE pt."User" RENAME CONSTRAINT "PK_User" TO pk_pt_user;
 ALTER TABLE pt."User" RENAME TO pt_user;
-ALTER TABLE pt.pt_user ADD COLUMN last_seen timestamp;
+ALTER TABLE pt.pt_user ADD COLUMN last_seen timestamptz;
 
 -- User / Small Group
 ALTER TABLE pt."User_SmallGroup" RENAME COLUMN "UserId" TO user_id;
@@ -105,3 +105,8 @@ ALTER TABLE pt."User_SmallGroup" RENAME CONSTRAINT "FK_User_SmallGroup_SmallGrou
 ALTER TABLE pt."User_SmallGroup" RENAME TO user_small_group;
 
 ALTER INDEX pt."IX_User_SmallGroup_SmallGroupId" RENAME TO ix_user_small_group_small_group_id;
+
+-- #41 - change to timestamptz
+SET TimeZone = 'UTC';
+ALTER TABLE pt.prayer_request ALTER COLUMN entered_date TYPE timestamptz;
+ALTER TABLE pt.prayer_request ALTER COLUMN updated_date TYPE timestamptz;

@@ -1,7 +1,5 @@
 namespace PrayerTracker.Entities
 
-// fsharplint:disable RecordFieldNames MemberNames
-
 (*-- SUPPORT TYPES --*)
 
 /// How as-of dates should (or should not) be displayed with requests
@@ -633,10 +631,10 @@ and [<CLIMutable; NoComparison; NoEquality>] PrayerRequest =
         SmallGroupId : SmallGroupId
         
         /// The date/time on which this request was entered
-        EnteredDate : DateTime
+        EnteredDate : Instant
         
         /// The date/time this request was last updated
-        UpdatedDate : DateTime
+        UpdatedDate : Instant
         
         /// The name of the requestor or subject, or title of announcement
         Requestor : string option
@@ -664,8 +662,8 @@ with
             RequestType    = CurrentRequest
             UserId         = UserId Guid.Empty
             SmallGroupId   = SmallGroupId Guid.Empty
-            EnteredDate    = DateTime.MinValue
-            UpdatedDate    = DateTime.MinValue
+            EnteredDate    = Instant.MinValue
+            UpdatedDate    = Instant.MinValue
             Requestor      = None
             Text           = "" 
             NotifyChaplain = false
@@ -674,20 +672,6 @@ with
             Expiration     = Automatic
         }
     
-    /// Is this request expired?
-    member this.IsExpired (curr : DateTime) expDays =
-        match this.Expiration, this.RequestType with
-        | Forced, _ -> true
-        | Manual, _ 
-        | Automatic, LongTermRequest
-        | Automatic, Expecting  -> false
-        | Automatic, _ -> curr.AddDays(-(float expDays)).Date > this.UpdatedDate.Date // Automatic expiration
-
-    /// Is an update required for this long-term request?
-    member this.UpdateRequired curr expDays updWeeks =
-        if this.IsExpired curr expDays then false
-        else curr.AddDays(-(float (updWeeks * 7))).Date > this.UpdatedDate.Date
-
     /// Configure EF for this entity
     static member internal ConfigureEF (mb : ModelBuilder) =
         mb.Entity<PrayerRequest> (fun it ->
@@ -759,19 +743,6 @@ with
             Users          = ResizeArray<UserSmallGroup> ()
         }
 
-    /// Get the local date for this group
-    member this.LocalTimeNow (clock : IClock) =
-        if isNull clock then nullArg (nameof clock)
-        let tzId = TimeZoneId.toString this.Preferences.TimeZoneId
-        let tz =
-            if DateTimeZoneProviders.Tzdb.Ids.Contains tzId then DateTimeZoneProviders.Tzdb[tzId]
-            else DateTimeZone.Utc
-        clock.GetCurrentInstant().InZone(tz).ToDateTimeUnspecified ()
-
-    /// Get the local date for this group
-    member this.LocalDateNow clock =
-        (this.LocalTimeNow clock).Date
-    
     /// Configure EF for this entity
     static member internal ConfigureEF (mb : ModelBuilder) =
         mb.Entity<SmallGroup> (fun it ->
@@ -855,7 +826,7 @@ and [<CLIMutable; NoComparison; NoEquality>] User =
         Salt : Guid option
         
         /// The last time the user was seen (set whenever the user is loaded into a session)
-        LastSeen : DateTime option
+        LastSeen : Instant option
         
         /// The small groups which this user is authorized
         SmallGroups : ResizeArray<UserSmallGroup>
@@ -900,7 +871,7 @@ with
         mb.Model.FindEntityType(typeof<User>).FindProperty(nameof User.empty.Salt)
             .SetValueConverter (OptionConverter<Guid> ())
         mb.Model.FindEntityType(typeof<User>).FindProperty(nameof User.empty.LastSeen)
-            .SetValueConverter (OptionConverter<DateTime> ())
+            .SetValueConverter (OptionConverter<Instant> ())
 
 
 /// Cross-reference between user and small group
@@ -947,4 +918,44 @@ with
             .SetValueConverter (Converters.UserIdConverter ())
         mb.Model.FindEntityType(typeof<UserSmallGroup>).FindProperty(nameof UserSmallGroup.empty.SmallGroupId)
             .SetValueConverter (Converters.SmallGroupIdConverter ())
-        
+
+
+/// Support functions for small groups
+module SmallGroup =
+    
+    /// The DateTimeZone for the time zone ID for this small group
+    let timeZone group =
+        let tzId = TimeZoneId.toString group.Preferences.TimeZoneId
+        if DateTimeZoneProviders.Tzdb.Ids.Contains tzId then DateTimeZoneProviders.Tzdb[tzId]
+        else DateTimeZone.Utc
+    
+    /// Get the local date/time for this group
+    let localTimeNow (clock : IClock) group =
+        if isNull clock then nullArg (nameof clock)
+        clock.GetCurrentInstant().InZone(timeZone group).LocalDateTime
+
+    /// Get the local date for this group
+    let localDateNow clock group =
+        (localTimeNow clock group).Date
+    
+
+
+/// Support functions for prayer requests
+module PrayerRequest =
+    
+    /// Is this request expired?
+    let isExpired (asOf : LocalDate) group req =
+        match req.Expiration, req.RequestType with
+        | Forced, _ -> true
+        | Manual, _ 
+        | Automatic, LongTermRequest
+        | Automatic, Expecting  -> false
+        | Automatic, _ ->
+            // Automatic expiration
+            asOf.PlusDays -group.Preferences.DaysToExpire > req.UpdatedDate.InZone(SmallGroup.timeZone group).Date
+
+    /// Is an update required for this long-term request?
+    let updateRequired asOf group req =
+        if isExpired asOf group req then false
+        else asOf.PlusWeeks -group.Preferences.LongTermUpdateWeeks
+                >= req.UpdatedDate.InZone(SmallGroup.timeZone group).Date

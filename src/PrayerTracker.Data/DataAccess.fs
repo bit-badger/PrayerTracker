@@ -2,6 +2,7 @@
 module PrayerTracker.DataAccess
 
 open System.Linq
+open NodaTime
 open PrayerTracker.Entities
 
 [<AutoOpen>]
@@ -24,7 +25,6 @@ module private Helpers =
         if pageNbr > 0 then q.Skip((pageNbr - 1) * pageSize).Take pageSize else q
 
 
-open System
 open Microsoft.EntityFrameworkCore
 open Microsoft.FSharpLu
 
@@ -90,12 +90,14 @@ type AppDbContext with
 
     /// Get all (or active) requests for a small group as of now or the specified date
     member this.AllRequestsForSmallGroup (grp : SmallGroup) clock listDate activeOnly pageNbr = backgroundTask {
-        let theDate = match listDate with Some dt -> dt | _ -> grp.LocalDateNow clock
+        let theDate = match listDate with Some dt -> dt | _ -> SmallGroup.localDateNow clock grp
         let query =
             this.PrayerRequests.Where(fun req -> req.SmallGroupId = grp.Id)
             |> function
             | q when activeOnly ->
-                let asOf = DateTime (theDate.AddDays(-(float grp.Preferences.DaysToExpire)).Date.Ticks, DateTimeKind.Utc)
+                let asOf =
+                    (theDate.AtStartOfDayInZone(SmallGroup.timeZone grp) - Duration.FromDays grp.Preferences.DaysToExpire)
+                        .ToInstant ()
                 q.Where(fun req ->
                         (   req.UpdatedDate > asOf
                          || req.Expiration  = Manual

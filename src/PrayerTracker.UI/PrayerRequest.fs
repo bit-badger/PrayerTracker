@@ -154,23 +154,22 @@ let maintain (model : MaintainRequests) (ctx : HttpContext) viewInfo =
     let l     = I18N.forView "Requests/Maintain"
     use sw    = new StringWriter ()
     let raw   = rawLocText sw
-    let now   = model.SmallGroup.LocalDateNow (ctx.GetService<IClock> ())
-    let prefs = model.SmallGroup.Preferences
+    let group = model.SmallGroup
+    let now   = SmallGroup.localDateNow (ctx.GetService<IClock> ()) group
     let types = ReferenceList.requestTypeList s |> Map.ofList
-    let updReq (req : PrayerRequest) =
-        if req.UpdateRequired now prefs.DaysToExpire prefs.LongTermUpdateWeeks then "cell pt-request-update" else "cell"
-        |> _class 
-    let reqExp (req : PrayerRequest) =
-        _class (if req.IsExpired now prefs.DaysToExpire then "cell pt-request-expired" else "cell")
-    let vi = AppViewInfo.withScopedStyles [ "#requestList { grid-template-columns: repeat(5, auto); }" ] viewInfo
+    let vi    = AppViewInfo.withScopedStyles [ "#requestList { grid-template-columns: repeat(5, auto); }" ] viewInfo
     /// Iterate the sequence once, before we render, so we can get the count of it at the top of the table
     let requests =
         model.Requests
         |> List.map (fun req ->
-            let reqId     = shortGuid req.Id.Value
-            let reqText   = htmlToPlainText req.Text
-            let delAction = $"/prayer-request/{reqId}/delete"
-            let delPrompt =
+            let updateClass  =
+                _class (if PrayerRequest.updateRequired now group req then "cell pt-request-update" else "cell")
+            let isExpired    = PrayerRequest.isExpired now group req
+            let expiredClass = _class (if isExpired then "cell pt-request-expired" else "cell")
+            let reqId        = shortGuid req.Id.Value
+            let reqText      = htmlToPlainText req.Text
+            let delAction    = $"/prayer-request/{reqId}/delete"
+            let delPrompt    =
                 [   s["Are you sure you want to delete this {0}?  This action cannot be undone.",
                         s["Prayer Request"].Value.ToLower() ].Value
                     "\\n"
@@ -183,7 +182,7 @@ let maintain (model : MaintainRequests) (ctx : HttpContext) viewInfo =
                     a [ _href $"/prayer-request/{reqId}/edit"; _title l["Edit This Prayer Request"].Value ] [
                         iconSized 18 "edit"
                     ]
-                    if req.IsExpired now prefs.DaysToExpire then
+                    if isExpired then
                         a [ _href  $"/prayer-request/{reqId}/restore"
                             _title l["Restore This Inactive Request"].Value ] [
                             iconSized 18 "visibility"
@@ -200,11 +199,11 @@ let maintain (model : MaintainRequests) (ctx : HttpContext) viewInfo =
                         iconSized 18 "delete_forever"
                     ]
                 ]
-                div [ updReq req ] [
+                div [ updateClass ] [
                     str (req.UpdatedDate.ToString(s["MMMM d, yyyy"].Value, Globalization.CultureInfo.CurrentUICulture))
                 ]
                 div [ _class "cell" ] [ locStr types[req.RequestType] ]
-                div [ reqExp req ] [ str (match req.Requestor with Some r -> r | None -> " ") ]
+                div [ expiredClass ] [ str (match req.Requestor with Some r -> r | None -> " ") ]
                 div [ _class "cell" ] [
                     match reqText.Length with
                     | len when len < 60 -> rawText reqText
@@ -316,7 +315,7 @@ let view model viewInfo =
     let s         = I18N.localizer.Force ()
     let pageTitle = $"""{s["Prayer Requests"].Value} • {model.SmallGroup.Name}"""
     let spacer    = rawText " &nbsp; &nbsp; &nbsp; "
-    let dtString  = model.Date.ToString "yyyy-MM-dd"
+    let dtString  = model.Date.ToString ("yyyy-MM-dd", null) // TODO: this should be invariant
     [   div [ _class "pt-center-text" ] [
             br []
             a [ _class  "pt-icon-link"
@@ -327,12 +326,12 @@ let view model viewInfo =
             ]
             if model.CanEmail then
                 spacer
-                if model.Date.DayOfWeek <> DayOfWeek.Sunday then
-                    let rec findSunday (date : DateTime) =
-                        if date.DayOfWeek = DayOfWeek.Sunday then date else findSunday (date.AddDays 1.)
+                if model.Date.DayOfWeek <> IsoDayOfWeek.Sunday then
+                    let rec findSunday (date : LocalDate) =
+                        if date.DayOfWeek = IsoDayOfWeek.Sunday then date else findSunday (date.PlusDays 1)
                     let sunday = findSunday model.Date
                     a [ _class "pt-icon-link"
-                        _href  $"""/prayer-requests/view/{sunday.ToString "yyyy-MM-dd"}"""
+                        _href  $"""/prayer-requests/view/{sunday.ToString ("yyyy-MM-dd", null)}""" // TODO: make invariant
                         _title s["List for Next Sunday"].Value ] [
                         icon "update"; rawText " &nbsp;"; locStr s["List for Next Sunday"]
                     ]
