@@ -238,6 +238,7 @@ footer a:hover {
   flex-flow: row wrap;
   align-items: center;
   justify-content: center;
+  gap: 2rem;
 }
 .pt-field {
   display: flex;
@@ -254,9 +255,6 @@ footer a:hover {
   font-size: .75rem;
   text-transform: uppercase;
   color: #777;
-}
-.pt-field ~ .pt-field {
-  margin-left: 3rem;
 }
 .pt-center-text {
   text-align: center;

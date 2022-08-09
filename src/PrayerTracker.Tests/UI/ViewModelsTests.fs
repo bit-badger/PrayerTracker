@@ -3,6 +3,7 @@
 open System
 open Expecto
 open Microsoft.AspNetCore.Html
+open NodaTime
 open PrayerTracker.Entities
 open PrayerTracker.Tests.TestLocalization
 open PrayerTracker.Utils
@@ -121,7 +122,7 @@ let appViewInfoTests =
             Expect.isNone vi.HelpLink "The help link should have been set to none"
             Expect.isEmpty vi.Messages "There should have been no messages set"
             Expect.equal vi.Version "" "The version should have been blank"
-            Expect.isGreaterThan vi.RequestStart DateTime.MinValue.Ticks "The request start time should have been set"
+            Expect.equal vi.RequestStart Instant.MinValue "The request start time should have been the minimum value"
             Expect.isNone vi.User "There should not have been a user"
             Expect.isNone vi.Group "There should not have been a small group"
         }
@@ -497,30 +498,31 @@ let messageLevelTests =
 let requestListTests =
     testList "RequestList" [
         let withRequestList f () =
-            { Requests   = [
-                { PrayerRequest.empty with
-                    RequestType = CurrentRequest
-                    Requestor   = Some "Zeb"
-                    Text        = "zyx"
-                    UpdatedDate = DateTime.Today
-                }
-                { PrayerRequest.empty with
-                    RequestType = CurrentRequest
-                    Requestor   = Some "Aaron"
-                    Text        = "abc"
-                    UpdatedDate = DateTime.Today - TimeSpan.FromDays 9.
-                }
-                { PrayerRequest.empty with
-                    RequestType = PraiseReport
-                    Text        = "nmo"
-                    UpdatedDate = DateTime.Today
-                }
-              ]
-              Date       = DateTime.Today
-              SmallGroup = SmallGroup.empty
-              ShowHeader = false
-              Recipients = []
-              CanEmail   = false
+            let today = SystemClock.Instance.GetCurrentInstant ()
+            {   Requests   = [
+                    { PrayerRequest.empty with
+                        RequestType = CurrentRequest
+                        Requestor   = Some "Zeb"
+                        Text        = "zyx"
+                        UpdatedDate = today
+                    }
+                    { PrayerRequest.empty with
+                        RequestType = CurrentRequest
+                        Requestor   = Some "Aaron"
+                        Text        = "abc"
+                        UpdatedDate = today - Duration.FromDays 9
+                    }
+                    { PrayerRequest.empty with
+                        RequestType = PraiseReport
+                        Text        = "nmo"
+                        UpdatedDate = today
+                    }
+                ]
+                Date       = today.InUtc().Date
+                SmallGroup = SmallGroup.empty
+                ShowHeader = false
+                Recipients = []
+                CanEmail   = false
             }
             |> f
         yield! testFixture withRequestList [
@@ -574,7 +576,7 @@ let requestListTests =
                     [ """<div style="text-align:center;font-family:Century Gothic,Tahoma,Luxi Sans,sans-serif">"""
                       """<span style="font-size:16pt;"><strong>Prayer Requests</strong></span><br>"""
                       """<span style="font-size:12pt;"><strong>Test HTML Group</strong><br>"""
-                      htmlList.Date.ToString "MMMM d, yyyy"
+                      htmlList.Date.ToString ("MMMM d, yyyy", null)
                       "</span></div><br>"
                     ]
                     |> String.concat ""
@@ -592,7 +594,7 @@ let requestListTests =
                     }
                 let html     = htmlList.AsHtml _s
                 let expected =
-                    htmlList.Requests[0].UpdatedDate.ToShortDateString ()
+                    htmlList.Requests[0].UpdatedDate.InUtc().Date.ToString ("d", null)
                     |> sprintf """<strong>Zeb</strong> &mdash; zyx<i style="font-size:9.60pt">&nbsp; (as of %s)</i>"""
                 // spot check; if one request has it, they all should
                 Expect.stringContains html expected "Expected short as-of date not found"    
@@ -607,7 +609,7 @@ let requestListTests =
                     }
                 let html     = htmlList.AsHtml _s
                 let expected =
-                    htmlList.Requests[0].UpdatedDate.ToLongDateString ()
+                    htmlList.Requests[0].UpdatedDate.InUtc().Date.ToString ("D", null)
                     |> sprintf """<strong>Zeb</strong> &mdash; zyx<i style="font-size:9.60pt">&nbsp; (as of %s)</i>"""
                 // spot check; if one request has it, they all should
                 Expect.stringContains html expected "Expected long as-of date not found"    
@@ -617,7 +619,8 @@ let requestListTests =
                 let text = textList.AsText _s
                 Expect.stringContains text $"{textList.SmallGroup.Name}\n" "Small group name not found"
                 Expect.stringContains text "Prayer Requests\n" "List heading not found"
-                Expect.stringContains text ((textList.Date.ToString "MMMM d, yyyy") + "\n \n") "List date not found"
+                Expect.stringContains text ((textList.Date.ToString ("MMMM d, yyyy", null)) + "\n \n")
+                    "List date not found"
                 Expect.stringContains text "--------------------\n  CURRENT REQUESTS\n--------------------\n"
                     """Heading for category "Current Requests" not found"""
                 Expect.stringContains text "  + Zeb - zyx\n" "First request not found"
@@ -637,7 +640,7 @@ let requestListTests =
                     }
                 let text     = textList.AsText _s
                 let expected =
-                    textList.Requests[0].UpdatedDate.ToShortDateString ()
+                    textList.Requests[0].UpdatedDate.InUtc().Date.ToString ("d", null)
                     |> sprintf " + Zeb - zyx  (as of %s)"
                 // spot check; if one request has it, they all should
                 Expect.stringContains text expected "Expected short as-of date not found"    
@@ -652,7 +655,7 @@ let requestListTests =
                     }
                 let text     = textList.AsText _s
                 let expected =
-                    textList.Requests[0].UpdatedDate.ToLongDateString ()
+                    textList.Requests[0].UpdatedDate.InUtc().Date.ToString ("D", null)
                     |> sprintf " + Zeb - zyx  (as of %s)"
                 // spot check; if one request has it, they all should
                 Expect.stringContains text expected "Expected long as-of date not found"    

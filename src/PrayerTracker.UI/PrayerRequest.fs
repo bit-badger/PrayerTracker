@@ -38,15 +38,13 @@ let edit (model : EditRequest) today ctx viewInfo =
                     inputField "date" (nameof model.EnteredDate) "" [ _placeholder today ]
                 ]
             else
-                // TODO: do these need to be nested like this?
                 div [ _inputField ] [
+                    br []
                     div [ _checkboxField ] [
-                        br []
                         inputField "checkbox" (nameof model.SkipDateUpdate) "True" []
                         label [ _for (nameof model.SkipDateUpdate) ] [ locStr s["Check to not update the date"] ]
-                        br []
-                        small [] [ em [] [ str (s["Typo Corrections"].Value.ToLower ()); rawText ", etc." ] ]
                     ]
+                    small [] [ em [] [ str (s["Typo Corrections"].Value.ToLower ()); rawText ", etc." ] ]
                 ]
         ]
         div [ _fieldRow ] [
@@ -57,7 +55,7 @@ let edit (model : EditRequest) today ctx viewInfo =
                     let radioId = String.concat "_" [ nameof model.Expiration; fst exp ] 
                     span [ _class "text-nowrap" ] [
                         radio (nameof model.Expiration) radioId (fst exp) model.Expiration
-                        label [ _for radioId ] [ locStr (snd exp) ]
+                        label [ _for radioId ] [ space; locStr (snd exp) ]
                         rawText " &nbsp; &nbsp; "
                     ])
                 |> div [ _class "pt-center-text" ]

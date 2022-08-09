@@ -768,7 +768,7 @@ with
     /// Is this request new?
     member this.IsNew (req : PrayerRequest) =
         let reqDate = req.UpdatedDate.InZone(SmallGroup.timeZone this.SmallGroup).Date
-        Period.Between(this.Date, reqDate, PeriodUnits.Days).Days <= this.SmallGroup.Preferences.DaysToKeepNew
+        Period.Between(reqDate, this.Date, PeriodUnits.Days).Days <= this.SmallGroup.Preferences.DaysToKeepNew
     
     /// Generate this list as HTML
     member this.AsHtml (s : IStringLocalizer) =
@@ -797,6 +797,7 @@ with
                         ]
                     ]
                 ]
+                let tz = SmallGroup.timeZone this.SmallGroup
                 reqs
                 |> List.map (fun req ->
                     let bullet = if this.IsNew req then "circle" else "disc"
@@ -804,7 +805,7 @@ with
                         match req.Requestor with
                         | Some r when r <> "" ->
                             strong [] [ str r ]
-                            rawText " &mdash; "
+                            rawText " &ndash; "
                         | Some _ -> ()
                         | None -> ()
                         rawText req.Text
@@ -814,8 +815,8 @@ with
                         | LongDate ->
                             let dt =
                                 match p.AsOfDateDisplay with
-                                | ShortDate -> req.UpdatedDate.ToString ("d", null)
-                                | LongDate -> req.UpdatedDate.ToString ("D", null)
+                                | ShortDate -> req.UpdatedDate.InZone(tz).Date.ToString ("d", null)
+                                | LongDate -> req.UpdatedDate.InZone(tz).Date.ToString ("D", null)
                                 | _ -> ""
                             i [ _style $"font-size:%.2f{asOfSize}pt" ] [
                                 rawText "&nbsp; ("; str s["as of"].Value; str " "; str dt; rawText ")"
@@ -828,6 +829,7 @@ with
 
     /// Generate this list as plain text
     member this.AsText (s : IStringLocalizer) =
+        let tz = SmallGroup.timeZone this.SmallGroup
         seq {
             this.SmallGroup.Name
             s["Prayer Requests"].Value
@@ -846,8 +848,8 @@ with
                     | _ ->
                         let dt =
                             match this.SmallGroup.Preferences.AsOfDateDisplay with
-                            | ShortDate -> req.UpdatedDate.ToString ("d", null)
-                            | LongDate -> req.UpdatedDate.ToString ("D", null)
+                            | ShortDate -> req.UpdatedDate.InZone(tz).Date.ToString ("d", null)
+                            | LongDate -> req.UpdatedDate.InZone(tz).Date.ToString ("D", null)
                             | _ -> ""
                         $"""  ({s["as of"].Value} {dt})"""
                     |> sprintf "  %s %s%s%s" bullet requestor (htmlToPlainText req.Text)

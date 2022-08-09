@@ -4,19 +4,26 @@ module PrayerTracker.Extensions
 open Microsoft.AspNetCore.Http
 open Microsoft.FSharpLu
 open Newtonsoft.Json
+open NodaTime
+open NodaTime.Serialization.JsonNet
 open PrayerTracker.Entities
 open PrayerTracker.ViewModels
+
+/// JSON.NET serializer settings for NodaTime
+let private jsonSettings = JsonSerializerSettings().ConfigureForNodaTime DateTimeZoneProviders.Tzdb
 
 /// Extensions on the .NET session object
 type ISession with
     
     /// Set an object in the session
     member this.SetObject key value =
-        this.SetString (key, JsonConvert.SerializeObject value)
+        this.SetString (key, JsonConvert.SerializeObject (value, jsonSettings))
     
     /// Get an object from the session
     member this.GetObject<'T> key =
-        match this.GetString key with null -> Unchecked.defaultof<'T> | v -> JsonConvert.DeserializeObject<'T> v
+        match this.GetString key with
+        | null -> Unchecked.defaultof<'T>
+        | v -> JsonConvert.DeserializeObject<'T> (v, jsonSettings)
 
     /// The currently logged on small group
     member this.CurrentGroup
@@ -63,7 +70,6 @@ type ClaimsPrincipal with
 
 
 open Giraffe
-open NodaTime
 open PrayerTracker
 
 /// Extensions on the ASP.NET Core HTTP context

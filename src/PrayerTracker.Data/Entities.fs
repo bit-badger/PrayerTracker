@@ -952,7 +952,8 @@ module PrayerRequest =
         | Automatic, Expecting  -> false
         | Automatic, _ ->
             // Automatic expiration
-            asOf.PlusDays -group.Preferences.DaysToExpire > req.UpdatedDate.InZone(SmallGroup.timeZone group).Date
+            Period.Between(req.UpdatedDate.InZone(SmallGroup.timeZone group).Date, asOf, PeriodUnits.Days).Days
+                >= group.Preferences.DaysToExpire
 
     /// Is an update required for this long-term request?
     let updateRequired asOf group req =

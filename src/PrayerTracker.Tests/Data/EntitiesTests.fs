@@ -143,6 +143,8 @@ let memberTests =
 
 [<Tests>]
 let prayerRequestTests =
+    let instantNow      = SystemClock.Instance.GetCurrentInstant
+    let localDateNow () = (instantNow ()).InUtc().Date
     testList "PrayerRequest" [
         test "empty is as expected" {
             let mt = PrayerRequest.empty
@@ -150,8 +152,8 @@ let prayerRequestTests =
             Expect.equal mt.RequestType CurrentRequest "The request type should have been Current"
             Expect.equal mt.UserId.Value Guid.Empty "The user ID should have been an empty GUID"
             Expect.equal mt.SmallGroupId.Value Guid.Empty "The small group ID should have been an empty GUID"
-            Expect.equal mt.EnteredDate DateTime.MinValue "The entered date should have been the minimum"
-            Expect.equal mt.UpdatedDate DateTime.MinValue "The updated date should have been the minimum"
+            Expect.equal mt.EnteredDate Instant.MinValue "The entered date should have been the minimum"
+            Expect.equal mt.UpdatedDate Instant.MinValue "The updated date should have been the minimum"
             Expect.isNone mt.Requestor "The requestor should not exist"
             Expect.equal mt.Text "" "The request text should have been blank"
             Expect.isFalse mt.NotifyChaplain "The notify chaplain flag should not have been set"
@@ -159,62 +161,60 @@ let prayerRequestTests =
             Expect.equal mt.User.Id.Value Guid.Empty "The user should have been an empty one"
             Expect.equal mt.SmallGroup.Id.Value Guid.Empty "The small group should have been an empty one"
         }
-        test "IsExpired always returns false for expecting requests" {
-            let req = { PrayerRequest.empty with RequestType = Expecting }
-            Expect.isFalse (req.IsExpired DateTime.Now 0) "An expecting request should never be considered expired"
+        test "isExpired always returns false for expecting requests" {
+            PrayerRequest.isExpired (localDateNow ()) SmallGroup.empty
+                { PrayerRequest.empty with RequestType = Expecting }
+            |> Flip.Expect.isFalse "An expecting request should never be considered expired"
         }
-        test "IsExpired always returns false for manually-expired requests" {
-            let req = { PrayerRequest.empty with UpdatedDate = DateTime.Now.AddMonths -1; Expiration = Manual }
-            Expect.isFalse (req.IsExpired DateTime.Now 4) "A never-expired request should never be considered expired"
+        test "isExpired always returns false for manually-expired requests" {
+            PrayerRequest.isExpired (localDateNow ()) SmallGroup.empty 
+                { PrayerRequest.empty with UpdatedDate = (instantNow ()) - Duration.FromDays 1; Expiration = Manual }
+            |> Flip.Expect.isFalse "A never-expired request should never be considered expired"
         }
-        test "IsExpired always returns false for long term/recurring requests" {
-            let req = { PrayerRequest.empty with RequestType = LongTermRequest }
-            Expect.isFalse (req.IsExpired DateTime.Now 0)
-                "A recurring/long-term request should never be considered expired"
+        test "isExpired always returns false for long term/recurring requests" {
+            PrayerRequest.isExpired (localDateNow ()) SmallGroup.empty
+                { PrayerRequest.empty with RequestType = LongTermRequest }
+            |> Flip.Expect.isFalse "A recurring/long-term request should never be considered expired"
         }
-        test "IsExpired always returns true for force-expired requests" {
-            let req = { PrayerRequest.empty with UpdatedDate = DateTime.Now; Expiration = Forced }
-            Expect.isTrue (req.IsExpired DateTime.Now 5) "A force-expired request should always be considered expired"
+        test "isExpired always returns true for force-expired requests" {
+            PrayerRequest.isExpired (localDateNow ()) SmallGroup.empty
+                { PrayerRequest.empty with UpdatedDate = (instantNow ()); Expiration = Forced }
+            |> Flip.Expect.isTrue "A force-expired request should always be considered expired"
         }
-        test "IsExpired returns false for non-expired requests" {
-            let now = DateTime.Now
-            let req = { PrayerRequest.empty with UpdatedDate = now.AddDays -5. }
-            Expect.isFalse (req.IsExpired now 7) "A request updated 5 days ago should not be considered expired"
+        test "isExpired returns false for non-expired requests" {
+            let now = instantNow ()
+            PrayerRequest.isExpired (now.InUtc().Date) SmallGroup.empty
+                { PrayerRequest.empty with UpdatedDate = now - Duration.FromDays 5 }
+            |> Flip.Expect.isFalse "A request updated 5 days ago should not be considered expired"
         }
-        test "IsExpired returns true for expired requests" {
-            let now = DateTime.Now
-            let req = { PrayerRequest.empty with UpdatedDate = now.AddDays -8. }
-            Expect.isTrue (req.IsExpired now 7) "A request updated 8 days ago should be considered expired"
+        test "isExpired returns true for expired requests" {
+            let now = instantNow ()
+            PrayerRequest.isExpired (now.InUtc().Date) SmallGroup.empty
+                { PrayerRequest.empty with UpdatedDate = now - Duration.FromDays 15 }
+            |> Flip.Expect.isTrue "A request updated 15 days ago should be considered expired"
         }
-        test "IsExpired returns true for same-day expired requests" {
-            let now = DateTime.Now
-            let req = { PrayerRequest.empty with UpdatedDate = now.Date.AddDays(-7.).AddSeconds -1. }
-            Expect.isTrue (req.IsExpired now 7)
-                "A request entered a second before midnight should be considered expired"
+        test "isExpired returns true for same-day expired requests" {
+            let now = instantNow ()
+            PrayerRequest.isExpired (now.InUtc().Date) SmallGroup.empty
+                { PrayerRequest.empty with UpdatedDate = now - (Duration.FromDays 14) - (Duration.FromSeconds 1L) }
+            |> Flip.Expect.isTrue  "A request entered a second before midnight should be considered expired"
         }
-        test "UpdateRequired returns false for expired requests" {
-            let req = { PrayerRequest.empty with Expiration = Forced }
-            Expect.isFalse (req.UpdateRequired DateTime.Now 7 4) "An expired request should not require an update"
+        test "updateRequired returns false for expired requests" {
+            PrayerRequest.updateRequired (localDateNow ()) SmallGroup.empty
+                { PrayerRequest.empty with Expiration = Forced }
+            |> Flip.Expect.isFalse "An expired request should not require an update"
         }
-        test "UpdateRequired returns false when an update is not required for an active request" {
-            let now = DateTime.Now
-            let req =
-                { PrayerRequest.empty with
-                    RequestType = LongTermRequest
-                    UpdatedDate = now.AddDays -14.
-                }
-            Expect.isFalse (req.UpdateRequired now 7 4)
-                "An active request updated 14 days ago should not require an update until 28 days"
+        test "updateRequired returns false when an update is not required for an active request" {
+            let now = instantNow ()
+            PrayerRequest.updateRequired (localDateNow ()) SmallGroup.empty
+                { PrayerRequest.empty with RequestType = LongTermRequest; UpdatedDate = now - Duration.FromDays 14 }
+            |> Flip.Expect.isFalse "An active request updated 14 days ago should not require an update until 28 days"
         }
         test "UpdateRequired returns true when an update is required for an active request" {
-            let now = DateTime.Now
-            let req =
-                { PrayerRequest.empty with
-                    RequestType = LongTermRequest
-                    UpdatedDate = now.AddDays -34.
-                }
-            Expect.isTrue (req.UpdateRequired now 7 4)
-                "An active request updated 34 days ago should require an update (past 28 days)"
+            let now = instantNow ()
+            PrayerRequest.updateRequired (localDateNow ()) SmallGroup.empty
+                { PrayerRequest.empty with RequestType = LongTermRequest; UpdatedDate = now - Duration.FromDays 34 }
+            |> Flip.Expect.isTrue "An active request updated 34 days ago should require an update (past 28 days)"
         }
     ]
 
@@ -288,9 +288,9 @@ let requestSortTests =
 [<Tests>]
 let smallGroupTests =
     testList "SmallGroup" [
-        let now = DateTime (2017, 5, 12, 12, 15, 0, DateTimeKind.Utc)
+        let now = Instant.FromDateTimeUtc (DateTime (2017, 5, 12, 12, 15, 0, DateTimeKind.Utc))
         let withFakeClock f () =
-            FakeClock (Instant.FromDateTimeUtc now) |> f
+            FakeClock now |> f
         yield test "empty is as expected" {
             let mt = SmallGroup.empty
             Expect.equal mt.Id.Value Guid.Empty "The small group ID should have been an empty GUID"
@@ -311,10 +311,12 @@ let smallGroupTests =
                     { SmallGroup.empty with
                         Preferences = { ListPreferences.empty with TimeZoneId = TimeZoneId "Europe/Berlin" }
                     }
-                Expect.isGreaterThan (grp.LocalTimeNow clock) now "UTC to Europe/Berlin should have added hours"
+                let tz = DateTimeZoneProviders.Tzdb["Europe/Berlin"]
+                Expect.isGreaterThan (SmallGroup.localTimeNow clock grp) (now.InUtc().LocalDateTime)
+                    "UTC to Europe/Berlin should have added hours"
             "LocalTimeNow adjusts the time behind UTC",
             fun clock ->
-                Expect.isLessThan (SmallGroup.empty.LocalTimeNow clock) now
+                Expect.isLessThan (SmallGroup.localTimeNow clock SmallGroup.empty) (now.InUtc().LocalDateTime)
                     "UTC to America/Denver should have subtracted hours"
             "LocalTimeNow returns UTC when the time zone is invalid",
             fun clock ->
@@ -322,16 +324,17 @@ let smallGroupTests =
                     { SmallGroup.empty with
                         Preferences = { ListPreferences.empty with TimeZoneId = TimeZoneId "garbage" }
                     }
-                Expect.equal (grp.LocalTimeNow clock) now "UTC should have been returned for an invalid time zone"
+                Expect.equal (SmallGroup.localTimeNow clock grp) (now.InUtc().LocalDateTime)
+                    "UTC should have been returned for an invalid time zone"
         ]
-        yield test "LocalTimeNow fails when clock is not passed" {
-            Expect.throws (fun () -> (SmallGroup.empty.LocalTimeNow >> ignore) null)
+        yield test "localTimeNow fails when clock is not passed" {
+            Expect.throws (fun () -> (SmallGroup.localTimeNow null SmallGroup.empty |> ignore))
                 "Should have raised an exception for null clock"
         }
         yield test "LocalDateNow returns the date portion" {
-            let now'  = DateTime (2017, 5, 12, 1, 15, 0, DateTimeKind.Utc)
-            let clock = FakeClock (Instant.FromDateTimeUtc now')
-            Expect.isLessThan (SmallGroup.empty.LocalDateNow clock) now.Date "The date should have been a day earlier"
+            let clock = FakeClock (Instant.FromDateTimeUtc (DateTime (2017, 5, 12, 1, 15, 0, DateTimeKind.Utc)))
+            Expect.isLessThan (SmallGroup.localDateNow clock SmallGroup.empty) (now.InUtc().Date)
+                "The date should have been a day earlier"
         }
     ]
 
