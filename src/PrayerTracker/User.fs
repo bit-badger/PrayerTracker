@@ -5,6 +5,7 @@ open Giraffe
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Identity
 open PrayerTracker
+open PrayerTracker.Data
 open PrayerTracker.Entities
 open PrayerTracker.ViewModels
 
@@ -52,16 +53,15 @@ module Hashing =
 
     
 /// Retrieve a user from the database by password, upgrading password hashes if required
-let private findUserByPassword model (db : AppDbContext) = task {
-    match! db.TryUserByEmailAndGroup model.Email (idFromShort SmallGroupId model.SmallGroupId) with
+let private findUserByPassword model conn = task {
+    match! Users.tryByEmailAndGroup model.Email (idFromShort SmallGroupId model.SmallGroupId) conn with
     | Some user ->
         let hasher = PrayerTrackerPasswordHasher ()
         match hasher.VerifyHashedPassword (user, user.PasswordHash, model.Password) with
         | PasswordVerificationResult.Success -> return Some user
         | PasswordVerificationResult.SuccessRehashNeeded ->
             let upgraded = { user with PasswordHash = hasher.HashPassword (user, model.Password) }
-            db.UpdateEntry upgraded
-            let! _ = db.SaveChangesAsync ()
+            do! Users.updatePassword upgraded conn
             return Some upgraded
         | _ -> return None
     | None -> return None
@@ -81,8 +81,9 @@ let changePassword : HttpHandler = requireAccess [ User ] >=> validateCsrf >=> f
         let  s      = Views.I18N.localizer.Force ()
         let  curUsr = ctx.Session.CurrentUser.Value
         let  hasher = PrayerTrackerPasswordHasher ()
+        let! conn   = ctx.Conn
         let! user   = task {
-            match! ctx.Db.TryUserById curUsr.Id with
+            match! Users.tryById curUsr.Id conn with
             | Some usr ->
                 if hasher.VerifyHashedPassword (usr, usr.PasswordHash, model.OldPassword)
                        = PasswordVerificationResult.Success then
@@ -92,8 +93,7 @@ let changePassword : HttpHandler = requireAccess [ User ] >=> validateCsrf >=> f
         }
         match user with
         | Some usr when model.NewPassword = model.NewPasswordConfirm ->
-            ctx.Db.UpdateEntry { usr with PasswordHash = hasher.HashPassword (usr, model.NewPassword) }
-            let! _ = ctx.Db.SaveChangesAsync ()
+            do! Users.updatePassword { usr with PasswordHash = hasher.HashPassword (usr, model.NewPassword) } conn
             addInfo ctx s["Your password was changed successfully"]
             return! redirectTo false "/" next ctx
         | Some _ ->
@@ -107,12 +107,12 @@ let changePassword : HttpHandler = requireAccess [ User ] >=> validateCsrf >=> f
 
 /// POST /user/[user-id]/delete
 let delete usrId : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next ctx -> task {
-    let userId = UserId usrId
-    match! ctx.Db.TryUserById userId with
+    let  userId = UserId usrId
+    let! conn   = ctx.Conn
+    match! Users.tryById userId conn with
     | Some user ->
-        ctx.Db.RemoveEntry user
-        let! _ = ctx.Db.SaveChangesAsync ()
-        let  s = Views.I18N.localizer.Force ()
+        do! Users.deleteById userId conn
+        let s = Views.I18N.localizer.Force ()
         addInfo ctx s["Successfully deleted user {0}", user.Name]
         return! redirectTo false "/users" next ctx
     | _ -> return! fourOhFour ctx
@@ -128,10 +128,11 @@ open Microsoft.AspNetCore.Html
 let doLogOn : HttpHandler = requireAccess [ AccessLevel.Public ] >=> validateCsrf >=> fun next ctx -> task {
     match! ctx.TryBindFormAsync<UserLogOn> () with
     | Ok model -> 
-        let s = Views.I18N.localizer.Force ()
-        match! findUserByPassword model ctx.Db with
+        let  s    = Views.I18N.localizer.Force ()
+        let! conn = ctx.Conn
+        match! findUserByPassword model conn with
         | Some user ->
-            match! ctx.Db.TryGroupById (idFromShort SmallGroupId model.SmallGroupId) with
+            match! SmallGroups.tryByIdWithPreferences (idFromShort SmallGroupId model.SmallGroupId) conn with
             | Some group ->
                 ctx.Session.CurrentUser  <- Some user
                 ctx.Session.CurrentGroup <- Some group
@@ -145,8 +146,7 @@ let doLogOn : HttpHandler = requireAccess [ AccessLevel.Public ] >=> validateCsr
                         AuthenticationProperties (
                             IssuedUtc    = DateTimeOffset.UtcNow,
                             IsPersistent = defaultArg model.RememberMe false))
-                ctx.Db.UpdateEntry { user with LastSeen = Some ctx.Now }
-                let! _ = ctx.Db.SaveChangesAsync ()
+                do! Users.updateLastSeen user.Id ctx.Now conn
                 addHtmlInfo ctx s["Log On Successful • Welcome to {0}", s["PrayerTracker"]]
                 return! redirectTo false (sanitizeUrl model.RedirectUrl "/small-group") next ctx
             | None -> return! fourOhFour ctx
@@ -177,7 +177,8 @@ let edit usrId : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> task 
             |> Views.User.edit EditUser.empty ctx
             |> renderHtml next ctx
     else
-        match! ctx.Db.TryUserById userId with
+        let! conn = ctx.Conn
+        match! Users.tryById userId conn with
         | Some user ->
             return!
                 viewInfo ctx
@@ -189,7 +190,8 @@ let edit usrId : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> task 
 /// GET /user/log-on
 let logOn : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx -> task {
     let  s      = Views.I18N.localizer.Force ()
-    let! groups = ctx.Db.GroupList ()
+    let! conn   = ctx.Conn
+    let! groups = SmallGroups.listAll conn
     let  url    = Option.ofObj <| ctx.Session.GetString Key.Session.redirectUrl
     match url with
     | Some _ ->
@@ -204,7 +206,8 @@ let logOn : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx 
 
 /// GET /users
 let maintain : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> task {
-    let! users = ctx.Db.AllUsers ()
+    let! conn  = ctx.Conn
+    let! users = Users.all conn
     return!
         viewInfo ctx
         |> Views.User.maintain users ctx
@@ -223,16 +226,16 @@ open System.Threading.Tasks
 let save : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next ctx -> task {
     match! ctx.TryBindFormAsync<EditUser> () with
     | Ok model ->
+        let! conn = ctx.Conn
         let! user =
             if model.IsNew then Task.FromResult (Some { User.empty with Id = (Guid.NewGuid >> UserId) () })
-            else ctx.Db.TryUserById (idFromShort UserId model.UserId)
+            else Users.tryById (idFromShort UserId model.UserId) conn
         match user with
         | Some usr ->
             let hasher      = PrayerTrackerPasswordHasher ()
             let updatedUser = model.PopulateUser usr (fun pw -> hasher.HashPassword (usr, pw))
-            updatedUser |> if model.IsNew then ctx.Db.AddEntry else ctx.Db.UpdateEntry
-            let! _ = ctx.Db.SaveChangesAsync ()
-            let  s = Views.I18N.localizer.Force ()
+            do! Users.save updatedUser conn
+            let s = Views.I18N.localizer.Force ()
             if model.IsNew then
                 let h = CommonFunctions.htmlString
                 { UserMessage.info with
@@ -284,10 +287,11 @@ let saveGroups : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun 
 
 /// GET /user/[user-id]/small-groups
 let smallGroups usrId : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> task {
-    let userId = UserId usrId
+    let! conn   = ctx.Conn
+    let  userId = UserId usrId
     match! ctx.Db.TryUserByIdWithGroups userId with
     | Some user ->
-        let! groups    = ctx.Db.GroupList ()
+        let! groups    = SmallGroups.listAll conn
         let  curGroups = user.SmallGroups |> Seq.map (fun g -> shortGuid g.SmallGroupId.Value) |> List.ofSeq
         return! 
             viewInfo ctx

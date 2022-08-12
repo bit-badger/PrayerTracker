@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <Compile Include="Entities.fs" />
+    <Compile Include="Access.fs" />
     <Compile Include="AppDbContext.fs" />
     <Compile Include="DataAccess.fs" />
     <Compile Include="Migrations\20161217153124_InitialDatabase.fs" />
@@ -19,6 +20,8 @@
     <PackageReference Include="NodaTime" Version="3.1.0" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="6.0.6" />
     <PackageReference Update="FSharp.Core" Version="6.0.5" />
+    <PackageReference Include="Npgsql.FSharp" Version="5.3.0" />
+    <PackageReference Include="Npgsql.NodaTime" Version="6.0.6" />
   </ItemGroup>
 
 </Project>

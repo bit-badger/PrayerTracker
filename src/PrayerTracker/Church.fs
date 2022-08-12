@@ -15,8 +15,9 @@ let private findStats (db : AppDbContext) churchId = task {
 
 /// POST /church/[church-id]/delete
 let delete chId : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next ctx -> task {
-    let churchId = ChurchId chId
-    match! ctx.Db.TryChurchById churchId with
+    let  churchId = ChurchId chId
+    use! conn     = ctx.Conn
+    match! Data.Churches.tryById churchId conn with
     | Some church ->
         let! _, stats = findStats ctx.Db churchId
         ctx.Db.RemoveEntry church
@@ -39,7 +40,8 @@ let edit churchId : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> ta
             |> Views.Church.edit EditChurch.empty ctx
             |> renderHtml next ctx
     else
-        match! ctx.Db.TryChurchById (ChurchId churchId) with
+        use! conn = ctx.Conn
+        match! Data.Churches.tryById (ChurchId churchId) conn with
         | Some church -> 
             return!
                 viewInfo ctx
@@ -65,9 +67,10 @@ open System.Threading.Tasks
 let save : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next ctx -> task {
     match! ctx.TryBindFormAsync<EditChurch> () with
     | Ok model ->
+        let! conn = ctx.Conn
         let! church =
             if model.IsNew then Task.FromResult (Some { Church.empty with Id = (Guid.NewGuid >> ChurchId) () })
-            else ctx.Db.TryChurchById (idFromShort ChurchId model.ChurchId)
+            else Data.Churches.tryById (idFromShort ChurchId model.ChurchId) conn
         match church with
         | Some ch ->
             model.PopulateChurch ch

@@ -396,9 +396,6 @@ type [<CLIMutable; NoComparison; NoEquality>] Church =
         
         /// The address for the interface
         InterfaceAddress : string option
-        
-        /// Small groups for this church
-        SmallGroups : ResizeArray<SmallGroup>
     }
 with
     /// An empty church
@@ -410,7 +407,6 @@ with
             State            = ""
             HasVpsInterface  = false
             InterfaceAddress = None
-            SmallGroups      = ResizeArray<SmallGroup> ()
         }
     
     /// Configure EF for this entity

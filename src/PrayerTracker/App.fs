@@ -71,7 +71,6 @@ module Configure =
         let _ = svc.AddSingleton<IClock> SystemClock.Instance
         
         let config = svc.BuildServiceProvider().GetRequiredService<IConfiguration> ()
-        //NpgsqlConnection.GlobalTypeMapper.
         let _      =
             svc.AddDbContext<AppDbContext> (
                 (fun options ->

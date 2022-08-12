@@ -43,8 +43,6 @@ let churchTests =
             Expect.equal mt.State "" "The state should have been blank"
             Expect.isFalse mt.HasVpsInterface "The church should not show that it has an interface"
             Expect.isNone mt.InterfaceAddress "The interface address should not exist"
-            Expect.isNotNull mt.SmallGroups "The small groups navigation property should not be null"
-            Expect.isEmpty mt.SmallGroups "There should be no small groups for an empty church"
         }
     ]
 

@@ -69,14 +69,30 @@ type ClaimsPrincipal with
         else None
 
 
+open System.Threading.Tasks
 open Giraffe
+open Microsoft.Extensions.Configuration
+open Npgsql
 open PrayerTracker
 
 /// Extensions on the ASP.NET Core HTTP context
 type HttpContext with
     
+    // TODO: is this disposed?
+    member private this.LazyConn : Lazy<Task<NpgsqlConnection>> = lazy (backgroundTask {
+        let cfg  = this.GetService<IConfiguration> ()
+        let conn = new NpgsqlConnection (cfg.GetConnectionString "PrayerTracker")
+        do! conn.OpenAsync ()
+        return conn
+    })
+    
     /// The EF Core database context (via DI)
     member this.Db = this.GetService<AppDbContext> ()
+    
+    /// The PostgreSQL connection (configured via DI)
+    member this.Conn = backgroundTask {
+        return! this.LazyConn.Force ()
+    }
     
     /// The system clock (via DI)
     member this.Clock = this.GetService<IClock> ()
