@@ -263,25 +263,11 @@ let saveGroups : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun 
             addError ctx s["You must select at least one group to assign"]
             return! redirectTo false $"/user/{model.UserId}/small-groups" next ctx
         | _ ->
-            match! ctx.Db.TryUserByIdWithGroups (idFromShort UserId model.UserId) with
-            | Some user ->
-                let groups =
-                    model.SmallGroups.Split ','
-                    |> Array.map (idFromShort SmallGroupId)
-                    |> List.ofArray
-                user.SmallGroups
-                |> Seq.filter (fun x -> not (groups |> List.exists (fun y -> y = x.SmallGroupId)))
-                |> ctx.Db.UserGroupXref.RemoveRange
-                groups
-                |> Seq.ofList
-                |> Seq.filter (fun x -> not (user.SmallGroups |> Seq.exists (fun y -> y.SmallGroupId = x)))
-                |> Seq.map (fun x -> { UserSmallGroup.empty with UserId = user.Id; SmallGroupId = x })
-                |> List.ofSeq
-                |> List.iter ctx.Db.AddEntry
-                let! _ = ctx.Db.SaveChangesAsync ()
-                addInfo ctx s["Successfully updated group permissions for {0}", model.UserName]
-                return! redirectTo false "/users" next ctx
-              | _ -> return! fourOhFour ctx
+            let! conn = ctx.Conn
+            do! Users.updateSmallGroups (idFromShort UserId model.UserId)
+                    (model.SmallGroups.Split ',' |> Array.map (idFromShort SmallGroupId) |> List.ofArray) conn
+            addInfo ctx s["Successfully updated group permissions for {0}", model.UserName]
+            return! redirectTo false "/users" next ctx
     | Result.Error e -> return! bindError e next ctx
 }
 
@@ -289,10 +275,11 @@ let saveGroups : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun 
 let smallGroups usrId : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> task {
     let! conn   = ctx.Conn
     let  userId = UserId usrId
-    match! ctx.Db.TryUserByIdWithGroups userId with
+    match! Users.tryById userId conn with
     | Some user ->
         let! groups    = SmallGroups.listAll conn
-        let  curGroups = user.SmallGroups |> Seq.map (fun g -> shortGuid g.SmallGroupId.Value) |> List.ofSeq
+        let! groupIds  = Users.groupIdsByUserId userId conn
+        let  curGroups = groupIds |> List.map (fun g -> shortGuid g.Value)
         return! 
             viewInfo ctx
             |> Views.User.assignGroups (AssignGroups.fromUser user) groups curGroups ctx

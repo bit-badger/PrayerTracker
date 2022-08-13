@@ -828,4 +828,7 @@
   <data name="Last Seen" xml:space="preserve">
     <value>Ultima vez Visto</value>
   </data>
+  <data name="Administrators" xml:space="preserve">
+      <value>Administradores</value>
+  </data>
 </root>

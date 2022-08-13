@@ -3,6 +3,7 @@
 open System
 open Giraffe
 open PrayerTracker
+open PrayerTracker.Data
 open PrayerTracker.Entities
 open PrayerTracker.ViewModels
 
@@ -14,14 +15,14 @@ let announcement : HttpHandler = requireAccess [ User ] >=> fun next ctx ->
 
 /// POST /small-group/[group-id]/delete
 let delete grpId : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next ctx -> task {
-    let s       = Views.I18N.localizer.Force ()
-    let groupId = SmallGroupId grpId
-    match! ctx.Db.TryGroupById groupId with
+    let  s       = Views.I18N.localizer.Force ()
+    let  groupId = SmallGroupId grpId
+    let! conn    = ctx.Conn
+    match! SmallGroups.tryById groupId conn with
     | Some grp ->
-        let! reqs  = ctx.Db.CountRequestsBySmallGroup groupId
-        let! users = ctx.Db.CountUsersBySmallGroup    groupId
-        ctx.Db.RemoveEntry grp
-        let! _ = ctx.Db.SaveChangesAsync ()
+        let! reqs  = PrayerRequests.countByGroup groupId conn
+        let! users = Users.countByGroup          groupId conn
+        do! SmallGroups.deleteById groupId conn
         addInfo ctx
             s["The group {0} and its {1} prayer request(s) were deleted successfully; revoked access from {2} user(s)",
               grp.Name, reqs, users]
@@ -31,13 +32,13 @@ let delete grpId : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fu
 
 /// POST /small-group/member/[member-id]/delete
 let deleteMember mbrId : HttpHandler = requireAccess [ User ] >=> validateCsrf >=> fun next ctx -> task {
-    let s        = Views.I18N.localizer.Force ()
-    let group    = ctx.Session.CurrentGroup.Value
-    let memberId = MemberId mbrId
-    match! ctx.Db.TryMemberById memberId with
+    let  s        = Views.I18N.localizer.Force ()
+    let  group    = ctx.Session.CurrentGroup.Value
+    let  memberId = MemberId mbrId
+    let! conn     = ctx.Conn
+    match! Members.tryById memberId conn with
     | Some mbr when mbr.SmallGroupId = group.Id ->
-        ctx.Db.RemoveEntry mbr
-        let! _ = ctx.Db.SaveChangesAsync ()
+        do! Members.deleteById memberId conn
         addHtmlInfo ctx s["The group member &ldquo;{0}&rdquo; was deleted successfully", mbr.Name]
         return! redirectTo false "/small-group/members" next ctx
     | Some _
@@ -46,7 +47,8 @@ let deleteMember mbrId : HttpHandler = requireAccess [ User ] >=> validateCsrf >
 
 /// GET /small-group/[group-id]/edit
 let edit grpId : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> task {
-    let! churches = ctx.Db.AllChurches ()
+    let! conn     = ctx.Conn
+    let! churches = Churches.all conn
     let  groupId  = SmallGroupId grpId
     if groupId.Value = Guid.Empty then
         return!
@@ -54,7 +56,7 @@ let edit grpId : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> task 
             |> Views.SmallGroup.edit EditSmallGroup.empty churches ctx
             |> renderHtml next ctx
     else
-        match! ctx.Db.TryGroupById groupId with
+        match! SmallGroups.tryById groupId conn with
         | Some grp ->
             return!
                 viewInfo ctx
@@ -75,7 +77,8 @@ let editMember mbrId : HttpHandler = requireAccess [ User ] >=> fun next ctx -> 
             |> Views.SmallGroup.editMember EditMember.empty types ctx
             |> renderHtml next ctx
     else
-        match! ctx.Db.TryMemberById memberId with
+        let! conn = ctx.Conn
+        match! Members.tryById memberId conn with
         | Some mbr when mbr.SmallGroupId = group.Id ->
             return!
                 viewInfo ctx
@@ -87,7 +90,8 @@ let editMember mbrId : HttpHandler = requireAccess [ User ] >=> fun next ctx -> 
 
 /// GET /small-group/log-on/[group-id?]
 let logOn grpId : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx -> task {
-    let! groups  = ctx.Db.ProtectedGroups ()
+    let! conn    = ctx.Conn
+    let! groups  = SmallGroups.listProtected conn
     let  groupId = match grpId with Some gid -> shortGuid gid | None -> ""
     return!
         { viewInfo ctx with HelpLink = Some Help.logOn }
@@ -147,21 +151,24 @@ let members : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task {
 /// GET /small-group
 let overview : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task {
     let  group    = ctx.Session.CurrentGroup.Value
+    let! conn     = ctx.Conn
     let! reqs     = ctx.Db.AllRequestsForSmallGroup  group ctx.Clock None true 0
     let! reqCount = ctx.Db.CountRequestsBySmallGroup group.Id
     let! mbrCount = ctx.Db.CountMembersForSmallGroup group.Id
+    let! admins   = Users.listByGroupId group.Id conn
     let  model    =
-        { TotalActiveReqs  = List.length reqs
-          AllReqs          = reqCount
-          TotalMembers     = mbrCount
-          ActiveReqsByType =
-              (reqs
+        {   TotalActiveReqs  = List.length reqs
+            AllReqs          = reqCount
+            TotalMembers     = mbrCount
+            ActiveReqsByType = (
+               reqs
                |> Seq.ofList
                |> Seq.map (fun req -> req.RequestType)
                |> Seq.distinct
                |> Seq.map (fun reqType -> reqType, reqs |> List.filter (fun r -> r.RequestType = reqType) |> List.length)
                |> Map.ofSeq)
-          }
+            Admins            = admins
+        }
     return!
         viewInfo ctx
         |> Views.SmallGroup.overview model

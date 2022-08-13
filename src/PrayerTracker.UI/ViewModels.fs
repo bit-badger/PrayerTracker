@@ -688,6 +688,9 @@ type Overview =
         
         /// A count of all members
         TotalMembers : int
+        
+        /// The users authorized to administer this group
+        Admins : User list
     }
 
 

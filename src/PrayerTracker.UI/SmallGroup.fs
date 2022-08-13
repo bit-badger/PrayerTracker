@@ -141,7 +141,7 @@ let editMember (model : EditMember) (types : (string * LocalizedString) seq) ctx
 
 
 /// View for the small group log on page
-let logOn (groups : SmallGroup list) grpId ctx viewInfo =
+let logOn (groups : (string * string) list) grpId ctx viewInfo =
     let s     = I18N.localizer.Force ()
     let model = { SmallGroupId = emptyGuid; Password = ""; RememberMe = None }
     let vi    = AppViewInfo.withOnLoadScript "PT.smallGroup.logOn.onPageLoad" viewInfo
@@ -154,9 +154,7 @@ let logOn (groups : SmallGroup list) grpId ctx viewInfo =
                     if groups.Length = 0 then "", s["There are no classes with passwords defined"].Value
                     else
                         "", selectDefault s["Select Group"].Value
-                        yield!
-                            groups
-                            |> List.map (fun grp -> shortGuid grp.Id.Value, $"{grp.Church.Name} | {grp.Name}")
+                        yield! groups
                 }
                 |> selectList (nameof model.SmallGroupId) grpId [ _required ]
             ]
@@ -336,6 +334,13 @@ let overview model viewInfo =
                 strong [] [ str (model.TotalMembers.ToString "N0"); space; locStr s["Members"] ]
                 hr []
                 a [ _href "/small-group/members" ] [ icon "email"; linkSpacer; locStr s["Maintain Group Members"] ]
+                hr []
+                strong [] [ str ((List.length model.Admins).ToString "N0"); space; locStr s["Administrators"] ]
+                for admin in model.Admins do
+                    hr []
+                    str admin.Name
+                    br []
+                    small [] [ a [ _href $"mailto:{admin.Email}" ] [ str admin.Email ] ]
             ]
         ]
     ]

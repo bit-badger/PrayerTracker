@@ -1,28 +1,29 @@
 ﻿module PrayerTracker.Handlers.Church
 
+open System.Threading.Tasks
 open Giraffe
 open PrayerTracker
+open PrayerTracker.Data
 open PrayerTracker.Entities
 open PrayerTracker.ViewModels
 
 /// Find statistics for the given church
-let private findStats (db : AppDbContext) churchId = task {
-    let! grps = db.CountGroupsByChurch   churchId
-    let! reqs = db.CountRequestsByChurch churchId
-    let! usrs = db.CountUsersByChurch    churchId
-    return shortGuid churchId.Value, { SmallGroups = grps; PrayerRequests = reqs; Users = usrs }
+let private findStats churchId conn = task {
+    let! groups   = SmallGroups.countByChurch    churchId conn
+    let! requests = PrayerRequests.countByChurch churchId conn
+    let! users    = Users.countByChurch          churchId conn
+    return shortGuid churchId.Value, { SmallGroups = groups; PrayerRequests = requests; Users = users }
 }
 
 /// POST /church/[church-id]/delete
 let delete chId : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next ctx -> task {
     let  churchId = ChurchId chId
     use! conn     = ctx.Conn
-    match! Data.Churches.tryById churchId conn with
+    match! Churches.tryById churchId conn with
     | Some church ->
-        let! _, stats = findStats ctx.Db churchId
-        ctx.Db.RemoveEntry church
-        let! _ = ctx.Db.SaveChangesAsync ()
-        let  s = Views.I18N.localizer.Force ()
+        let! _, stats = findStats churchId conn
+        do! Churches.deleteById churchId conn
+        let s = Views.I18N.localizer.Force ()
         addInfo ctx
           s["The church {0} and its {1} small groups (with {2} prayer request(s)) were deleted successfully; revoked access from {3} user(s)",
               church.Name, stats.SmallGroups, stats.PrayerRequests, stats.Users]
@@ -41,7 +42,7 @@ let edit churchId : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> ta
             |> renderHtml next ctx
     else
         use! conn = ctx.Conn
-        match! Data.Churches.tryById (ChurchId churchId) conn with
+        match! Churches.tryById (ChurchId churchId) conn with
         | Some church -> 
             return!
                 viewInfo ctx
@@ -52,16 +53,14 @@ let edit churchId : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> ta
 
 /// GET /churches
 let maintain : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> task {
-    let  await    = Async.AwaitTask >> Async.RunSynchronously
-    let! churches = ctx.Db.AllChurches ()
-    let  stats    = churches |> List.map (fun c -> await (findStats ctx.Db c.Id))
+    let! conn     = ctx.Conn
+    let! churches = Churches.all conn
+    let  stats    = churches |> List.map (fun c -> findStats c.Id conn |> Async.AwaitTask |> Async.RunSynchronously)
     return!
         viewInfo ctx
         |> Views.Church.maintain churches (stats |> Map.ofList) ctx
         |> renderHtml next ctx
 }
-
-open System.Threading.Tasks
 
 /// POST /church/save
 let save : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next ctx -> task {
@@ -70,14 +69,12 @@ let save : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next c
         let! conn = ctx.Conn
         let! church =
             if model.IsNew then Task.FromResult (Some { Church.empty with Id = (Guid.NewGuid >> ChurchId) () })
-            else Data.Churches.tryById (idFromShort ChurchId model.ChurchId) conn
+            else Churches.tryById (idFromShort ChurchId model.ChurchId) conn
         match church with
         | Some ch ->
-            model.PopulateChurch ch
-            |> (if model.IsNew then ctx.Db.AddEntry else ctx.Db.UpdateEntry)
-            let! _   = ctx.Db.SaveChangesAsync ()
-            let  s   = Views.I18N.localizer.Force ()
-            let  act = s[if model.IsNew then "Added" else "Updated"].Value.ToLower ()
+            do! Churches.save (model.PopulateChurch ch) conn
+            let s   = Views.I18N.localizer.Force ()
+            let act = s[if model.IsNew then "Added" else "Updated"].Value.ToLower ()
             addInfo ctx s["Successfully {0} church “{1}”", act, model.Name]
             return! redirectTo false "/churches" next ctx
         | None -> return! fourOhFour ctx

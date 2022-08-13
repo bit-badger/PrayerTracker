@@ -6,6 +6,7 @@ open Microsoft.FSharpLu
 open Newtonsoft.Json
 open NodaTime
 open NodaTime.Serialization.JsonNet
+open PrayerTracker.Data
 open PrayerTracker.Entities
 open PrayerTracker.ViewModels
 
@@ -107,7 +108,8 @@ type HttpContext with
         | None ->
             match this.User.SmallGroupId with
             | Some groupId ->
-                match! this.Db.TryGroupById groupId with
+                let! conn = this.Conn
+                match! SmallGroups.tryByIdWithPreferences groupId conn with
                 | Some group ->
                     this.Session.CurrentGroup <- Some group
                     return Some group
@@ -122,11 +124,11 @@ type HttpContext with
         | None ->
             match this.User.UserId with
             | Some userId ->
-                match! this.Db.TryUserById userId with
+                let! conn = this.Conn
+                match! Users.tryById userId conn with
                 | Some user ->
                     // Set last seen for user
-                    this.Db.UpdateEntry { user with LastSeen = Some this.Now }
-                    let! _ = this.Db.SaveChangesAsync ()
+                    do! Users.updateLastSeen userId this.Now conn
                     this.Session.CurrentUser <- Some user
                     return Some user
                 | None -> return None
