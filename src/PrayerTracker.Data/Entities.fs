@@ -956,3 +956,20 @@ module PrayerRequest =
         if isExpired asOf group req then false
         else asOf.PlusWeeks -group.Preferences.LongTermUpdateWeeks
                 >= req.UpdatedDate.InZone(SmallGroup.timeZone group).Date
+
+
+/// Information needed to display the small group maintenance page
+[<NoComparison; NoEquality>]
+type SmallGroupInfo =
+    {   /// The ID of the small group
+        Id : string
+        
+        /// The name of the small group
+        Name : string
+        
+        /// The name of the church to which the small group belongs
+        ChurchName : string
+        
+        /// The ID of the time zone for the small group
+        TimeZoneId : TimeZoneId
+    }

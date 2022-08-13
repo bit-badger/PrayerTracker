@@ -52,6 +52,22 @@ module private Helpers =
             SmallGroup = SmallGroup.empty
         }
     
+    /// Map a row to a Prayer Request instance
+    let mapToPrayerRequest (row : RowReader) =
+        {   Id             = PrayerRequestId         (row.uuid "id")
+            UserId         = UserId                  (row.uuid "user_id")
+            SmallGroupId   = SmallGroupId            (row.uuid "small_group_id")
+            EnteredDate    = row.fieldValue<Instant> "entered_date"
+            UpdatedDate    = row.fieldValue<Instant> "updated_date"
+            Requestor      = row.stringOrNone        "requestor"
+            Text           = row.string              "request_text"
+            NotifyChaplain = row.bool                "notify_chaplain"
+            RequestType    = PrayerRequestType.fromCode (row.string "request_id")
+            Expiration     = Expiration.fromCode        (row.string "expiration")
+            User = User.empty
+            SmallGroup = SmallGroup.empty
+        }
+    
     /// Map a row to a Small Group instance
     let mapToSmallGroup (row : RowReader) =
         {   Id          = SmallGroupId (row.uuid "id")
@@ -62,6 +78,14 @@ module private Helpers =
             Members = ResizeArray ()
             PrayerRequests = ResizeArray ()
             Users = ResizeArray ()
+        }
+    
+    /// Map a row to a Small Group information set
+    let mapToSmallGroupInfo (row : RowReader) =
+        {   Id         = Giraffe.ShortGuid.fromGuid (row.uuid "id")
+            Name       = row.string "group_name"
+            ChurchName = row.string "church_name"
+            TimeZoneId = TimeZoneId (row.string "time_zone_id")
         }
     
     /// Map a row to a Small Group list item
@@ -156,6 +180,14 @@ module Churches =
 /// Functions to manipulate small group members
 module Members =
     
+    /// Count members for the given small group
+    let countByGroup (groupId : SmallGroupId) conn =
+        conn
+        |> Sql.existingConnection
+        |> Sql.query "SELECT COUNT(id) AS mbr_count FROM pt.member WHERE small_group_id = @groupId"
+        |> Sql.parameters [ "@groupId", Sql.uuid groupId.Value ]
+        |> Sql.executeRowAsync (fun row -> row.int "mbr_count")
+    
     /// Delete a small group member by its ID
     let deleteById (memberId : MemberId) conn = backgroundTask {
         let! _ =
@@ -166,6 +198,14 @@ module Members =
             |> Sql.executeNonQueryAsync
         return ()
     }
+    
+    /// Retrieve all members for a given small group
+    let forGroup (groupId : SmallGroupId) conn =
+        conn
+        |> Sql.existingConnection
+        |> Sql.query "SELECT * FROM pt.member WHERE small_group_id = @groupId ORDER BY member_name"
+        |> Sql.parameters [ "@groupId", Sql.uuid groupId.Value ]
+        |> Sql.executeAsync mapToMember
     
     /// Retrieve a small group member by its ID
     let tryById (memberId : MemberId) conn = backgroundTask {
@@ -179,8 +219,37 @@ module Members =
     }
 
 
+/// Options to retrieve a list of requests
+type PrayerRequestOptions =
+    {   /// The small group for which requests should be retrieved
+        SmallGroup : SmallGroup
+        
+        /// The clock instance to use for date/time manipulation
+        Clock : IClock
+        
+        /// The date for which the list is being retrieved
+        ListDate : LocalDate option
+        
+        /// Whether only active requests should be retrieved
+        ActiveOnly : bool
+        
+        /// The page number, for paged lists
+        PageNumber : int
+    }
+
+
 /// Functions to manipulate prayer requests
 module PrayerRequests =
+    
+    /// Central place to append sort criteria for prayer request queries
+    let private orderBy sort =
+        match sort with
+        | SortByDate -> "DESC updated_date, DESC entered_date, requestor"
+        | SortByRequestor -> "requestor, DESC updated_date, DESC entered_date"
+    
+    /// Paginate a prayer request query
+    let private paginate (pageNbr : int) pageSize =
+        if pageNbr > 0 then $"LIMIT {pageSize} OFFSET {(pageNbr - 1) * pageSize}" else ""
     
     /// Count the number of prayer requests for a church
     let countByChurch (churchId : ChurchId) conn =
@@ -200,8 +269,40 @@ module PrayerRequests =
         |> Sql.query "SELECT COUNT(id) AS req_count FROM pt.prayer_request WHERE small_group_id = @groupId"
         |> Sql.parameters [ "@groupId", Sql.uuid groupId.Value ]
         |> Sql.executeRowAsync (fun row -> row.int "req_count")
+    
+    /// Get all (or active) requests for a small group as of now or the specified date
+    let forGroup (opts : PrayerRequestOptions) conn =
+        let theDate = defaultArg opts.ListDate (SmallGroup.localDateNow opts.Clock opts.SmallGroup)
+        let where, parameters =
+            if opts.ActiveOnly then
+                let asOf = NpgsqlParameter (
+                    "@asOf",
+                    (theDate.AtStartOfDayInZone(SmallGroup.timeZone opts.SmallGroup)
+                            - Duration.FromDays opts.SmallGroup.Preferences.DaysToExpire)
+                        .ToInstant ())
+                """ AND (   updatedDate  > @asOf
+                         OR expiration   = @manual
+                         OR request_type = @longTerm
+                         OR request_type = @expecting)
+                    AND expiration <> @forced""",
+                [   "@asOf",      Sql.parameter asOf
+                    "@manual",    Sql.string    (Expiration.toCode Manual)
+                    "@longTerm",  Sql.string    (PrayerRequestType.toCode LongTermRequest)
+                    "@expecting", Sql.string    (PrayerRequestType.toCode Expecting)
+                    "@forced",    Sql.string    (Expiration.toCode Forced) ]
+            else "", []
+        conn
+        |> Sql.existingConnection
+        |> Sql.query $"""
+            SELECT *
+              FROM prayer_request
+             WHERE small_group_id = @groupId {where}
+             ORDER BY {orderBy opts.SmallGroup.Preferences.RequestSort}
+             {paginate opts.PageNumber opts.SmallGroup.Preferences.PageSize}"""
+        |> Sql.parameters (("@groupId", Sql.uuid opts.SmallGroup.Id.Value) :: parameters)
+        |> Sql.executeAsync mapToPrayerRequest
 
-        
+
 /// Functions to retrieve small group information
 module SmallGroups =
     
@@ -227,6 +328,18 @@ module SmallGroups =
         return ()
     }
     
+    /// Get information for all small groups
+    let infoForAll conn =
+        conn
+        |> Sql.existingConnection
+        |> Sql.query """
+            SELECT sg.id, c.church_name, lp.time_zone_id
+              FROM pt.small_group sg
+                   INNER JOIN pt.church c ON c.id = sg.church_id
+                   INNER JOIN pt.list_preference lp ON lp.small_group_id = sg.id
+             ORDER BY sg.group_name"""
+        |> Sql.executeAsync mapToSmallGroupInfo
+    
     /// Get a list of small group IDs along with a description that includes the church name
     let listAll conn =
         conn
@@ -250,6 +363,22 @@ module SmallGroups =
              WHERE COALESCE(lp.group_password, '') <> ''
              ORDER BY c.church_name, g.group_name"""
         |> Sql.executeAsync mapToSmallGroupItem
+    
+    /// Log on for a small group (includes list preferences)
+    let logOn (groupId : SmallGroupId) password conn = backgroundTask {
+        let! group =
+            conn
+            |> Sql.existingConnection
+            |> Sql.query """
+                SELECT sg.*, lp.*
+                  FROM pt.small_group sg
+                       INNER JOIN pt.list_preference lp ON lp.small_group_id = sg.id
+                 WHERE sg.id             = @id
+                   AND lp.group_password = @password"""
+            |> Sql.parameters [ "@id", Sql.uuid groupId.Value; "@password", Sql.string password ]
+            |> Sql.executeAsync mapToSmallGroupWithPreferences
+        return List.tryHead group
+    }
     
     /// Get a small group by its ID
     let tryById (groupId : SmallGroupId) conn = backgroundTask {
@@ -345,7 +474,7 @@ module Users =
         |> Sql.executeAsync mapToUser
     
     /// Save a user's information
-    let save user conn = backgroundTask {
+    let save (user : User) conn = backgroundTask {
         let! _ =
             conn
             |> Sql.existingConnection
@@ -410,7 +539,7 @@ module Users =
     }
     
     /// Update a user's password hash
-    let updatePassword user conn = backgroundTask {
+    let updatePassword (user : User) conn = backgroundTask {
         let! _ =
             conn
             |> Sql.existingConnection

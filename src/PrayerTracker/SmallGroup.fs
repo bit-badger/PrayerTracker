@@ -107,8 +107,9 @@ open Microsoft.AspNetCore.Authentication.Cookies
 let logOnSubmit : HttpHandler = requireAccess [ AccessLevel.Public ] >=> validateCsrf >=> fun next ctx -> task {
     match! ctx.TryBindFormAsync<GroupLogOn> () with
     | Ok model ->
-        let s = Views.I18N.localizer.Force ()
-        match! ctx.Db.TryGroupLogOnByPassword (idFromShort SmallGroupId model.SmallGroupId) model.Password with
+        let  s    = Views.I18N.localizer.Force ()
+        let! conn = ctx.Conn
+        match! SmallGroups.logOn (idFromShort SmallGroupId model.SmallGroupId) model.Password conn with
         | Some group ->
             ctx.Session.CurrentGroup <- Some group
             let identity = ClaimsIdentity (
@@ -129,7 +130,8 @@ let logOnSubmit : HttpHandler = requireAccess [ AccessLevel.Public ] >=> validat
 
 /// GET /small-groups
 let maintain : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> task {
-    let! groups = ctx.Db.AllGroups ()
+    let! conn   = ctx.Conn
+    let! groups = SmallGroups.infoForAll conn
     return!
         viewInfo ctx
         |> Views.SmallGroup.maintain groups ctx
@@ -140,7 +142,8 @@ let maintain : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> task {
 let members : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task {
     let  group   = ctx.Session.CurrentGroup.Value
     let  s       = Views.I18N.localizer.Force ()
-    let! members = ctx.Db.AllMembersForSmallGroup group.Id
+    let! conn    = ctx.Conn
+    let! members = Members.forGroup group.Id conn
     let  types   = ReferenceList.emailTypeList group.Preferences.DefaultEmailType s |> Map.ofSeq
     return!
         { viewInfo ctx with HelpLink = Some Help.maintainGroupMembers }
@@ -152,10 +155,16 @@ let members : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task {
 let overview : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task {
     let  group    = ctx.Session.CurrentGroup.Value
     let! conn     = ctx.Conn
-    let! reqs     = ctx.Db.AllRequestsForSmallGroup  group ctx.Clock None true 0
-    let! reqCount = ctx.Db.CountRequestsBySmallGroup group.Id
-    let! mbrCount = ctx.Db.CountMembersForSmallGroup group.Id
-    let! admins   = Users.listByGroupId group.Id conn
+    let! reqs     = PrayerRequests.forGroup
+                        {   SmallGroup = group
+                            Clock      = ctx.Clock
+                            ListDate   = None
+                            ActiveOnly = true
+                            PageNumber = 0
+                        } conn
+    let! reqCount = PrayerRequests.countByGroup group.Id conn
+    let! mbrCount = Members.countByGroup        group.Id conn
+    let! admins   = Users.listByGroupId         group.Id conn
     let  model    =
         {   TotalActiveReqs  = List.length reqs
             AllReqs          = reqCount
@@ -177,6 +186,7 @@ let overview : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task {
 
 /// GET /small-group/preferences
 let preferences : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task {
+    // TODO: stopped here
     let  group = ctx.Session.CurrentGroup.Value
     let! tzs   = ctx.Db.AllTimeZones ()
     return!

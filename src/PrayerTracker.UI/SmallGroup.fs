@@ -178,7 +178,7 @@ let logOn (groups : (string * string) list) grpId ctx viewInfo =
 
 
 /// View for the small group maintenance page
-let maintain (groups : SmallGroup list) ctx viewInfo =
+let maintain (groups : SmallGroupInfo list) ctx viewInfo =
     let s  = I18N.localizer.Force ()
     let vi = AppViewInfo.withScopedStyles [ "#groupList { grid-template-columns: repeat(4, auto); }" ] viewInfo
     let groupTable =
@@ -193,13 +193,12 @@ let maintain (groups : SmallGroup list) ctx viewInfo =
                     header [ _class "cell" ] [ locStr s["Time Zone"] ]
                 ]
                 for group in groups do
-                    let grpId     = shortGuid group.Id.Value
-                    let delAction = $"/small-group/{grpId}/delete"
+                    let delAction = $"/small-group/{group.Id}/delete"
                     let delPrompt = s["Are you sure you want to delete this {0}?  This action cannot be undone.",
                                          $"""{s["Small Group"].Value.ToLower ()} ({group.Name})""" ].Value
                     div [ _class "row" ] [
                         div [ _class "cell actions" ] [
-                            a [ _href $"/small-group/{grpId}/edit"; _title s["Edit This Group"].Value ] [
+                            a [ _href $"/small-group/{group.Id}/edit"; _title s["Edit This Group"].Value ] [
                                 iconSized 18 "edit"
                             ]
                             a [ _href      delAction
@@ -210,8 +209,8 @@ let maintain (groups : SmallGroup list) ctx viewInfo =
                             ]
                         ]
                         div [ _class "cell" ] [ str group.Name ]
-                        div [ _class "cell" ] [ str group.Church.Name ]
-                        div [ _class "cell" ] [ locStr (TimeZones.name group.Preferences.TimeZoneId s) ]
+                        div [ _class "cell" ] [ str group.ChurchName ]
+                        div [ _class "cell" ] [ locStr (TimeZones.name group.TimeZoneId s) ]
                     ]
             ]
     [   div [ _class "pt-center-text" ] [
