@@ -39,8 +39,7 @@ type ISession with
       with get () = this.GetObject<User> Key.Session.currentUser |> Option.fromObject
        and set (v : User option) =
           match v with
-          | Some user ->
-              this.SetObject Key.Session.currentUser { user with PasswordHash = ""; SmallGroups = ResizeArray() }
+          | Some user -> this.SetObject Key.Session.currentUser { user with PasswordHash = "" }
           | None -> this.Remove Key.Session.currentUser
     
     /// Current messages for the session
@@ -74,7 +73,6 @@ open System.Threading.Tasks
 open Giraffe
 open Microsoft.Extensions.Configuration
 open Npgsql
-open PrayerTracker
 
 /// Extensions on the ASP.NET Core HTTP context
 type HttpContext with
@@ -86,9 +84,6 @@ type HttpContext with
         do! conn.OpenAsync ()
         return conn
     })
-    
-    /// The EF Core database context (via DI)
-    member this.Db = this.GetService<AppDbContext> ()
     
     /// The PostgreSQL connection (configured via DI)
     member this.Conn = backgroundTask {

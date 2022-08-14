@@ -543,9 +543,9 @@ let requestListTests =
                 let curReqHtml =
                     [ "<ul>"
                       """<li style="list-style-type:circle;font-family:Century Gothic,Tahoma,Luxi Sans,sans-serif;font-size:12pt;padding-bottom:.25em;">"""
-                      "<strong>Zeb</strong> &mdash; zyx</li>"
+                      "<strong>Zeb</strong> &ndash; zyx</li>"
                       """<li style="list-style-type:disc;font-family:Century Gothic,Tahoma,Luxi Sans,sans-serif;font-size:12pt;padding-bottom:.25em;">"""
-                      "<strong>Aaron</strong> &mdash; abc</li></ul>"
+                      "<strong>Aaron</strong> &ndash; abc</li></ul>"
                     ]
                     |> String.concat ""
                 Expect.stringContains html curReqHtml """Expected HTML for "Current Requests" requests not found"""
@@ -582,7 +582,7 @@ let requestListTests =
                     |> String.concat ""
                 Expect.stringContains html lstHeading "Expected HTML for the list heading not found"
                 // spot check; without header test tests this exhaustively
-                Expect.stringContains html "<strong>Zeb</strong> &mdash; zyx</li>" "Expected requests not found"
+                Expect.stringContains html "<strong>Zeb</strong> &ndash; zyx</li>" "Expected requests not found"
             "AsHtml succeeds with short as-of date",
             fun reqList ->
                 let htmlList =
@@ -595,7 +595,7 @@ let requestListTests =
                 let html     = htmlList.AsHtml _s
                 let expected =
                     htmlList.Requests[0].UpdatedDate.InUtc().Date.ToString ("d", null)
-                    |> sprintf """<strong>Zeb</strong> &mdash; zyx<i style="font-size:9.60pt">&nbsp; (as of %s)</i>"""
+                    |> sprintf """<strong>Zeb</strong> &ndash; zyx<i style="font-size:9.60pt">&nbsp; (as of %s)</i>"""
                 // spot check; if one request has it, they all should
                 Expect.stringContains html expected "Expected short as-of date not found"    
             "AsHtml succeeds with long as-of date",
@@ -610,7 +610,7 @@ let requestListTests =
                 let html     = htmlList.AsHtml _s
                 let expected =
                     htmlList.Requests[0].UpdatedDate.InUtc().Date.ToString ("D", null)
-                    |> sprintf """<strong>Zeb</strong> &mdash; zyx<i style="font-size:9.60pt">&nbsp; (as of %s)</i>"""
+                    |> sprintf """<strong>Zeb</strong> &ndash; zyx<i style="font-size:9.60pt">&nbsp; (as of %s)</i>"""
                 // spot check; if one request has it, they all should
                 Expect.stringContains html expected "Expected long as-of date not found"    
             "AsText succeeds with no as-of date",

@@ -14,13 +14,12 @@ type RequestStartMiddleware (next : RequestDelegate) =
 open System
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting
+open Microsoft.Extensions.Configuration
 
 /// Module to hold configuration for the web app
 [<RequireQualifiedAccess>]
 module Configure =
   
-    open Microsoft.Extensions.Configuration
-
     /// Set up the configuration for the app
     let configuration (ctx : WebHostBuilderContext) (cfg : IConfigurationBuilder) =
         cfg.SetBasePath(ctx.HostingEnvironment.ContentRootPath)
@@ -39,7 +38,6 @@ module Configure =
     open System.IO
     open Microsoft.AspNetCore.Authentication.Cookies
     open Microsoft.AspNetCore.Localization
-    open Microsoft.EntityFrameworkCore
     open Microsoft.Extensions.DependencyInjection
     open NeoSmart.Caching.Sqlite
     open NodaTime
@@ -69,15 +67,6 @@ module Configure =
         let _ = svc.AddAntiforgery ()
         let _ = svc.AddRouting ()
         let _ = svc.AddSingleton<IClock> SystemClock.Instance
-        
-        let config = svc.BuildServiceProvider().GetRequiredService<IConfiguration> ()
-        let _      =
-            svc.AddDbContext<AppDbContext> (
-                (fun options ->
-                    options.UseNpgsql (
-                        config.GetConnectionString "PrayerTracker", fun o -> o.UseNodaTime () |> ignore)
-                    |> ignore),
-                ServiceLifetime.Scoped, ServiceLifetime.Singleton)
         ()
     
     open Giraffe
@@ -194,10 +183,6 @@ module Configure =
             let _ = app.UseDeveloperExceptionPage ()
             ()
         else
-            try
-                use scope = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>().CreateScope ()
-                scope.ServiceProvider.GetService<AppDbContext>().Database.Migrate ()
-            with _ -> () // om nom nom
             let _ = app.UseGiraffeErrorHandler errorHandler
             ()
         
@@ -219,34 +204,55 @@ module Configure =
 module App =
     
     open System.Text
-    open Microsoft.EntityFrameworkCore
     open Microsoft.Extensions.DependencyInjection
+    open Npgsql
+    open Npgsql.FSharp
+    open PrayerTracker.Entities
     
     let migratePasswords (app : IWebHost) =
         task {
-            use db = app.Services.GetService<AppDbContext>()
-            let! v1Users = db.Users.FromSqlRaw("SELECT * FROM pt.pt_user WHERE salt IS NULL").ToListAsync ()
-            for user in v1Users do
+            let config = app.Services.GetService<IConfiguration> ()
+            use conn   = new NpgsqlConnection (config.GetConnectionString "PrayerTracker")
+            do! conn.OpenAsync ()
+            let! v1Users =
+                conn
+                |> Sql.existingConnection
+                |> Sql.query "SELECT id, password_hash FROM pt.pt_user WHERE salt IS NULL"
+                |> Sql.executeAsync (fun row -> UserId (row.uuid "id"), row.string "password_hash") 
+            for userId, oldHash in v1Users do
                 let pw =
                     [|  254uy 
-                        yield! (Encoding.UTF8.GetBytes user.PasswordHash)
+                        yield! (Encoding.UTF8.GetBytes oldHash)
                     |]
                     |> Convert.ToBase64String
-                db.UpdateEntry { user with PasswordHash = pw }
-            let! v1Count = db.SaveChangesAsync ()
-            printfn $"Updated {v1Count} users with version 1 password"
+                let! _ =
+                    conn
+                    |> Sql.existingConnection
+                    |> Sql.query "UPDATE pt.pt_user SET password_hash = @hash WHERE id = @id"
+                    |> Sql.parameters [ "@id", Sql.uuid userId.Value; "@hash", Sql.string pw ]
+                    |> Sql.executeNonQueryAsync
+                ()
+            printfn $"Updated {v1Users.Length} users with version 1 password"
             let! v2Users =
-                db.Users.FromSqlRaw("SELECT * FROM pt.pt_user WHERE salt IS NOT NULL").ToListAsync ()
-            for user in v2Users do
+                conn
+                |> Sql.existingConnection
+                |> Sql.query "SELECT id, password_hash, salt FROM pt.pt_user WHERE salt IS NOT NULL"
+                |> Sql.executeAsync (fun row -> UserId (row.uuid "id"), row.string "password_hash", row.uuid "salt")
+            for userId, oldHash, salt in v2Users do
                 let pw =
                     [|  255uy
-                        yield! (user.Salt.Value.ToByteArray ())
-                        yield! (Encoding.UTF8.GetBytes user.PasswordHash)
+                        yield! (salt.ToByteArray ())
+                        yield! (Encoding.UTF8.GetBytes oldHash)
                     |]
                     |> Convert.ToBase64String
-                db.UpdateEntry { user with PasswordHash = pw }
-            let! v2Count = db.SaveChangesAsync ()
-            printfn $"Updated {v2Count} users with version 2 password"
+                let! _ =
+                    conn
+                    |> Sql.existingConnection
+                    |> Sql.query "UPDATE pt.pt_user SET password_hash = @hash WHERE id = @id"
+                    |> Sql.parameters [ "@id", Sql.uuid userId.Value; "@hash", Sql.string pw ]
+                    |> Sql.executeNonQueryAsync
+                ()
+            printfn $"Updated {v2Users.Length} users with version 2 password"
         } |> Async.AwaitTask |> Async.RunSynchronously
     
     open System.IO

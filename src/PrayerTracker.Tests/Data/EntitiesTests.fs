@@ -118,8 +118,6 @@ let listPreferencesTests =
             Expect.isFalse mt.IsPublic "The isPublic flag should not have been set"
             Expect.equal (TimeZoneId.toString mt.TimeZoneId) "America/Denver"
                 "The default time zone should have been America/Denver"
-            Expect.equal (TimeZoneId.toString mt.TimeZone.Id) ""
-                "The default preferences should have included an empty time zone"
             Expect.equal mt.PageSize 100 "The default page size should have been 100"
             Expect.equal mt.AsOfDateDisplay NoDisplay "The as-of date display should have been No Display"
         }
@@ -135,7 +133,6 @@ let memberTests =
             Expect.equal mt.Name "" "The member name should have been blank"
             Expect.equal mt.Email "" "The member e-mail address should have been blank"
             Expect.isNone mt.Format "The preferred e-mail format should not exist"
-            Expect.equal mt.SmallGroup.Id.Value Guid.Empty "The small group should have been an empty one"
         }
     ]
 
@@ -156,8 +153,6 @@ let prayerRequestTests =
             Expect.equal mt.Text "" "The request text should have been blank"
             Expect.isFalse mt.NotifyChaplain "The notify chaplain flag should not have been set"
             Expect.equal mt.Expiration Automatic "The expiration should have been Automatic"
-            Expect.equal mt.User.Id.Value Guid.Empty "The user should have been an empty one"
-            Expect.equal mt.SmallGroup.Id.Value Guid.Empty "The small group should have been an empty one"
         }
         test "isExpired always returns false for expecting requests" {
             PrayerRequest.isExpired (localDateNow ()) SmallGroup.empty
@@ -294,13 +289,6 @@ let smallGroupTests =
             Expect.equal mt.Id.Value Guid.Empty "The small group ID should have been an empty GUID"
             Expect.equal mt.ChurchId.Value Guid.Empty "The church ID should have been an empty GUID"
             Expect.equal mt.Name "" "The name should have been blank"
-            Expect.equal mt.Church.Id.Value Guid.Empty "The church should have been an empty one"
-            Expect.isNotNull mt.Members "The members navigation property should not be null"
-            Expect.isEmpty mt.Members "There should be no members for an empty small group"
-            Expect.isNotNull mt.PrayerRequests "The prayer requests navigation property should not be null"
-            Expect.isEmpty mt.PrayerRequests "There should be no prayer requests for an empty small group"
-            Expect.isNotNull mt.Users "The users navigation property should not be null"
-            Expect.isEmpty mt.Users "There should be no users for an empty small group"
         }
         yield! testFixture withFakeClock [
             "LocalTimeNow adjusts the time ahead of UTC",
@@ -309,7 +297,6 @@ let smallGroupTests =
                     { SmallGroup.empty with
                         Preferences = { ListPreferences.empty with TimeZoneId = TimeZoneId "Europe/Berlin" }
                     }
-                let tz = DateTimeZoneProviders.Tzdb["Europe/Berlin"]
                 Expect.isGreaterThan (SmallGroup.localTimeNow clock grp) (now.InUtc().LocalDateTime)
                     "UTC to Europe/Berlin should have added hours"
             "LocalTimeNow adjusts the time behind UTC",
@@ -337,18 +324,6 @@ let smallGroupTests =
     ]
 
 [<Tests>]
-let timeZoneTests =
-    testList "TimeZone" [
-        test "empty is as expected" {
-            let mt = TimeZone.empty
-            Expect.equal (TimeZoneId.toString mt.Id) "" "The time zone ID should have been blank"
-            Expect.equal mt.Description "" "The description should have been blank"
-            Expect.equal mt.SortOrder 0 "The sort order should have been zero"
-            Expect.isFalse mt.IsActive "The is-active flag should not have been set"
-        }
-    ]
-
-[<Tests>]
 let userTests =
     testList "User" [
         test "empty is as expected" {
@@ -359,9 +334,6 @@ let userTests =
             Expect.equal mt.Email "" "The e-mail address should have been blank"
             Expect.isFalse mt.IsAdmin "The is admin flag should not have been set"
             Expect.equal mt.PasswordHash "" "The password hash should have been blank"
-            Expect.isNone mt.Salt "The password salt should not exist"
-            Expect.isNotNull mt.SmallGroups "The small groups navigation property should not have been null"
-            Expect.isEmpty mt.SmallGroups "There should be no small groups for an empty user"
         }
         test "Name concatenates first and last names" {
             let user = { User.empty with FirstName = "Unit"; LastName = "Test" }
@@ -376,7 +348,5 @@ let userSmallGroupTests =
             let mt = UserSmallGroup.empty
             Expect.equal mt.UserId.Value Guid.Empty "The user ID should have been an empty GUID"
             Expect.equal mt.SmallGroupId.Value Guid.Empty "The small group ID should have been an empty GUID"
-            Expect.equal mt.User.Id.Value Guid.Empty "The user should have been an empty one"
-            Expect.equal mt.SmallGroup.Id.Value Guid.Empty "The small group should have been an empty one"
         }
     ]

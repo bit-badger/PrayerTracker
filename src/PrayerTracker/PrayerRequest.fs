@@ -126,7 +126,7 @@ let expire reqId : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task
     | Ok req ->
         let  s    = Views.I18N.localizer.Force ()
         let! conn = ctx.Conn
-        do! PrayerRequests.updateExpiration { req with Expiration = Forced } conn
+        do! PrayerRequests.updateExpiration { req with Expiration = Forced } false conn
         addInfo ctx s["Successfully {0} prayer request", s["Expired"].Value.ToLower ()]
         return! redirectTo false "/prayer-requests" next ctx
     | Result.Error e -> return! e
@@ -177,16 +177,16 @@ let lists : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx 
 ///  - OR -
 /// GET /prayer-requests?search=[search-query]
 let maintain onlyActive : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task {
-    // TODO: stopped here
     let group   = ctx.Session.CurrentGroup.Value
     let pageNbr =
         match ctx.GetQueryStringValue "page" with
         | Ok pg -> match Int32.TryParse pg with true, p -> p | false, _ -> 1
         | Result.Error _ -> 1
     let! model = backgroundTask {
+        let! conn = ctx.Conn
         match ctx.GetQueryStringValue "search" with
         | Ok search ->
-            let! reqs = ctx.Db.SearchRequestsForSmallGroup group search pageNbr
+            let! reqs = PrayerRequests.searchForGroup group search pageNbr conn
             return
                 { MaintainRequests.empty with
                     Requests   = reqs
@@ -194,7 +194,14 @@ let maintain onlyActive : HttpHandler = requireAccess [ User ] >=> fun next ctx 
                     PageNbr    = Some pageNbr
                 }
         | Result.Error _ ->
-            let! reqs = ctx.Db.AllRequestsForSmallGroup group ctx.Clock None onlyActive pageNbr
+            let! reqs =
+                PrayerRequests.forGroup
+                    {   SmallGroup = group
+                        Clock      = ctx.Clock
+                        ListDate   = None
+                        ActiveOnly = onlyActive
+                        PageNumber = pageNbr
+                    } conn
             return
                 { MaintainRequests.empty with
                     Requests   = reqs
@@ -221,9 +228,9 @@ let restore reqId : HttpHandler = requireAccess [ User ] >=> fun next ctx -> tas
     let requestId = PrayerRequestId reqId
     match! findRequest ctx requestId with
     | Ok req ->
-        let s  = Views.I18N.localizer.Force ()
-        ctx.Db.UpdateEntry { req with Expiration = Automatic; UpdatedDate = ctx.Now }
-        let! _ = ctx.Db.SaveChangesAsync ()
+        let  s    = Views.I18N.localizer.Force ()
+        let! conn = ctx.Conn
+        do! PrayerRequests.updateExpiration { req with Expiration = Automatic; UpdatedDate = ctx.Now } true conn
         addInfo ctx s["Successfully {0} prayer request", s["Restored"].Value.ToLower ()]
         return! redirectTo false "/prayer-requests" next ctx
     | Result.Error e -> return! e
@@ -235,41 +242,42 @@ open System.Threading.Tasks
 let save : HttpHandler = requireAccess [ User ] >=> validateCsrf >=> fun next ctx -> task {
     match! ctx.TryBindFormAsync<EditRequest> () with
     | Ok model ->
-        let! req =
-          if model.IsNew then
-              Task.FromResult (Some { PrayerRequest.empty with Id = (Guid.NewGuid >> PrayerRequestId) () })
-          else ctx.Db.TryRequestById (idFromShort PrayerRequestId model.RequestId)
+        let  group = ctx.Session.CurrentGroup.Value
+        let! conn  = ctx.Conn
+        let! req   =
+            if model.IsNew then
+                { PrayerRequest.empty with
+                    Id           = (Guid.NewGuid >> PrayerRequestId) ()
+                    SmallGroupId = group.Id
+                    UserId       = ctx.User.UserId.Value
+                }
+                |> (Some >> Task.FromResult)
+            else PrayerRequests.tryById (idFromShort PrayerRequestId model.RequestId) conn
         match req with
-        | Some pr ->
-            let upd8 =
+        | Some pr when pr.SmallGroupId = group.Id ->
+            let now  = SmallGroup.localDateNow ctx.Clock group
+            let updated =
                 { pr with
                     RequestType = PrayerRequestType.fromCode model.RequestType
                     Requestor   = match model.Requestor with Some x when x.Trim () = "" -> None | x -> x
                     Text        = ckEditorToText model.Text
                     Expiration  = Expiration.fromCode model.Expiration
                 }
-            let group = ctx.Session.CurrentGroup.Value
-            let now   = SmallGroup.localDateNow ctx.Clock group
-            match model.IsNew with
-            | true ->
-                let dt =
-                    (defaultArg (parseListDate model.EnteredDate) now)
-                        .AtStartOfDayInZone(SmallGroup.timeZone group)
-                        .ToInstant()
-                { upd8 with
-                    SmallGroupId = group.Id
-                    UserId       = ctx.User.UserId.Value
-                    EnteredDate  = dt
-                    UpdatedDate  = dt
-                  }
-            | false when defaultArg model.SkipDateUpdate false -> upd8
-            | false -> { upd8 with UpdatedDate = ctx.Now }
-            |> if model.IsNew then ctx.Db.AddEntry else ctx.Db.UpdateEntry
-            let! _   = ctx.Db.SaveChangesAsync ()
-            let  s   = Views.I18N.localizer.Force ()
-            let  act = if model.IsNew then "Added" else "Updated"
+                |> function
+                | it when model.IsNew ->
+                    let dt =
+                        (defaultArg (parseListDate model.EnteredDate) now)
+                            .AtStartOfDayInZone(SmallGroup.timeZone group)
+                            .ToInstant()
+                    { it with EnteredDate = dt; UpdatedDate = dt }
+                | it when defaultArg model.SkipDateUpdate false -> it
+                | it -> { it with UpdatedDate = ctx.Now }
+            do! PrayerRequests.save updated conn
+            let s   = Views.I18N.localizer.Force ()
+            let act = if model.IsNew then "Added" else "Updated"
             addInfo ctx s["Successfully {0} prayer request", s[act].Value.ToLower ()]
             return! redirectTo false "/prayer-requests" next ctx
+        | Some _
         | None -> return! fourOhFour ctx
     | Result.Error e -> return! bindError e next ctx
 }

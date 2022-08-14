@@ -39,7 +39,6 @@ module private Helpers =
             RequestSort         = RequestSort.fromCode     (row.string "request_sort")
             DefaultEmailType    = EmailFormat.fromCode     (row.string "default_email_type")
             AsOfDateDisplay     = AsOfDateDisplay.fromCode (row.string "as_of_date_display")
-            TimeZone = TimeZone.empty
         }
     
     /// Map a row to a Member instance
@@ -49,7 +48,6 @@ module private Helpers =
             Name         = row.string       "member_name"
             Email        = row.string       "email"
             Format       = row.stringOrNone "email_format" |> Option.map EmailFormat.fromCode
-            SmallGroup = SmallGroup.empty
         }
     
     /// Map a row to a Prayer Request instance
@@ -64,8 +62,6 @@ module private Helpers =
             NotifyChaplain = row.bool                "notify_chaplain"
             RequestType    = PrayerRequestType.fromCode (row.string "request_id")
             Expiration     = Expiration.fromCode        (row.string "expiration")
-            User = User.empty
-            SmallGroup = SmallGroup.empty
         }
     
     /// Map a row to a Small Group instance
@@ -74,10 +70,6 @@ module private Helpers =
             ChurchId    = ChurchId     (row.uuid "church_id")
             Name        = row.string   "group_name"
             Preferences = ListPreferences.empty
-            Church = Church.empty
-            Members = ResizeArray ()
-            PrayerRequests = ResizeArray ()
-            Users = ResizeArray ()
         }
     
     /// Map a row to a Small Group information set
@@ -107,9 +99,7 @@ module private Helpers =
             Email        = row.string "email"
             IsAdmin      = row.bool   "is_admin"
             PasswordHash = row.string "password_hash"
-            Salt         = None
             LastSeen     = row.fieldValueOrNone<Instant> "last_seen"
-            SmallGroups = ResizeArray ()
         }
 
 
@@ -373,6 +363,19 @@ module PrayerRequests =
         return ()
     }
     
+    /// Search prayer requests for the given term
+    let searchForGroup group searchTerm pageNbr conn =
+        conn
+        |> Sql.existingConnection
+        |> Sql.query $"""
+            SELECT * FROM pt.prayer_request WHERE small_group_id = @groupId AND request_text ILIKE @search
+                UNION
+            SELECT * FROM pt.prayer_request WHERE small_group_id = @groupId AND COALESCE(requestor, '') ILIKE @search
+            ORDER BY {orderBy group.Preferences.RequestSort}
+            {paginate pageNbr group.Preferences.PageSize}"""
+        |> Sql.parameters [ "@groupId", Sql.uuid group.Id.Value; "@search", Sql.string $"%%%s{searchTerm}%%" ]
+        |> Sql.executeAsync mapToPrayerRequest
+
     /// Retrieve a prayer request by its ID
     let tryById (reqId : PrayerRequestId) conn = backgroundTask {
         let! req =
@@ -385,14 +388,20 @@ module PrayerRequests =
     }
     
     /// Update the expiration for the given prayer request
-    let updateExpiration (req : PrayerRequest) conn = backgroundTask {
+    let updateExpiration (req : PrayerRequest) withTime conn = backgroundTask {
+        let sql, parameters =
+            if withTime then
+                ", updated_date = @updated",
+                [ "@updated", Sql.parameter (NpgsqlParameter ("@updated", req.UpdatedDate)) ]
+            else "", []
         let! _ =
             conn
             |> Sql.existingConnection
-            |> Sql.query "UPDATE pt.prayer_request SET expiration = @expiration WHERE id = @id"
+            |> Sql.query $"UPDATE pt.prayer_request SET expiration = @expiration{sql} WHERE id = @id"
             |> Sql.parameters
-                [   "@expiration", Sql.string (Expiration.toCode req.Expiration)
+                ([  "@expiration", Sql.string (Expiration.toCode req.Expiration)
                     "@id",         Sql.uuid   req.Id.Value ]
+                 |> List.append parameters)
             |> Sql.executeNonQueryAsync
         return ()
     }
