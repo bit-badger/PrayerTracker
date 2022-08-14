@@ -86,15 +86,16 @@ type HttpContext with
     })
     
     /// The PostgreSQL connection (configured via DI)
-    member this.Conn = backgroundTask {
-        return! this.LazyConn.Force ()
-    }
+    member this.Conn = this.GetService<NpgsqlConnection> ()
     
     /// The system clock (via DI)
     member this.Clock = this.GetService<IClock> ()
     
     /// The current instant
     member this.Now = this.Clock.GetCurrentInstant ()
+    
+    /// The common string localizer
+    member this.Strings = Views.I18N.localizer.Force ()
     
     /// The currently logged on small group (sets the value in the session if it is missing)
     member this.CurrentGroup () = task {
@@ -103,8 +104,7 @@ type HttpContext with
         | None ->
             match this.User.SmallGroupId with
             | Some groupId ->
-                let! conn = this.Conn
-                match! SmallGroups.tryByIdWithPreferences groupId conn with
+                match! SmallGroups.tryByIdWithPreferences groupId this.Conn with
                 | Some group ->
                     this.Session.CurrentGroup <- Some group
                     return Some group
@@ -119,11 +119,10 @@ type HttpContext with
         | None ->
             match this.User.UserId with
             | Some userId ->
-                let! conn = this.Conn
-                match! Users.tryById userId conn with
+                match! Users.tryById userId this.Conn with
                 | Some user ->
                     // Set last seen for user
-                    do! Users.updateLastSeen userId this.Now conn
+                    do! Users.updateLastSeen userId this.Now this.Conn
                     this.Session.CurrentUser <- Some user
                     return Some user
                 | None -> return None

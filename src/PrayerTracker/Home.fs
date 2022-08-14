@@ -61,8 +61,7 @@ open Microsoft.AspNetCore.Authentication.Cookies
 let logOff : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx -> task {
     ctx.Session.Clear ()
     do! ctx.SignOutAsync CookieAuthenticationDefaults.AuthenticationScheme
-    let s = Views.I18N.localizer.Force ()
-    addHtmlInfo ctx s["Log Off Successful • Have a nice day!"]
+    addHtmlInfo ctx ctx.Strings["Log Off Successful • Have a nice day!"]
     return! redirectTo false "/" next ctx
 }
 

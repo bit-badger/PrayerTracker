@@ -111,6 +111,7 @@ let lists (groups : SmallGroupInfo list) viewInfo =
     let l   = I18N.forView "Requests/Lists"
     use sw  = new StringWriter ()
     let raw = rawLocText sw
+    let vi  = AppViewInfo.withScopedStyles [ "#groupList { grid-template-columns: repeat(3, auto); }" ] viewInfo
     [   p [] [
             raw l["The groups listed below have either public or password-protected request lists."]
             space
@@ -122,27 +123,31 @@ let lists (groups : SmallGroupInfo list) viewInfo =
         | 0 -> p [] [ raw l["There are no groups with public or password-protected request lists."] ]
         | count ->
             tableSummary count s
-            table [ _class "pt-table pt-action-table" ] [
-                tableHeadings s [ "Actions"; "Church"; "Group" ]
-                groups
-                |> List.map (fun grp ->
-                    tr [] [
-                        if grp.IsPublic then
-                            a [ _href $"/prayer-requests/{grp.Id}/list"; _title s["View"].Value ] [ icon "list" ]
-                        else
-                            a [ _href $"/small-group/log-on/{grp.Id}"; _title s["Log On"].Value ] [
-                                icon "verified_user"
-                            ]
-                        |> List.singleton
-                        |> td []
-                        td [] [ str grp.ChurchName ]
-                        td [] [ str grp.Name ]
-                    ])
-                |> tbody []
+            section [ _id "groupList"; _class "pt-table"; _ariaLabel "Small group list" ] [
+                div [ _class "row head" ] [
+                    header [ _class "cell" ] [ locStr s["Actions"] ]
+                    header [ _class "cell" ] [ locStr s["Church"] ]
+                    header [ _class "cell" ] [ locStr s["Group"] ]
+                ]
+                for group in groups do
+                    div [ _class "row" ] [
+                        div [ _class "cell actions" ] [
+                            if group.IsPublic then
+                                a [ _href $"/prayer-requests/{group.Id}/list"; _title s["View"].Value ] [
+                                    iconSized 18 "list"
+                                ]
+                            else
+                                a [ _href $"/small-group/log-on/{group.Id}"; _title s["Log On"].Value ] [
+                                    iconSized 18 "verified_user"
+                                ]
+                        ]
+                        div [ _class "cell" ] [ str group.ChurchName ]
+                        div [ _class "cell" ] [ str group.Name ]
+                    ]
             ]
     ]
     |> Layout.Content.standard
-    |> Layout.standard viewInfo "Request Lists"
+    |> Layout.standard vi "Request Lists"
 
 
 /// View for the prayer request maintenance page
@@ -256,7 +261,7 @@ let maintain (model : MaintainRequests) (ctx : HttpContext) viewInfo =
                 br []
                 a [ _href "/prayer-requests/inactive" ] [ raw l["Show Inactive Requests"] ]
             | _ ->
-                if defaultArg model.OnlyActive false then
+                if Option.isSome model.OnlyActive then
                     raw l["Inactive requests are currently shown"]
                     br []
                     a [ _href "/prayer-requests" ] [ raw l["Do Not Show Inactive Requests"] ]

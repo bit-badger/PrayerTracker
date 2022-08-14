@@ -6,13 +6,13 @@ open Microsoft.AspNetCore.Mvc.Rendering
 
 /// Create a select list from an enumeration
 let toSelectList<'T> valFunc textFunc withDefault emptyText (items : 'T seq) =
-    match items with null -> nullArg "items" | _ -> ()
-    [ match withDefault with
-      | true ->
-          let s = PrayerTracker.Views.I18N.localizer.Force ()
-          yield SelectListItem ($"""&mdash; %A{s[emptyText]} &mdash;""", "")
-      | _ -> ()
-      yield! items |> Seq.map (fun x -> SelectListItem (textFunc x, valFunc x))
+    if isNull items then nullArg (nameof items)
+    [   match withDefault with
+        | true ->
+            let s = PrayerTracker.Views.I18N.localizer.Force ()
+            SelectListItem ($"""&mdash; %A{s[emptyText]} &mdash;""", "")
+        | _ -> ()
+        yield! items |> Seq.map (fun x -> SelectListItem (textFunc x, valFunc x))
     ]
   
 /// Create a select list from an enumeration
@@ -151,8 +151,7 @@ let requireAccess levels : HttpHandler = fun next ctx -> task {
     | _, Some _ when List.contains Group  levels              -> return! next ctx
     | Some u, _ when List.contains Admin  levels && u.IsAdmin -> return! next ctx
     | _, _ when List.contains Admin levels ->
-        let s = Views.I18N.localizer.Force ()
-        addError ctx s["You are not authorized to view the requested page."]
+        addError ctx ctx.Strings["You are not authorized to view the requested page."]
         return! redirectTo false "/unauthorized" next ctx
     | _, _ when List.contains User levels ->
         // Redirect to the user log on page
@@ -162,7 +161,6 @@ let requireAccess levels : HttpHandler = fun next ctx -> task {
         // Redirect to the small group log on page
         return! redirectTo false "/small-group/log-on" next ctx
     | _, _ ->
-        let s = Views.I18N.localizer.Force ()
-        addError ctx s["You are not authorized to view the requested page."]
+        addError ctx ctx.Strings["You are not authorized to view the requested page."]
         return! redirectTo false "/unauthorized" next ctx
 }

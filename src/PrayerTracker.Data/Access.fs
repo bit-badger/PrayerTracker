@@ -60,7 +60,7 @@ module private Helpers =
             Requestor      = row.stringOrNone        "requestor"
             Text           = row.string              "request_text"
             NotifyChaplain = row.bool                "notify_chaplain"
-            RequestType    = PrayerRequestType.fromCode (row.string "request_id")
+            RequestType    = PrayerRequestType.fromCode (row.string "request_type")
             Expiration     = Expiration.fromCode        (row.string "expiration")
         }
     
@@ -108,8 +108,7 @@ module Churches =
     
     /// Get a list of all churches
     let all conn =
-        conn
-        |> Sql.existingConnection
+           Sql.existingConnection conn
         |> Sql.query "SELECT * FROM pt.church ORDER BY church_name"
         |> Sql.executeAsync mapToChurch
     
@@ -118,8 +117,7 @@ module Churches =
         let idParam = [ [ "@churchId", Sql.uuid churchId.Value ] ]
         let where   = "WHERE small_group_id IN (SELECT id FROM pt.small_group WHERE church_id = @churchId)"
         let! _ =
-            conn
-            |> Sql.existingConnection
+               Sql.existingConnection conn
             |> Sql.executeTransactionAsync
                 [   $"DELETE FROM pt.prayer_request {where}", idParam
                     $"DELETE FROM pt.user_small_group {where}", idParam
@@ -132,8 +130,7 @@ module Churches =
     /// Save a church's information
     let save (church : Church) conn = backgroundTask {
         let! _ =
-            conn
-            |> Sql.existingConnection
+               Sql.existingConnection conn
             |> Sql.query """
                 INSERT INTO pt.church (
                     id, church_name, city, state, has_vps_interface, interface_address
@@ -159,8 +156,7 @@ module Churches =
     /// Find a church by its ID
     let tryById (churchId : ChurchId) conn = backgroundTask {
         let! church =
-            conn
-            |> Sql.existingConnection
+               Sql.existingConnection conn
             |> Sql.query "SELECT * FROM pt.church WHERE id = @id"
             |> Sql.parameters [ "@id", Sql.uuid churchId.Value ]
             |> Sql.executeAsync mapToChurch
@@ -173,8 +169,7 @@ module Members =
     
     /// Count members for the given small group
     let countByGroup (groupId : SmallGroupId) conn =
-        conn
-        |> Sql.existingConnection
+           Sql.existingConnection conn
         |> Sql.query "SELECT COUNT(id) AS mbr_count FROM pt.member WHERE small_group_id = @groupId"
         |> Sql.parameters [ "@groupId", Sql.uuid groupId.Value ]
         |> Sql.executeRowAsync (fun row -> row.int "mbr_count")
@@ -182,8 +177,7 @@ module Members =
     /// Delete a small group member by its ID
     let deleteById (memberId : MemberId) conn = backgroundTask {
         let! _ =
-            conn
-            |> Sql.existingConnection
+               Sql.existingConnection conn
             |> Sql.query "DELETE FROM pt.member WHERE id = @id"
             |> Sql.parameters [ "@id", Sql.uuid memberId.Value ]
             |> Sql.executeNonQueryAsync
@@ -192,8 +186,7 @@ module Members =
     
     /// Retrieve all members for a given small group
     let forGroup (groupId : SmallGroupId) conn =
-        conn
-        |> Sql.existingConnection
+           Sql.existingConnection conn
         |> Sql.query "SELECT * FROM pt.member WHERE small_group_id = @groupId ORDER BY member_name"
         |> Sql.parameters [ "@groupId", Sql.uuid groupId.Value ]
         |> Sql.executeAsync mapToMember
@@ -201,8 +194,7 @@ module Members =
     /// Save a small group member
     let save (mbr : Member) conn = backgroundTask {
         let! _ =
-            conn
-            |> Sql.existingConnection
+               Sql.existingConnection conn
             |> Sql.query """
                 INSERT INTO pt.member (
                     id, small_group_id, member_name, email, email_format
@@ -225,8 +217,7 @@ module Members =
     /// Retrieve a small group member by its ID
     let tryById (memberId : MemberId) conn = backgroundTask {
         let! mbr =
-            conn
-            |> Sql.existingConnection
+               Sql.existingConnection conn
             |> Sql.query "SELECT * FROM pt.member WHERE id = @id"
             |> Sql.parameters [ "@id", Sql.uuid memberId.Value ]
             |> Sql.executeAsync mapToMember
@@ -259,8 +250,8 @@ module PrayerRequests =
     /// Central place to append sort criteria for prayer request queries
     let private orderBy sort =
         match sort with
-        | SortByDate -> "DESC updated_date, DESC entered_date, requestor"
-        | SortByRequestor -> "requestor, DESC updated_date, DESC entered_date"
+        | SortByDate -> "updated_date DESC, entered_date DESC, requestor"
+        | SortByRequestor -> "requestor, updated_date DESC, entered_date DESC"
     
     /// Paginate a prayer request query
     let private paginate (pageNbr : int) pageSize =
@@ -268,8 +259,7 @@ module PrayerRequests =
     
     /// Count the number of prayer requests for a church
     let countByChurch (churchId : ChurchId) conn =
-        conn
-        |> Sql.existingConnection
+           Sql.existingConnection conn
         |> Sql.query """
             SELECT COUNT(id) AS req_count
               FROM pt.prayer_request
@@ -279,8 +269,7 @@ module PrayerRequests =
     
     /// Count the number of prayer requests for a small group
     let countByGroup (groupId : SmallGroupId) conn =
-        conn
-        |> Sql.existingConnection
+           Sql.existingConnection conn
         |> Sql.query "SELECT COUNT(id) AS req_count FROM pt.prayer_request WHERE small_group_id = @groupId"
         |> Sql.parameters [ "@groupId", Sql.uuid groupId.Value ]
         |> Sql.executeRowAsync (fun row -> row.int "req_count")
@@ -288,8 +277,7 @@ module PrayerRequests =
     /// Delete a prayer request by its ID
     let deleteById (reqId : PrayerRequestId) conn = backgroundTask {
         let! _ =
-            conn
-            |> Sql.existingConnection
+               Sql.existingConnection conn
             |> Sql.query "DELETE FROM pt.prayer_request WHERE id = @id"
             |> Sql.parameters [ "@id", Sql.uuid reqId.Value ]
             |> Sql.executeNonQueryAsync
@@ -306,7 +294,7 @@ module PrayerRequests =
                     (theDate.AtStartOfDayInZone(SmallGroup.timeZone opts.SmallGroup)
                             - Duration.FromDays opts.SmallGroup.Preferences.DaysToExpire)
                         .ToInstant ())
-                """ AND (   updatedDate  > @asOf
+                """ AND (   updated_date > @asOf
                          OR expiration   = @manual
                          OR request_type = @longTerm
                          OR request_type = @expecting)
@@ -317,11 +305,10 @@ module PrayerRequests =
                     "@expecting", Sql.string    (PrayerRequestType.toCode Expecting)
                     "@forced",    Sql.string    (Expiration.toCode Forced) ]
             else "", []
-        conn
-        |> Sql.existingConnection
+        Sql.existingConnection conn
         |> Sql.query $"""
             SELECT *
-              FROM prayer_request
+              FROM pt.prayer_request
              WHERE small_group_id = @groupId {where}
              ORDER BY {orderBy opts.SmallGroup.Preferences.RequestSort}
              {paginate opts.PageNumber opts.SmallGroup.Preferences.PageSize}"""
@@ -331,8 +318,7 @@ module PrayerRequests =
     /// Save a prayer request
     let save (req : PrayerRequest) conn = backgroundTask {
         let! _ =
-            conn
-            |> Sql.existingConnection
+               Sql.existingConnection conn
             |> Sql.query """
                 INSERT into pt.prayer_request (
                     id, request_type, user_id, small_group_id, entered_date, updated_date, requestor, request_text,
@@ -365,8 +351,7 @@ module PrayerRequests =
     
     /// Search prayer requests for the given term
     let searchForGroup group searchTerm pageNbr conn =
-        conn
-        |> Sql.existingConnection
+           Sql.existingConnection conn
         |> Sql.query $"""
             SELECT * FROM pt.prayer_request WHERE small_group_id = @groupId AND request_text ILIKE @search
                 UNION
@@ -379,8 +364,7 @@ module PrayerRequests =
     /// Retrieve a prayer request by its ID
     let tryById (reqId : PrayerRequestId) conn = backgroundTask {
         let! req =
-            conn
-            |> Sql.existingConnection
+               Sql.existingConnection conn
             |> Sql.query "SELECT * FROM pt.prayer_request WHERE id = @id"
             |> Sql.parameters [ "@id", Sql.uuid reqId.Value ]
             |> Sql.executeAsync mapToPrayerRequest
@@ -395,8 +379,7 @@ module PrayerRequests =
                 [ "@updated", Sql.parameter (NpgsqlParameter ("@updated", req.UpdatedDate)) ]
             else "", []
         let! _ =
-            conn
-            |> Sql.existingConnection
+               Sql.existingConnection conn
             |> Sql.query $"UPDATE pt.prayer_request SET expiration = @expiration{sql} WHERE id = @id"
             |> Sql.parameters
                 ([  "@expiration", Sql.string (Expiration.toCode req.Expiration)
@@ -412,8 +395,7 @@ module SmallGroups =
     
     /// Count the number of small groups for a church
     let countByChurch (churchId : ChurchId) conn =
-        conn
-        |> Sql.existingConnection
+           Sql.existingConnection conn
         |> Sql.query "SELECT COUNT(id) AS group_count FROM pt.small_group WHERE church_id = @churchId"
         |> Sql.parameters [ "@churchId", Sql.uuid churchId.Value ]
         |> Sql.executeRowAsync (fun row -> row.int "group_count")
@@ -422,8 +404,7 @@ module SmallGroups =
     let deleteById (groupId : SmallGroupId) conn = backgroundTask {
         let idParam = [ [ "@groupId", Sql.uuid groupId.Value ] ]
         let! _ =
-            conn
-            |> Sql.existingConnection
+               Sql.existingConnection conn
             |> Sql.executeTransactionAsync
                 [   "DELETE FROM pt.prayer_request   WHERE small_group_id = @groupId", idParam
                     "DELETE FROM pt.user_small_group WHERE small_group_id = @groupId", idParam
@@ -434,10 +415,9 @@ module SmallGroups =
     
     /// Get information for all small groups
     let infoForAll conn =
-        conn
-        |> Sql.existingConnection
+           Sql.existingConnection conn
         |> Sql.query """
-            SELECT sg.id, c.church_name, lp.time_zone_id
+            SELECT sg.id, sg.group_name, c.church_name, lp.time_zone_id, lp.is_public
               FROM pt.small_group sg
                    INNER JOIN pt.church c ON c.id = sg.church_id
                    INNER JOIN pt.list_preference lp ON lp.small_group_id = sg.id
@@ -446,8 +426,7 @@ module SmallGroups =
     
     /// Get a list of small group IDs along with a description that includes the church name
     let listAll conn =
-        conn
-        |> Sql.existingConnection
+           Sql.existingConnection conn
         |> Sql.query """
             SELECT g.group_name, g.id, c.church_name
               FROM pt.small_group g
@@ -457,8 +436,7 @@ module SmallGroups =
     
     /// Get a list of small group IDs and descriptions for groups with a group password
     let listProtected conn =
-        conn
-        |> Sql.existingConnection
+           Sql.existingConnection conn
         |> Sql.query """
             SELECT g.group_name, g.id, c.church_name, lp.is_public
               FROM pt.small_group g
@@ -470,10 +448,9 @@ module SmallGroups =
     
     /// Get a list of small group IDs and descriptions for groups that are public or have a group password
     let listPublicAndProtected conn =
-        conn
-        |> Sql.existingConnection
+           Sql.existingConnection conn
         |> Sql.query """
-            SELECT g.group_name, g.id, c.church_name, lp.is_public
+            SELECT g.group_name, g.id, c.church_name, lp.time_zone_id, lp.is_public
               FROM pt.small_group g
                    INNER JOIN pt.church           c ON c.id = g.church_id
                    INNER JOIN pt.list_preference lp ON lp.small_group_id = g.id
@@ -485,8 +462,7 @@ module SmallGroups =
     /// Log on for a small group (includes list preferences)
     let logOn (groupId : SmallGroupId) password conn = backgroundTask {
         let! group =
-            conn
-            |> Sql.existingConnection
+               Sql.existingConnection conn
             |> Sql.query """
                 SELECT sg.*, lp.*
                   FROM pt.small_group sg
@@ -501,8 +477,7 @@ module SmallGroups =
     /// Save a small group
     let save (group : SmallGroup) isNew conn = backgroundTask {
         let! _ =
-            conn
-            |> Sql.existingConnection
+               Sql.existingConnection conn
             |> Sql.executeTransactionAsync [
                 """ INSERT INTO pt.small_group (
                         id, church_id, group_name
@@ -524,8 +499,7 @@ module SmallGroups =
     /// Save a small group's list preferences
     let savePreferences (pref : ListPreferences) conn = backgroundTask {
         let! _ =
-            conn
-            |> Sql.existingConnection
+               Sql.existingConnection conn
             |> Sql.query """
                 UPDATE pt.list_preference
                    SET days_to_keep_new       = @daysToKeepNew,
@@ -573,8 +547,7 @@ module SmallGroups =
     /// Get a small group by its ID
     let tryById (groupId : SmallGroupId) conn = backgroundTask {
         let! group =
-            conn
-            |> Sql.existingConnection
+               Sql.existingConnection conn
             |> Sql.query "SELECT * FROM pt.small_group WHERE id = @id"
             |> Sql.parameters [ "@id", Sql.uuid groupId.Value ]
             |> Sql.executeAsync mapToSmallGroup
@@ -584,8 +557,7 @@ module SmallGroups =
     /// Get a small group by its ID with its list preferences populated
     let tryByIdWithPreferences (groupId : SmallGroupId) conn = backgroundTask {
         let! group =
-            conn
-            |> Sql.existingConnection
+               Sql.existingConnection conn
             |> Sql.query """
                 SELECT sg.*, lp.*
                   FROM pt.small_group sg
@@ -602,15 +574,13 @@ module Users =
     
     /// Retrieve all PrayerTracker users
     let all conn =
-        conn
-        |> Sql.existingConnection
+           Sql.existingConnection conn
         |> Sql.query "SELECT * FROM pt.pt_user ORDER BY last_name, first_name"
         |> Sql.executeAsync mapToUser
     
     /// Count the number of users for a church
     let countByChurch (churchId : ChurchId) conn =
-        conn
-        |> Sql.existingConnection
+           Sql.existingConnection conn
         |> Sql.query """
             SELECT COUNT(u.id) AS user_count
               FROM pt.pt_user u
@@ -625,8 +595,7 @@ module Users =
     
     /// Count the number of users for a small group
     let countByGroup (groupId : SmallGroupId) conn =
-        conn
-        |> Sql.existingConnection
+           Sql.existingConnection conn
         |> Sql.query "SELECT COUNT(user_id) AS user_count FROM pt.user_small_group WHERE small_group_id = @groupId"
         |> Sql.parameters [ "@groupId", Sql.uuid groupId.Value ]
         |> Sql.executeRowAsync (fun row -> row.int "user_count")
@@ -634,8 +603,7 @@ module Users =
     /// Delete a user by its database ID
     let deleteById (userId : UserId) conn = backgroundTask {
         let! _ =
-            conn
-            |> Sql.existingConnection
+               Sql.existingConnection conn
             |> Sql.query "DELETE FROM pt.pt_user WHERE id = @id"
             |> Sql.parameters [ "@id", Sql.uuid userId.Value ]
             |> Sql.executeNonQueryAsync
@@ -644,16 +612,14 @@ module Users =
     
     /// Get the IDs of the small groups for which the given user is authorized
     let groupIdsByUserId (userId : UserId) conn =
-        conn
-        |> Sql.existingConnection
+           Sql.existingConnection conn
         |> Sql.query "SELECT small_group_id FROM pt.user_small_group WHERE user_id = @id"
         |> Sql.parameters [ "@id", Sql.uuid userId.Value ]
         |> Sql.executeAsync (fun row -> SmallGroupId (row.uuid "small_group_id"))
     
     /// Get a list of users authorized to administer the given small group
     let listByGroupId (groupId : SmallGroupId) conn =
-        conn
-        |> Sql.existingConnection
+           Sql.existingConnection conn
         |> Sql.query """
             SELECT u.*
               FROM pt.pt_user u
@@ -666,8 +632,7 @@ module Users =
     /// Save a user's information
     let save (user : User) conn = backgroundTask {
         let! _ =
-            conn
-            |> Sql.existingConnection
+               Sql.existingConnection conn
             |> Sql.query """
                 INSERT INTO pt.pt_user (
                     id, first_name, last_name, email, is_admin, password_hash
@@ -694,8 +659,7 @@ module Users =
     /// Find a user by its e-mail address and authorized small group
     let tryByEmailAndGroup email (groupId : SmallGroupId) conn = backgroundTask {
         let! user =
-            conn
-            |> Sql.existingConnection
+               Sql.existingConnection conn
             |> Sql.query """
                 SELECT u.*
                   FROM pt.pt_user u
@@ -709,8 +673,7 @@ module Users =
     /// Find a user by their database ID
     let tryById (userId : UserId) conn = backgroundTask {
         let! user =
-            conn
-            |> Sql.existingConnection
+               Sql.existingConnection conn
             |> Sql.query "SELECT * FROM pt.pt_user WHERE id = @id"
             |> Sql.parameters [ "@id", Sql.uuid userId.Value ]
             |> Sql.executeAsync mapToUser
@@ -720,8 +683,7 @@ module Users =
     /// Update a user's last seen date/time
     let updateLastSeen (userId : UserId) (now : Instant) conn = backgroundTask {
         let! _ =
-            conn
-            |> Sql.existingConnection
+               Sql.existingConnection conn
             |> Sql.query "UPDATE pt.pt_user SET last_seen = @now WHERE id = @id"
             |> Sql.parameters [ "@id", Sql.uuid userId.Value; "@now", Sql.parameter (NpgsqlParameter ("@now", now)) ]
             |> Sql.executeNonQueryAsync
@@ -731,8 +693,7 @@ module Users =
     /// Update a user's password hash
     let updatePassword (user : User) conn = backgroundTask {
         let! _ =
-            conn
-            |> Sql.existingConnection
+               Sql.existingConnection conn
             |> Sql.query "UPDATE pt.pt_user SET password_hash = @passwordHash WHERE id = @id"
             |> Sql.parameters [ "@id", Sql.uuid user.Id.Value; "@passwordHash", Sql.string user.PasswordHash ]
             |> Sql.executeNonQueryAsync
@@ -757,8 +718,7 @@ module Users =
         }
         if not (Seq.isEmpty queries) then
             let! _ =
-                conn
-                |> Sql.existingConnection
+                   Sql.existingConnection conn
                 |> Sql.executeTransactionAsync (List.ofSeq queries)
             ()
     }

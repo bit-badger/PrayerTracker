@@ -203,7 +203,7 @@ let maintain (groups : SmallGroupInfo list) ctx viewInfo =
                             ]
                             a [ _href      delAction
                                 _title     s["Delete This Group"].Value
-                                _hxDelete  delAction
+                                _hxPost    delAction
                                 _hxConfirm delPrompt ] [
                                 iconSized 18 "delete_forever"
                             ]

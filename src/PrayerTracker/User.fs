@@ -78,12 +78,10 @@ let sanitizeUrl providedUrl defaultUrl =
 let changePassword : HttpHandler = requireAccess [ User ] >=> validateCsrf >=> fun next ctx -> task {
     match! ctx.TryBindFormAsync<ChangePassword> () with
     | Ok model ->
-        let  s      = Views.I18N.localizer.Force ()
         let  curUsr = ctx.Session.CurrentUser.Value
         let  hasher = PrayerTrackerPasswordHasher ()
-        let! conn   = ctx.Conn
         let! user   = task {
-            match! Users.tryById curUsr.Id conn with
+            match! Users.tryById curUsr.Id ctx.Conn with
             | Some usr ->
                 if hasher.VerifyHashedPassword (usr, usr.PasswordHash, model.OldPassword)
                        = PasswordVerificationResult.Success then
@@ -93,27 +91,25 @@ let changePassword : HttpHandler = requireAccess [ User ] >=> validateCsrf >=> f
         }
         match user with
         | Some usr when model.NewPassword = model.NewPasswordConfirm ->
-            do! Users.updatePassword { usr with PasswordHash = hasher.HashPassword (usr, model.NewPassword) } conn
-            addInfo ctx s["Your password was changed successfully"]
+            do! Users.updatePassword { usr with PasswordHash = hasher.HashPassword (usr, model.NewPassword) } ctx.Conn
+            addInfo ctx ctx.Strings["Your password was changed successfully"]
             return! redirectTo false "/" next ctx
         | Some _ ->
-            addError ctx s["The new passwords did not match - your password was NOT changed"]
+            addError ctx ctx.Strings["The new passwords did not match - your password was NOT changed"]
             return! redirectTo false "/user/password" next ctx
         | None ->
-            addError ctx s["The old password was incorrect - your password was NOT changed"]
+            addError ctx ctx.Strings["The old password was incorrect - your password was NOT changed"]
             return! redirectTo false "/user/password" next ctx
     | Result.Error e -> return! bindError e next ctx
 }
 
 /// POST /user/[user-id]/delete
 let delete usrId : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next ctx -> task {
-    let  userId = UserId usrId
-    let! conn   = ctx.Conn
-    match! Users.tryById userId conn with
+    let userId = UserId usrId
+    match! Users.tryById userId ctx.Conn with
     | Some user ->
-        do! Users.deleteById userId conn
-        let s = Views.I18N.localizer.Force ()
-        addInfo ctx s["Successfully deleted user {0}", user.Name]
+        do! Users.deleteById userId ctx.Conn
+        addInfo ctx ctx.Strings["Successfully deleted user {0}", user.Name]
         return! redirectTo false "/users" next ctx
     | _ -> return! fourOhFour ctx
 }
@@ -128,11 +124,10 @@ open Microsoft.AspNetCore.Html
 let doLogOn : HttpHandler = requireAccess [ AccessLevel.Public ] >=> validateCsrf >=> fun next ctx -> task {
     match! ctx.TryBindFormAsync<UserLogOn> () with
     | Ok model -> 
-        let  s    = Views.I18N.localizer.Force ()
-        let! conn = ctx.Conn
-        match! findUserByPassword model conn with
+        let s = ctx.Strings
+        match! findUserByPassword model ctx.Conn with
         | Some user ->
-            match! SmallGroups.tryByIdWithPreferences (idFromShort SmallGroupId model.SmallGroupId) conn with
+            match! SmallGroups.tryByIdWithPreferences (idFromShort SmallGroupId model.SmallGroupId) ctx.Conn with
             | Some group ->
                 ctx.Session.CurrentUser  <- Some user
                 ctx.Session.CurrentGroup <- Some group
@@ -146,7 +141,7 @@ let doLogOn : HttpHandler = requireAccess [ AccessLevel.Public ] >=> validateCsr
                         AuthenticationProperties (
                             IssuedUtc    = DateTimeOffset.UtcNow,
                             IsPersistent = defaultArg model.RememberMe false))
-                do! Users.updateLastSeen user.Id ctx.Now conn
+                do! Users.updateLastSeen user.Id ctx.Now ctx.Conn
                 addHtmlInfo ctx s["Log On Successful • Welcome to {0}", s["PrayerTracker"]]
                 return! redirectTo false (sanitizeUrl model.RedirectUrl "/small-group") next ctx
             | None -> return! fourOhFour ctx
@@ -177,8 +172,7 @@ let edit usrId : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> task 
             |> Views.User.edit EditUser.empty ctx
             |> renderHtml next ctx
     else
-        let! conn = ctx.Conn
-        match! Users.tryById userId conn with
+        match! Users.tryById userId ctx.Conn with
         | Some user ->
             return!
                 viewInfo ctx
@@ -189,14 +183,12 @@ let edit usrId : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> task 
 
 /// GET /user/log-on
 let logOn : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx -> task {
-    let  s      = Views.I18N.localizer.Force ()
-    let! conn   = ctx.Conn
-    let! groups = SmallGroups.listAll conn
+    let! groups = SmallGroups.listAll ctx.Conn
     let  url    = Option.ofObj <| ctx.Session.GetString Key.Session.redirectUrl
     match url with
     | Some _ ->
         ctx.Session.Remove Key.Session.redirectUrl
-        addWarning ctx s["The page you requested requires authentication; please log on below."]
+        addWarning ctx ctx.Strings["The page you requested requires authentication; please log on below."]
     | None -> ()
     return!
         { viewInfo ctx with HelpLink = Some Help.logOn }
@@ -206,8 +198,7 @@ let logOn : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx 
 
 /// GET /users
 let maintain : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> task {
-    let! conn  = ctx.Conn
-    let! users = Users.all conn
+    let! users = Users.all ctx.Conn
     return!
         viewInfo ctx
         |> Views.User.maintain users ctx
@@ -226,23 +217,23 @@ open System.Threading.Tasks
 let save : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next ctx -> task {
     match! ctx.TryBindFormAsync<EditUser> () with
     | Ok model ->
-        let! conn = ctx.Conn
         let! user =
             if model.IsNew then Task.FromResult (Some { User.empty with Id = (Guid.NewGuid >> UserId) () })
-            else Users.tryById (idFromShort UserId model.UserId) conn
+            else Users.tryById (idFromShort UserId model.UserId) ctx.Conn
         match user with
         | Some usr ->
             let hasher      = PrayerTrackerPasswordHasher ()
             let updatedUser = model.PopulateUser usr (fun pw -> hasher.HashPassword (usr, pw))
-            do! Users.save updatedUser conn
-            let s = Views.I18N.localizer.Force ()
+            do! Users.save updatedUser ctx.Conn
+            let s = ctx.Strings
             if model.IsNew then
                 let h = CommonFunctions.htmlString
                 { UserMessage.info with
                     Text        = h s["Successfully {0} user", s["Added"].Value.ToLower ()]
                     Description = 
-                      h s["Please select at least one group for which this user ({0}) is authorized", updatedUser.Name]
-                      |> Some
+                        h s["Please select at least one group for which this user ({0}) is authorized",
+                            updatedUser.Name]
+                        |> Some
                 }
                 |> addUserMessage ctx
                 return! redirectTo false $"/user/{shortGuid usr.Id.Value}/small-groups" next ctx
@@ -257,28 +248,25 @@ let save : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next c
 let saveGroups : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next ctx -> task {
     match! ctx.TryBindFormAsync<AssignGroups> () with
     | Ok model ->
-        let s = Views.I18N.localizer.Force ()
         match Seq.length model.SmallGroups with
         | 0 ->
-            addError ctx s["You must select at least one group to assign"]
+            addError ctx ctx.Strings["You must select at least one group to assign"]
             return! redirectTo false $"/user/{model.UserId}/small-groups" next ctx
         | _ ->
-            let! conn = ctx.Conn
             do! Users.updateSmallGroups (idFromShort UserId model.UserId)
-                    (model.SmallGroups.Split ',' |> Array.map (idFromShort SmallGroupId) |> List.ofArray) conn
-            addInfo ctx s["Successfully updated group permissions for {0}", model.UserName]
+                    (model.SmallGroups.Split ',' |> Array.map (idFromShort SmallGroupId) |> List.ofArray) ctx.Conn
+            addInfo ctx ctx.Strings["Successfully updated group permissions for {0}", model.UserName]
             return! redirectTo false "/users" next ctx
     | Result.Error e -> return! bindError e next ctx
 }
 
 /// GET /user/[user-id]/small-groups
 let smallGroups usrId : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> task {
-    let! conn   = ctx.Conn
-    let  userId = UserId usrId
-    match! Users.tryById userId conn with
+    let userId = UserId usrId
+    match! Users.tryById userId ctx.Conn with
     | Some user ->
-        let! groups    = SmallGroups.listAll conn
-        let! groupIds  = Users.groupIdsByUserId userId conn
+        let! groups    = SmallGroups.listAll ctx.Conn
+        let! groupIds  = Users.groupIdsByUserId userId ctx.Conn
         let  curGroups = groupIds |> List.map (fun g -> shortGuid g.Value)
         return! 
             viewInfo ctx

@@ -41,6 +41,7 @@ module Configure =
     open Microsoft.Extensions.DependencyInjection
     open NeoSmart.Caching.Sqlite
     open NodaTime
+    open Npgsql
     
     /// Configure ASP.NET Core's service collection (dependency injection container)
     let services (svc : IServiceCollection) =
@@ -67,6 +68,13 @@ module Configure =
         let _ = svc.AddAntiforgery ()
         let _ = svc.AddRouting ()
         let _ = svc.AddSingleton<IClock> SystemClock.Instance
+        let _ =
+            svc.AddScoped<NpgsqlConnection>(fun sp ->
+                let cfg  = sp.GetService<IConfiguration> ()
+                let conn = new NpgsqlConnection (cfg.GetConnectionString "PrayerTracker")
+                conn.OpenAsync () |> Async.AwaitTask |> Async.RunSynchronously
+                conn)
+        let _ = NpgsqlConnection.GlobalTypeMapper.UseNodaTime ()
         ()
     
     open Giraffe
@@ -215,39 +223,28 @@ module App =
             use conn   = new NpgsqlConnection (config.GetConnectionString "PrayerTracker")
             do! conn.OpenAsync ()
             let! v1Users =
-                conn
-                |> Sql.existingConnection
+                   Sql.existingConnection conn
                 |> Sql.query "SELECT id, password_hash FROM pt.pt_user WHERE salt IS NULL"
                 |> Sql.executeAsync (fun row -> UserId (row.uuid "id"), row.string "password_hash") 
             for userId, oldHash in v1Users do
-                let pw =
-                    [|  254uy 
-                        yield! (Encoding.UTF8.GetBytes oldHash)
-                    |]
-                    |> Convert.ToBase64String
+                let pw = Convert.ToBase64String [| 254uy; yield! (Encoding.UTF8.GetBytes oldHash) |] 
                 let! _ =
-                    conn
-                    |> Sql.existingConnection
+                       Sql.existingConnection conn
                     |> Sql.query "UPDATE pt.pt_user SET password_hash = @hash WHERE id = @id"
                     |> Sql.parameters [ "@id", Sql.uuid userId.Value; "@hash", Sql.string pw ]
                     |> Sql.executeNonQueryAsync
                 ()
             printfn $"Updated {v1Users.Length} users with version 1 password"
             let! v2Users =
-                conn
-                |> Sql.existingConnection
+                   Sql.existingConnection conn
                 |> Sql.query "SELECT id, password_hash, salt FROM pt.pt_user WHERE salt IS NOT NULL"
                 |> Sql.executeAsync (fun row -> UserId (row.uuid "id"), row.string "password_hash", row.uuid "salt")
             for userId, oldHash, salt in v2Users do
                 let pw =
-                    [|  255uy
-                        yield! (salt.ToByteArray ())
-                        yield! (Encoding.UTF8.GetBytes oldHash)
-                    |]
-                    |> Convert.ToBase64String
+                    Convert.ToBase64String
+                        [| 255uy; yield! (salt.ToByteArray ()); yield! (Encoding.UTF8.GetBytes oldHash) |]
                 let! _ =
-                    conn
-                    |> Sql.existingConnection
+                       Sql.existingConnection conn
                     |> Sql.query "UPDATE pt.pt_user SET password_hash = @hash WHERE id = @id"
                     |> Sql.parameters [ "@id", Sql.uuid userId.Value; "@hash", Sql.string pw ]
                     |> Sql.executeNonQueryAsync

@@ -76,13 +76,9 @@ ALTER TABLE pt."SmallGroup" RENAME TO small_group;
 
 ALTER INDEX pt."IX_SmallGroup_ChurchId" RENAME TO ix_small_group_church_id;
 
--- Time Zone
-ALTER TABLE pt."TimeZone" RENAME COLUMN "TimeZoneId" TO id;
-ALTER TABLE pt."TimeZone" RENAME COLUMN "Description" TO description;
-ALTER TABLE pt."TimeZone" RENAME COLUMN "SortOrder" TO sort_order;
-ALTER TABLE pt."TimeZone" RENAME COLUMN "IsActive" TO is_active;
-ALTER TABLE pt."TimeZone" RENAME CONSTRAINT "PK_TimeZone" TO pk_time_zone;
-ALTER TABLE pt."TimeZone" RENAME TO time_zone;
+-- Time Zone (goes away)
+ALTER TABLE pt.list_preference DROP CONSTRAINT fk_list_preference_time_zone_id;
+DROP TABLE pt."TimeZone";
 
 -- User
 ALTER TABLE pt."User" RENAME COLUMN "UserId" TO id;
