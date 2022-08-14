@@ -32,6 +32,13 @@ module String =
         match haystack.IndexOf needle with
         | -1 -> haystack
         | idx -> String.concat "" [ haystack[0..idx - 1]; replacement; haystack[idx + needle.Length..] ]
+    
+    /// Convert a string to an option, with null, blank, and whitespace becoming None
+    let noneIfBlank (str : string) =
+        match str with
+        | null -> None
+        | it when it.Trim () = "" -> None
+        | it -> Some it
 
 
 open System.Text.RegularExpressions

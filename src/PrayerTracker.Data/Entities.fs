@@ -958,7 +958,7 @@ module PrayerRequest =
                 >= req.UpdatedDate.InZone(SmallGroup.timeZone group).Date
 
 
-/// Information needed to display the small group maintenance page
+/// Information needed to display the public/protected request list and small group maintenance pages
 [<NoComparison; NoEquality>]
 type SmallGroupInfo =
     {   /// The ID of the small group
@@ -972,4 +972,7 @@ type SmallGroupInfo =
         
         /// The ID of the time zone for the small group
         TimeZoneId : TimeZoneId
+        
+        /// Whether the small group has a publicly-available request list
+        IsPublic : bool
     }

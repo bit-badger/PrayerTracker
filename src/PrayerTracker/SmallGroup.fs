@@ -174,7 +174,8 @@ let overview : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task {
                |> Seq.ofList
                |> Seq.map (fun req -> req.RequestType)
                |> Seq.distinct
-               |> Seq.map (fun reqType -> reqType, reqs |> List.filter (fun r -> r.RequestType = reqType) |> List.length)
+               |> Seq.map (fun reqType ->
+                   reqType, reqs |> List.filter (fun r -> r.RequestType = reqType) |> List.length)
                |> Map.ofSeq)
             Admins            = admins
         }
@@ -186,12 +187,9 @@ let overview : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task {
 
 /// GET /small-group/preferences
 let preferences : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task {
-    // TODO: stopped here
-    let  group = ctx.Session.CurrentGroup.Value
-    let! tzs   = ctx.Db.AllTimeZones ()
     return!
         { viewInfo ctx with HelpLink = Some Help.groupPreferences }
-        |> Views.SmallGroup.preferences (EditPreferences.fromPreferences group.Preferences) tzs ctx
+        |> Views.SmallGroup.preferences (EditPreferences.fromPreferences ctx.Session.CurrentGroup.Value.Preferences) ctx
         |> renderHtml next ctx
 }
 
@@ -201,19 +199,14 @@ open System.Threading.Tasks
 let save : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next ctx -> task {
     match! ctx.TryBindFormAsync<EditSmallGroup> () with
     | Ok model ->
-        let s = Views.I18N.localizer.Force ()
-        let! group =
+        let  s        = Views.I18N.localizer.Force ()
+        let! conn     = ctx.Conn
+        let! tryGroup =
             if model.IsNew then Task.FromResult (Some { SmallGroup.empty with Id = (Guid.NewGuid >> SmallGroupId) () })
-            else ctx.Db.TryGroupById (idFromShort SmallGroupId model.SmallGroupId)
-        match group with
-        | Some grp ->
-            model.populateGroup grp
-            |> function
-            | grp when model.IsNew ->
-                ctx.Db.AddEntry grp
-                ctx.Db.AddEntry { grp.Preferences with SmallGroupId = grp.Id }
-            | grp -> ctx.Db.UpdateEntry grp
-            let! _ = ctx.Db.SaveChangesAsync ()
+            else SmallGroups.tryById (idFromShort SmallGroupId model.SmallGroupId) conn
+        match tryGroup with
+        | Some group ->
+            do! SmallGroups.save (model.populateGroup group) model.IsNew conn
             let act = s[if model.IsNew then "Added" else "Updated"].Value.ToLower ()
             addHtmlInfo ctx s["Successfully {0} group “{1}”", act, model.Name]
             return! redirectTo false "/small-groups" next ctx
@@ -225,21 +218,21 @@ let save : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next c
 let saveMember : HttpHandler = requireAccess [ User ] >=> validateCsrf >=> fun next ctx -> task {
     match! ctx.TryBindFormAsync<EditMember> () with
     | Ok model ->
-        let  group = ctx.Session.CurrentGroup.Value
-        let! mMbr  =
+        let  group  = ctx.Session.CurrentGroup.Value
+        let! conn   = ctx.Conn
+        let! tryMbr =
             if model.IsNew then
                 Task.FromResult (Some { Member.empty with Id = (Guid.NewGuid >> MemberId) (); SmallGroupId = group.Id })
-            else ctx.Db.TryMemberById (idFromShort MemberId model.MemberId)
-        match mMbr with
+            else Members.tryById (idFromShort MemberId model.MemberId) conn
+        match tryMbr with
         | Some mbr when mbr.SmallGroupId = group.Id ->
-            { mbr with
-                Name   = model.Name
-                Email  = model.Email
-                Format = match model.Format with "" | null -> None | _ -> Some (EmailFormat.fromCode model.Format)
-            }
-            |> if model.IsNew then ctx.Db.AddEntry else ctx.Db.UpdateEntry
-            let! _ = ctx.Db.SaveChangesAsync ()
-            let s = Views.I18N.localizer.Force ()
+            do! Members.save
+                    { mbr with
+                        Name   = model.Name
+                        Email  = model.Email
+                        Format = String.noneIfBlank model.Format |> Option.map EmailFormat.fromCode
+                    } conn
+            let s   = Views.I18N.localizer.Force ()
             let act = s[if model.IsNew then "Added" else "Updated"].Value.ToLower ()
             addInfo ctx s["Successfully {0} group member", act]
             return! redirectTo false "/small-group/members" next ctx
@@ -255,14 +248,14 @@ let savePreferences : HttpHandler = requireAccess [ User ] >=> validateCsrf >=> 
         // Since the class is stored in the session, we'll use an intermediate instance to persist it; once that works,
         // we can repopulate the session instance. That way, if the update fails, the page should still show the
         // database values, not the then out-of-sync session ones.
-        let group = ctx.Session.CurrentGroup.Value
-        match! ctx.Db.TryGroupById group.Id with
+        let  group = ctx.Session.CurrentGroup.Value
+        let! conn  = ctx.Conn
+        match! SmallGroups.tryByIdWithPreferences group.Id conn with
         | Some grp ->
-            let prefs = model.PopulatePreferences grp.Preferences
-            ctx.Db.UpdateEntry prefs
-            let! _ = ctx.Db.SaveChangesAsync ()
+            let pref = model.PopulatePreferences grp.Preferences
+            do! SmallGroups.savePreferences pref conn
             // Refresh session instance
-            ctx.Session.CurrentGroup <- Some { grp with Preferences = prefs }
+            ctx.Session.CurrentGroup <- Some { grp with Preferences = pref }
             let s = Views.I18N.localizer.Force ()
             addInfo ctx s["Group preferences updated successfully"]
             return! redirectTo false "/small-group/preferences" next ctx
@@ -289,10 +282,13 @@ let sendAnnouncement : HttpHandler = requireAccess [ User ] >=> validateCsrf >=>
             |> renderHtmlNode
         let plainText = (htmlToPlainText >> wordWrap 74) htmlText
         // Send the e-mails
-        let! recipients =
-            match model.SendToClass with
-            | "N" when usr.IsAdmin -> ctx.Db.AllUsersAsMembers ()
-            | _ -> ctx.Db.AllMembersForSmallGroup group.Id
+        let! conn       = ctx.Conn
+        let! recipients = task {
+            if model.SendToClass = "N" && usr.IsAdmin then
+                let! users = Users.all conn
+                return users |> List.map (fun u -> { Member.empty with Name = u.Name; Email = u.Email })
+            else return! Members.forGroup group.Id conn
+        }
         use! client = Email.getConnection ()
         do! Email.sendEmails
                 {   Client        = client
@@ -311,23 +307,20 @@ let sendAnnouncement : HttpHandler = requireAccess [ User ] >=> validateCsrf >=>
         | _, Some x when not x -> ()
         | _, _ ->
             let zone = SmallGroup.timeZone group
-            { PrayerRequest.empty with
-                Id           = (Guid.NewGuid >> PrayerRequestId) ()
-                SmallGroupId = group.Id
-                UserId       = usr.Id
-                RequestType  = (Option.get >> PrayerRequestType.fromCode) model.RequestType
-                Text         = requestText
-                EnteredDate  = now.Date.AtStartOfDayInZone(zone).ToInstant()
-                UpdatedDate  = now.InZoneLeniently(zone).ToInstant()
-            }
-            |> ctx.Db.AddEntry
-            let! _ = ctx.Db.SaveChangesAsync ()
-            ()
+            do! PrayerRequests.save
+                    { PrayerRequest.empty with
+                        Id           = (Guid.NewGuid >> PrayerRequestId) ()
+                        SmallGroupId = group.Id
+                        UserId       = usr.Id
+                        RequestType  = (Option.get >> PrayerRequestType.fromCode) model.RequestType
+                        Text         = requestText
+                        EnteredDate  = now.Date.AtStartOfDayInZone(zone).ToInstant()
+                        UpdatedDate  = now.InZoneLeniently(zone).ToInstant()
+                    } conn
         // Tell 'em what they've won, Johnny!
         let toWhom =
-            match model.SendToClass with
-            | "N" -> s["{0} users", s["PrayerTracker"]].Value
-            | _ -> s["Group Members"].Value.ToLower ()
+            if model.SendToClass = "N" then s["{0} users", s["PrayerTracker"]].Value
+            else s["Group Members"].Value.ToLower ()
         let andAdded = match model.AddToRequestList with Some x when x -> "and added it to the request list" | _ -> ""
         addInfo ctx s["Successfully sent announcement to all {0} {1}", toWhom, s[andAdded]]
         return!

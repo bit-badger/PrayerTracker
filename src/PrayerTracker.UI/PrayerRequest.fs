@@ -106,7 +106,7 @@ let list (model : RequestList) viewInfo =
 
 
 /// View for the prayer request lists page
-let lists (groups : SmallGroup list) viewInfo =
+let lists (groups : SmallGroupInfo list) viewInfo =
     let s   = I18N.localizer.Force ()
     let l   = I18N.forView "Requests/Lists"
     use sw  = new StringWriter ()
@@ -126,17 +126,16 @@ let lists (groups : SmallGroup list) viewInfo =
                 tableHeadings s [ "Actions"; "Church"; "Group" ]
                 groups
                 |> List.map (fun grp ->
-                    let grpId = shortGuid grp.Id.Value
                     tr [] [
-                        if grp.Preferences.IsPublic then
-                            a [ _href $"/prayer-requests/{grpId}/list"; _title s["View"].Value ] [ icon "list" ]
+                        if grp.IsPublic then
+                            a [ _href $"/prayer-requests/{grp.Id}/list"; _title s["View"].Value ] [ icon "list" ]
                         else
-                            a [ _href $"/small-group/log-on/{grpId}"; _title s["Log On"].Value ] [
+                            a [ _href $"/small-group/log-on/{grp.Id}"; _title s["Log On"].Value ] [
                                 icon "verified_user"
                             ]
                         |> List.singleton
                         |> td []
-                        td [] [ str grp.Church.Name ]
+                        td [] [ str grp.ChurchName ]
                         td [] [ str grp.Name ]
                     ])
                 |> tbody []

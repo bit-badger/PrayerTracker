@@ -156,25 +156,28 @@ let renderHtmlString = renderHtmlNode >> HtmlString
 /// Utility methods to help with time zones (and localization of their names)
 module TimeZones =
   
-    open System.Collections.Generic
     open PrayerTracker.Entities
 
     /// Cross-reference between time zone Ids and their English names
-    let private xref =
-        [ "America/Chicago",     "Central"
-          "America/Denver",      "Mountain"
-          "America/Los_Angeles", "Pacific"
-          "America/New_York",    "Eastern"
-          "America/Phoenix",     "Mountain (Arizona)"
-          "Europe/Berlin",       "Central European"
-        ]
-        |> Map.ofList
+    let private xref = [
+        TimeZoneId "America/Chicago",     "Central"
+        TimeZoneId "America/Denver",      "Mountain"
+        TimeZoneId "America/Los_Angeles", "Pacific"
+        TimeZoneId "America/New_York",    "Eastern"
+        TimeZoneId "America/Phoenix",     "Mountain (Arizona)"
+        TimeZoneId "Europe/Berlin",       "Central European"
+    ]
 
     /// Get the name of a time zone, given its Id
     let name timeZoneId (s : IStringLocalizer) =
-        let tzId = TimeZoneId.toString timeZoneId
-        try s[xref[tzId]]
-        with :? KeyNotFoundException -> LocalizedString (tzId, tzId)
+        match xref |> List.tryFind (fun it -> fst it = timeZoneId) with
+        | Some tz -> s[snd tz]
+        | None ->
+            let tzId = TimeZoneId.toString timeZoneId
+            LocalizedString (tzId, tzId)
+    
+    /// All known time zones in their defined order
+    let all = xref |> List.map fst
 
 
 open Giraffe.ViewEngine.Htmx

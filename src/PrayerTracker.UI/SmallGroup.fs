@@ -351,7 +351,7 @@ let overview model viewInfo =
 open System.IO
 
 /// View for the small group preferences page
-let preferences (model : EditPreferences) (tzs : TimeZone list) ctx viewInfo =
+let preferences (model : EditPreferences) ctx viewInfo =
     let s   = I18N.localizer.Force ()
     let l   = I18N.forView "SmallGroup/Preferences"
     use sw  = new StringWriter ()
@@ -518,9 +518,8 @@ let preferences (model : EditPreferences) (tzs : TimeZone list) ctx viewInfo =
                         seq {
                             "", selectDefault s["Select"].Value
                             yield!
-                                tzs
-                                |> List.map (fun tz ->
-                                    TimeZoneId.toString tz.Id, (TimeZones.name tz.Id s).Value)
+                                TimeZones.all
+                                |> List.map (fun tz -> TimeZoneId.toString tz, (TimeZones.name tz s).Value)
                         }
                         |> selectList (nameof model.TimeZone) model.TimeZone [ _required ]
                     ]

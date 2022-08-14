@@ -3,12 +3,14 @@
 open Giraffe
 open Microsoft.AspNetCore.Http
 open PrayerTracker
+open PrayerTracker.Data
 open PrayerTracker.Entities
 open PrayerTracker.ViewModels
 
 /// Retrieve a prayer request, and ensure that it belongs to the current class
 let private findRequest (ctx : HttpContext) reqId = task {
-    match! ctx.Db.TryRequestById reqId with
+    let! conn = ctx.Conn
+    match! PrayerRequests.tryById reqId conn with
     | Some req when req.SmallGroupId = ctx.Session.CurrentGroup.Value.Id -> return Ok req
     | Some _ ->
         let s = Views.I18N.localizer.Force ()
@@ -21,7 +23,15 @@ let private findRequest (ctx : HttpContext) reqId = task {
 let private generateRequestList (ctx : HttpContext) date = task {
     let  group    = ctx.Session.CurrentGroup.Value
     let  listDate = match date with Some d -> d | None -> SmallGroup.localDateNow ctx.Clock group
-    let! reqs     = ctx.Db.AllRequestsForSmallGroup group ctx.Clock (Some listDate) true 0
+    let! conn     = ctx.Conn
+    let! reqs     =
+        PrayerRequests.forGroup
+            {   SmallGroup = group
+                Clock      = ctx.Clock
+                ListDate   = Some listDate
+                ActiveOnly = true
+                PageNumber = 0
+            } conn
     return
         {   Requests   = reqs
             Date       = listDate
@@ -78,7 +88,8 @@ let email date : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task {
     let  listDate   = parseListDate (Some date)
     let  group      = ctx.Session.CurrentGroup.Value
     let! list       = generateRequestList ctx listDate
-    let! recipients = ctx.Db.AllMembersForSmallGroup group.Id
+    let! conn       = ctx.Conn
+    let! recipients = Members.forGroup group.Id conn
     use! client     = Email.getConnection ()
     do! Email.sendEmails
             {   Client        = client
@@ -100,9 +111,9 @@ let delete reqId : HttpHandler = requireAccess [ User ] >=> validateCsrf >=> fun
     let requestId = PrayerRequestId reqId
     match! findRequest ctx requestId with
     | Ok req ->
-        let s  = Views.I18N.localizer.Force ()
-        ctx.Db.PrayerRequests.Remove req |> ignore
-        let! _ = ctx.Db.SaveChangesAsync ()
+        let  s    = Views.I18N.localizer.Force ()
+        let! conn = ctx.Conn
+        do! PrayerRequests.deleteById req.Id conn
         addInfo ctx s["The prayer request was deleted successfully"]
         return! redirectTo false "/prayer-requests" next ctx
     | Result.Error e -> return! e
@@ -113,9 +124,9 @@ let expire reqId : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task
     let requestId = PrayerRequestId reqId
     match! findRequest ctx requestId with
     | Ok req ->
-        let s  = Views.I18N.localizer.Force ()
-        ctx.Db.UpdateEntry { req with Expiration = Forced }
-        let! _ = ctx.Db.SaveChangesAsync ()
+        let  s    = Views.I18N.localizer.Force ()
+        let! conn = ctx.Conn
+        do! PrayerRequests.updateExpiration { req with Expiration = Forced } conn
         addInfo ctx s["Successfully {0} prayer request", s["Expired"].Value.ToLower ()]
         return! redirectTo false "/prayer-requests" next ctx
     | Result.Error e -> return! e
@@ -123,9 +134,17 @@ let expire reqId : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task
 
 /// GET /prayer-requests/[group-id]/list
 let list groupId : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx -> task {
-    match! ctx.Db.TryGroupById groupId with
+    let! conn = ctx.Conn
+    match! SmallGroups.tryByIdWithPreferences groupId conn with
     | Some group when group.Preferences.IsPublic ->
-        let! reqs = ctx.Db.AllRequestsForSmallGroup group ctx.Clock None true 0
+        let! reqs =
+            PrayerRequests.forGroup
+                {   SmallGroup = group
+                    Clock      = ctx.Clock
+                    ListDate   = None
+                    ActiveOnly = true
+                    PageNumber = 0
+                } conn
         return!
             viewInfo ctx
             |> Views.PrayerRequest.list
@@ -146,7 +165,8 @@ let list groupId : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun ne
 
 /// GET /prayer-requests/lists
 let lists : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx -> task {
-    let! groups = ctx.Db.PublicAndProtectedGroups ()
+    let! conn   = ctx.Conn
+    let! groups = SmallGroups.listPublicAndProtected conn
     return!
         viewInfo ctx
         |> Views.PrayerRequest.lists groups
@@ -157,6 +177,7 @@ let lists : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx 
 ///  - OR -
 /// GET /prayer-requests?search=[search-query]
 let maintain onlyActive : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task {
+    // TODO: stopped here
     let group   = ctx.Session.CurrentGroup.Value
     let pageNbr =
         match ctx.GetQueryStringValue "page" with

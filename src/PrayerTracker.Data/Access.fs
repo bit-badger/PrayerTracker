@@ -86,6 +86,7 @@ module private Helpers =
             Name       = row.string "group_name"
             ChurchName = row.string "church_name"
             TimeZoneId = TimeZoneId (row.string "time_zone_id")
+            IsPublic   = row.bool   "is_public"
         }
     
     /// Map a row to a Small Group list item
@@ -207,6 +208,30 @@ module Members =
         |> Sql.parameters [ "@groupId", Sql.uuid groupId.Value ]
         |> Sql.executeAsync mapToMember
     
+    /// Save a small group member
+    let save (mbr : Member) conn = backgroundTask {
+        let! _ =
+            conn
+            |> Sql.existingConnection
+            |> Sql.query """
+                INSERT INTO pt.member (
+                    id, small_group_id, member_name, email, email_format
+                ) VALUES (
+                    @id, @groupId, @name, @email, @format
+                ) ON CONFLICT (id) DO UPDATE
+                SET member_name  = EXCLUDED.member_name,
+                    email        = EXCLUDED.email,
+                    email_format = EXCLUDED.email_format"""
+            |> Sql.parameters
+                [   "@id",      Sql.uuid         mbr.Id.Value
+                    "@groupId", Sql.uuid         mbr.SmallGroupId.Value
+                    "@name",    Sql.string       mbr.Name
+                    "@email",   Sql.string       mbr.Email
+                    "@format",  Sql.stringOrNone (mbr.Format |> Option.map EmailFormat.toCode) ]
+            |> Sql.executeNonQueryAsync
+        return ()
+    }
+    
     /// Retrieve a small group member by its ID
     let tryById (memberId : MemberId) conn = backgroundTask {
         let! mbr =
@@ -270,6 +295,17 @@ module PrayerRequests =
         |> Sql.parameters [ "@groupId", Sql.uuid groupId.Value ]
         |> Sql.executeRowAsync (fun row -> row.int "req_count")
     
+    /// Delete a prayer request by its ID
+    let deleteById (reqId : PrayerRequestId) conn = backgroundTask {
+        let! _ =
+            conn
+            |> Sql.existingConnection
+            |> Sql.query "DELETE FROM pt.prayer_request WHERE id = @id"
+            |> Sql.parameters [ "@id", Sql.uuid reqId.Value ]
+            |> Sql.executeNonQueryAsync
+        return ()
+    }
+    
     /// Get all (or active) requests for a small group as of now or the specified date
     let forGroup (opts : PrayerRequestOptions) conn =
         let theDate = defaultArg opts.ListDate (SmallGroup.localDateNow opts.Clock opts.SmallGroup)
@@ -301,6 +337,65 @@ module PrayerRequests =
              {paginate opts.PageNumber opts.SmallGroup.Preferences.PageSize}"""
         |> Sql.parameters (("@groupId", Sql.uuid opts.SmallGroup.Id.Value) :: parameters)
         |> Sql.executeAsync mapToPrayerRequest
+    
+    /// Save a prayer request
+    let save (req : PrayerRequest) conn = backgroundTask {
+        let! _ =
+            conn
+            |> Sql.existingConnection
+            |> Sql.query """
+                INSERT into pt.prayer_request (
+                    id, request_type, user_id, small_group_id, entered_date, updated_date, requestor, request_text,
+                    notify_chaplain, expiration
+                ) VALUES (
+                    @id, @type, @userId, @groupId, @entered, @updated, @requestor, @text,
+                    @notifyChaplain, @expiration
+                ) ON CONFLICT (id) DO UPDATE
+                SET request_type    = EXCLUDED.request_type,
+                    updated_date    = EXCLUDED.updated_date,
+                    requestor       = EXCLUDED.requestor,
+                    request_text    = EXCLUDED.request_text,
+                    notify_chaplain = EXCLUDED.notify_chaplain,
+                    expiration      = EXCLUDED.expiration"""
+            |> Sql.parameters
+                [   "@id",             Sql.uuid         req.Id.Value
+                    "@type",           Sql.string       (PrayerRequestType.toCode req.RequestType)
+                    "@userId",         Sql.uuid         req.UserId.Value
+                    "@groupId",        Sql.uuid         req.SmallGroupId.Value
+                    "@entered",        Sql.parameter    (NpgsqlParameter ("@entered", req.EnteredDate))
+                    "@updated",        Sql.parameter    (NpgsqlParameter ("@updated", req.UpdatedDate))
+                    "@requestor",      Sql.stringOrNone req.Requestor
+                    "@text",           Sql.string       req.Text
+                    "@notifyChaplain", Sql.bool         req.NotifyChaplain
+                    "@expiration",     Sql.string       (Expiration.toCode req.Expiration)
+                ]
+            |> Sql.executeNonQueryAsync
+        return ()
+    }
+    
+    /// Retrieve a prayer request by its ID
+    let tryById (reqId : PrayerRequestId) conn = backgroundTask {
+        let! req =
+            conn
+            |> Sql.existingConnection
+            |> Sql.query "SELECT * FROM pt.prayer_request WHERE id = @id"
+            |> Sql.parameters [ "@id", Sql.uuid reqId.Value ]
+            |> Sql.executeAsync mapToPrayerRequest
+        return List.tryHead req
+    }
+    
+    /// Update the expiration for the given prayer request
+    let updateExpiration (req : PrayerRequest) conn = backgroundTask {
+        let! _ =
+            conn
+            |> Sql.existingConnection
+            |> Sql.query "UPDATE pt.prayer_request SET expiration = @expiration WHERE id = @id"
+            |> Sql.parameters
+                [   "@expiration", Sql.string (Expiration.toCode req.Expiration)
+                    "@id",         Sql.uuid   req.Id.Value ]
+            |> Sql.executeNonQueryAsync
+        return ()
+    }
 
 
 /// Functions to retrieve small group information
@@ -356,13 +451,27 @@ module SmallGroups =
         conn
         |> Sql.existingConnection
         |> Sql.query """
-            SELECT g.group_name, g.id, c.church_name
+            SELECT g.group_name, g.id, c.church_name, lp.is_public
               FROM pt.small_group g
                    INNER JOIN pt.church           c ON c.id = g.church_id
                    INNER JOIN pt.list_preference lp ON lp.small_group_id = g.id
              WHERE COALESCE(lp.group_password, '') <> ''
              ORDER BY c.church_name, g.group_name"""
         |> Sql.executeAsync mapToSmallGroupItem
+    
+    /// Get a list of small group IDs and descriptions for groups that are public or have a group password
+    let listPublicAndProtected conn =
+        conn
+        |> Sql.existingConnection
+        |> Sql.query """
+            SELECT g.group_name, g.id, c.church_name, lp.is_public
+              FROM pt.small_group g
+                   INNER JOIN pt.church           c ON c.id = g.church_id
+                   INNER JOIN pt.list_preference lp ON lp.small_group_id = g.id
+             WHERE lp.is_public = TRUE
+                OR COALESCE(lp.group_password, '') <> ''
+             ORDER BY c.church_name, g.group_name"""
+        |> Sql.executeAsync mapToSmallGroupInfo
     
     /// Log on for a small group (includes list preferences)
     let logOn (groupId : SmallGroupId) password conn = backgroundTask {
@@ -378,6 +487,78 @@ module SmallGroups =
             |> Sql.parameters [ "@id", Sql.uuid groupId.Value; "@password", Sql.string password ]
             |> Sql.executeAsync mapToSmallGroupWithPreferences
         return List.tryHead group
+    }
+    
+    /// Save a small group
+    let save (group : SmallGroup) isNew conn = backgroundTask {
+        let! _ =
+            conn
+            |> Sql.existingConnection
+            |> Sql.executeTransactionAsync [
+                """ INSERT INTO pt.small_group (
+                        id, church_id, group_name
+                    ) VALUES (
+                        @id, @churchId, @name
+                    ) ON CONFLICT (id) DO UPDATE
+                    SET church_id  = EXCLUDED.church_id,
+                        group_name = EXCLUDED.group_name""",
+                [ [ "@id",       Sql.uuid   group.Id.Value
+                    "@churchId", Sql.uuid   group.ChurchId.Value
+                    "@name",     Sql.string group.Name ] ]
+                if isNew then
+                    "INSERT INTO pt.list_preference (small_group_id) VALUES (@id)",
+                    [ [ "@id", Sql.uuid group.Id.Value ] ]
+            ]
+        return ()
+    }
+    
+    /// Save a small group's list preferences
+    let savePreferences (pref : ListPreferences) conn = backgroundTask {
+        let! _ =
+            conn
+            |> Sql.existingConnection
+            |> Sql.query """
+                UPDATE pt.list_preference
+                   SET days_to_keep_new       = @daysToKeepNew,
+                       days_to_expire         = @daysToExpire,
+                       long_term_update_weeks = @longTermUpdateWeeks,
+                       email_from_name        = @emailFromName,
+                       email_from_address     = @emailFromAddress,
+                       fonts                  = @fonts,
+                       heading_color          = @headingColor,
+                       line_color             = @lineColor,
+                       heading_font_size      = @headingFontSize,
+                       text_font_size         = @textFontSize,
+                       request_sort           = @requestSort,
+                       group_password         = @groupPassword,
+                       default_email_type     = @defaultEmailType,
+                       is_public              = @isPublic,
+                       time_zone_id           = @timeZoneId,
+                       page_size              = @pageSize,
+                       as_of_date_display     = @asOfDateDisplay
+                 WHERE small_group_id = @groupId"""
+            |> Sql.parameters
+                [   "@groupId",             Sql.uuid   pref.SmallGroupId.Value
+                    "@daysToKeepNew",       Sql.int    pref.DaysToKeepNew
+                    "@daysToExpire",        Sql.int    pref.DaysToExpire
+                    "@longTermUpdateWeeks", Sql.int    pref.LongTermUpdateWeeks
+                    "@emailFromName",       Sql.string pref.EmailFromName
+                    "@emailFromAddress",    Sql.string pref.EmailFromAddress
+                    "@fonts",               Sql.string pref.Fonts
+                    "@headingColor",        Sql.string pref.HeadingColor
+                    "@lineColor",           Sql.string pref.LineColor
+                    "@headingFontSize",     Sql.int    pref.HeadingFontSize
+                    "@textFontSize",        Sql.int    pref.TextFontSize
+                    "@requestSort",         Sql.string (RequestSort.toCode pref.RequestSort)
+                    "@groupPassword",       Sql.string pref.GroupPassword
+                    "@defaultEmailType",    Sql.string (EmailFormat.toCode pref.DefaultEmailType)
+                    "@isPublic",            Sql.bool   pref.IsPublic
+                    "@timeZoneId",          Sql.string (TimeZoneId.toString pref.TimeZoneId)
+                    "@pageSize",            Sql.int    pref.PageSize
+                    "@asOfDateDisplay",     Sql.string (AsOfDateDisplay.toCode pref.AsOfDateDisplay)
+                ]
+            |> Sql.executeNonQueryAsync
+        return ()
     }
     
     /// Get a small group by its ID
