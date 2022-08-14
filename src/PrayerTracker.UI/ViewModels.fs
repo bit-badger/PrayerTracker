@@ -778,7 +778,7 @@ with
         let p        = this.SmallGroup.Preferences
         let asOfSize = Math.Round (float p.TextFontSize * 0.8, 2)
         [   if this.ShowHeader then
-                div [ _style $"text-align:center;font-family:{p.Fonts}" ] [
+                div [ _style $"text-align:center;font-family:{p.FontStack}" ] [
                     span [ _style $"font-size:%i{p.HeadingFontSize}pt;" ] [
                         strong [] [ str s["Prayer Requests"].Value ]
                     ]
@@ -792,7 +792,7 @@ with
                 br []
             for _, name, reqs in this.RequestsByType s do
                 div [ _style "padding-left:10px;padding-bottom:.5em;" ] [
-                    table [ _style $"font-family:{p.Fonts};page-break-inside:avoid;" ] [
+                    table [ _style $"font-family:{p.FontStack};page-break-inside:avoid;" ] [
                         tr [] [
                             td [ _style $"font-size:%i{p.HeadingFontSize}pt;color:{p.HeadingColor};padding:3px 0;border-top:solid 3px {p.LineColor};border-bottom:solid 3px {p.LineColor};font-weight:bold;" ] [
                                 rawText "&nbsp; &nbsp; "; str name.Value; rawText "&nbsp; &nbsp; "
@@ -804,7 +804,7 @@ with
                 reqs
                 |> List.map (fun req ->
                     let bullet = if this.IsNew req then "circle" else "disc"
-                    li [ _style $"list-style-type:{bullet};font-family:{p.Fonts};font-size:%i{p.TextFontSize}pt;padding-bottom:.25em;" ] [
+                    li [ _style $"list-style-type:{bullet};font-family:{p.FontStack};font-size:%i{p.TextFontSize}pt;padding-bottom:.25em;" ] [
                         match req.Requestor with
                         | Some r when r <> "" ->
                             strong [] [ str r ]

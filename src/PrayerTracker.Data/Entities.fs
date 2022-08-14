@@ -312,6 +312,13 @@ type ListPreferences =
         /// How the as-of date should be automatically displayed
         AsOfDateDisplay : AsOfDateDisplay
     }
+with
+    
+    /// The list of fonts to use when displaying request lists (converts "native" to native font stack)
+    member this.FontStack =
+        if this.Fonts = "native" then
+            """system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,"Liberation Sans",Cantarell,"Helvetica Neue",sans-serif"""
+        else this.Fonts
 
 /// Functions to support list preferences
 module ListPreferences =
@@ -323,8 +330,8 @@ module ListPreferences =
             DaysToKeepNew       = 7
             LongTermUpdateWeeks = 4
             EmailFromName       = "PrayerTracker"
-            EmailFromAddress    = "prayer@djs-consulting.com"
-            Fonts               = "Century Gothic,Tahoma,Luxi Sans,sans-serif"
+            EmailFromAddress    = "prayer@bitbadger.solutions"
+            Fonts               = "native"
             HeadingColor        = "maroon"
             LineColor           = "navy"
             HeadingFontSize     = 16

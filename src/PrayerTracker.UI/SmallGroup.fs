@@ -14,7 +14,11 @@ let announcement isAdmin ctx viewInfo =
     let model    = { SendToClass = ""; Text = ""; AddToRequestList = None; RequestType = None }
     let reqTypes = ReferenceList.requestTypeList s
     let vi       = AppViewInfo.withOnLoadScript "PT.smallGroup.announcement.onPageLoad" viewInfo
-    form [ _action "/small-group/announcement/send"; _method "post"; _class "pt-center-columns"; Target.content ] [
+    form [ _action "/small-group/announcement/send"
+           _method "post"
+           _class "pt-center-columns"
+           _onsubmit "PT.updateCKEditor()"
+           Target.content ] [
         csrfToken ctx
         div [ _fieldRow ] [
             div [ _inputFieldWith [ "pt-editor" ] ] [
@@ -461,7 +465,7 @@ let preferences (model : EditPreferences) ctx viewInfo =
                             input [ _type  "color" 
                                     _name  (nameof model.LineColor)
                                     _id    $"{nameof model.LineColor}_Color"
-                                    _value model.LineColor // TODO: convert to hex or skip if named
+                                    _value (colorToHex model.LineColor)
                                     if not (model.LineColor.StartsWith "#") then _disabled ]
                         ]
                     ]
@@ -483,7 +487,7 @@ let preferences (model : EditPreferences) ctx viewInfo =
                             input [ _type  "color"
                                     _name  (nameof model.HeadingColor)
                                     _id    $"{nameof model.HeadingColor}_Color"
-                                    _value model.HeadingColor // TODO: convert to hex or skip if named
+                                    _value (colorToHex model.HeadingColor)
                                     if not (model.HeadingColor.StartsWith "#") then _disabled ]
                         ]
                     ]

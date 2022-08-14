@@ -29,10 +29,13 @@ ALTER TABLE pt."ListPreference" RENAME COLUMN "PageSize" TO page_size;
 ALTER TABLE pt."ListPreference" RENAME COLUMN "AsOfDateDisplay" TO as_of_date_display;
 ALTER TABLE pt."ListPreference" RENAME CONSTRAINT "PK_ListPreference" TO pk_list_preference;
 ALTER TABLE pt."ListPreference" RENAME CONSTRAINT "FK_ListPreference_SmallGroup_SmallGroupId" TO fk_list_preference_small_group_id;
-ALTER TABLE pt."ListPreference" RENAME CONSTRAINT "FK_ListPreference_TimeZone_TimeZoneId" TO fk_list_preference_time_zone_id;
+ALTER TABLE pt."ListPreference" DROP   CONSTRAINT "FK_ListPreference_TimeZone_TimeZoneId";
 ALTER TABLE pt."ListPreference" RENAME TO list_preference;
 
 ALTER INDEX pt."IX_ListPreference_TimeZoneId" RENAME TO ix_list_preference_time_zone_id;
+
+ALTER TABLE pt.list_preference ALTER COLUMN email_from_address SET DEFAULT 'prayer@bitbadger.solutions';
+ALTER TABLE pt.list_preference ALTER COLUMN fonts SET DEFAULT 'native';
 
 -- Small Group Member
 ALTER TABLE pt."Member" RENAME COLUMN "MemberId" TO id;
@@ -77,7 +80,6 @@ ALTER TABLE pt."SmallGroup" RENAME TO small_group;
 ALTER INDEX pt."IX_SmallGroup_ChurchId" RENAME TO ix_small_group_church_id;
 
 -- Time Zone (goes away)
-ALTER TABLE pt.list_preference DROP CONSTRAINT fk_list_preference_time_zone_id;
 DROP TABLE pt."TimeZone";
 
 -- User

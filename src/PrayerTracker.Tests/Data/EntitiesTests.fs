@@ -98,6 +98,15 @@ let expirationTests =
 [<Tests>]
 let listPreferencesTests =
     testList "ListPreferences" [
+        test "FontStack is correct for native fonts" {
+            Expect.equal ListPreferences.empty.FontStack
+                """system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,"Liberation Sans",Cantarell,"Helvetica Neue",sans-serif"""
+                "The expected native font stack was incorrect"
+        }
+        test "FontStack is correct for specific fonts" {
+            Expect.equal { ListPreferences.empty with Fonts = "Arial,sans-serif" }.FontStack "Arial,sans-serif"
+                "The specified fonts were not returned correctly"
+        }
         test "empty is as expected" {
             let mt = ListPreferences.empty
             Expect.equal mt.SmallGroupId.Value Guid.Empty "The small group ID should have been an empty GUID"
@@ -107,7 +116,7 @@ let listPreferencesTests =
             Expect.equal mt.EmailFromName "PrayerTracker" "The default e-mail from name should have been PrayerTracker"
             Expect.equal mt.EmailFromAddress "prayer@djs-consulting.com"
                 "The default e-mail from address should have been prayer@djs-consulting.com"
-            Expect.equal mt.Fonts "Century Gothic,Tahoma,Luxi Sans,sans-serif" "The default list fonts were incorrect"
+            Expect.equal mt.Fonts "native" "The default list fonts were incorrect"
             Expect.equal mt.HeadingColor "maroon" "The default heading text color should have been maroon"
             Expect.equal mt.LineColor "navy" "The default heding line color should have been navy"
             Expect.equal mt.HeadingFontSize 16 "The default heading font size should have been 16"

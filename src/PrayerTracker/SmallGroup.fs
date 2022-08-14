@@ -260,7 +260,7 @@ let sendAnnouncement : HttpHandler = requireAccess [ User ] >=> validateCsrf >=>
         // Reformat the text to use the class's font stylings
         let requestText = ckEditorToText model.Text
         let htmlText =
-            p [ _style $"font-family:{pref.Fonts};font-size:%d{pref.TextFontSize}pt;" ] [ rawText requestText ]
+            p [ _style $"font-family:{pref.FontStack};font-size:%d{pref.TextFontSize}pt;" ] [ rawText requestText ]
             |> renderHtmlNode
         let plainText = (htmlToPlainText >> wordWrap 74) htmlText
         // Send the e-mails

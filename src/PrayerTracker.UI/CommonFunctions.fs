@@ -78,6 +78,28 @@ let namedColorList name selected attrs (s : IStringLocalizer) =
     |> List.ofSeq
     |> select (_name name :: attrs)
 
+/// Convert a named color to its hex notation
+let colorToHex (color : string) =
+    match color with
+    | it when it.StartsWith "#" -> color
+    | "aqua"    -> "#00ffff"
+    | "black"   -> "#000000"
+    | "blue"    -> "#0000ff"
+    | "fuchsia" -> "#ff00ff"
+    | "gray"    -> "#808080"
+    | "green"   -> "#008000"
+    | "lime"    -> "#00ff00"
+    | "maroon"  -> "#800000"
+    | "navy"    -> "#000080"
+    | "olive"   -> "#808000"
+    | "purple"  -> "#800080"
+    | "red"     -> "#ff0000"
+    | "silver"  -> "#c0c0c0"
+    | "teal"    -> "#008080"
+    | "white"   -> "#ffffff"
+    | "yellow"  -> "#ffff00"
+    | it        -> it
+    
 /// Generate an input[type=radio] that is selected if its value is the current value
 let radio name domId value current =
     input [ _type "radio"

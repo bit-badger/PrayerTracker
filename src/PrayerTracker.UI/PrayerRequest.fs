@@ -1,6 +1,6 @@
 ﻿module PrayerTracker.Views.PrayerRequest
 
-open System
+open System.Globalization
 open System.IO
 open Giraffe
 open Giraffe.ViewEngine
@@ -17,7 +17,11 @@ let edit (model : EditRequest) today ctx viewInfo =
     let s         = I18N.localizer.Force ()
     let pageTitle = if model.IsNew then "Add a New Request" else "Edit Request"
     let vi        = AppViewInfo.withOnLoadScript "PT.initCKEditor" viewInfo
-    form [ _action "/prayer-request/save"; _method "post"; _class "pt-center-columns"; Target.content ] [
+    form [ _action   "/prayer-request/save"
+           _method   "post"
+           _class    "pt-center-columns"
+           _onsubmit "PT.updateCKEditor()"
+           Target.content ] [
         csrfToken ctx
         inputField "hidden" (nameof model.RequestId) model.RequestId []
         div [ _fieldRow ] [
@@ -79,7 +83,7 @@ let email model viewInfo =
     let pageTitle = $"""{s["Prayer Requests"].Value} • {model.SmallGroup.Name}"""
     let prefs     = model.SmallGroup.Preferences
     let addresses = model.Recipients |> List.map (fun mbr -> $"{mbr.Name} <{mbr.Email}>") |> String.concat ", "
-    [   p [ _style $"font-family:{prefs.Fonts};font-size:%i{prefs.TextFontSize}pt;" ] [
+    [   p [ _style $"font-family:{prefs.FontStack};font-size:%i{prefs.TextFontSize}pt;" ] [
             locStr s["The request list was sent to the following people, via individual e-mails"]
             rawText ":"
             br []
@@ -202,7 +206,7 @@ let maintain (model : MaintainRequests) (ctx : HttpContext) viewInfo =
                     ]
                 ]
                 div [ updateClass ] [
-                    str (req.UpdatedDate.ToString(s["MMMM d, yyyy"].Value, Globalization.CultureInfo.CurrentUICulture))
+                    str (req.UpdatedDate.ToString(s["MMMM d, yyyy"].Value, CultureInfo.CurrentUICulture))
                 ]
                 div [ _class "cell" ] [ locStr types[req.RequestType] ]
                 div [ expiredClass ] [ str (match req.Requestor with Some r -> r | None -> " ") ]
@@ -300,7 +304,7 @@ let print model version =
         rawText (model.AsHtml s)
         br []
         hr []
-        div [ _style $"font-size:70%%;font-family:{model.SmallGroup.Preferences.Fonts};" ] [
+        div [ _style $"font-size:70%%;font-family:{model.SmallGroup.Preferences.FontStack};" ] [
             img [ _src $"""/img/{s["footer_en"].Value}.png"""
                   _style "vertical-align:text-bottom;"
                   _alt imgAlt
@@ -317,7 +321,7 @@ let view model viewInfo =
     let s         = I18N.localizer.Force ()
     let pageTitle = $"""{s["Prayer Requests"].Value} • {model.SmallGroup.Name}"""
     let spacer    = rawText " &nbsp; &nbsp; &nbsp; "
-    let dtString  = model.Date.ToString ("yyyy-MM-dd", null) // TODO: this should be invariant
+    let dtString  = model.Date.ToString ("yyyy-MM-dd", CultureInfo.InvariantCulture)
     [   div [ _class "pt-center-text" ] [
             br []
             a [ _class  "pt-icon-link"
@@ -333,7 +337,7 @@ let view model viewInfo =
                         if date.DayOfWeek = IsoDayOfWeek.Sunday then date else findSunday (date.PlusDays 1)
                     let sunday = findSunday model.Date
                     a [ _class "pt-icon-link"
-                        _href  $"""/prayer-requests/view/{sunday.ToString ("yyyy-MM-dd", null)}""" // TODO: make invariant
+                        _href  $"""/prayer-requests/view/{sunday.ToString ("yyyy-MM-dd", CultureInfo.InvariantCulture)}"""
                         _title s["List for Next Sunday"].Value ] [
                         icon "update"; rawText " &nbsp;"; locStr s["List for Next Sunday"]
                     ]

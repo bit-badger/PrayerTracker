@@ -86,7 +86,15 @@ this.PT = {
   initCKEditor() {
     ClassicEditor
       .create(document.querySelector("#Text"))
+      .then(editor => window.ckEditor = editor)
       .catch(console.error)
+  },
+
+  /**
+   * Instruct the current CKEditor element to update its source (needed as htmx does not fire the submit event)
+   */
+  updateCKEditor() {
+    window.ckEditor.updateElement()
   },
 
   /**
