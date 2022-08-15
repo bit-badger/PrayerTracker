@@ -370,6 +370,7 @@ let preferences (model : EditPreferences) ctx viewInfo =
                 |> toHtmlIds
             let fontsId = $"#{nameof model.Fonts}"
             $"{numberFields} {{ width: 3rem; }}"
+            $"#{nameof model.EmailFromName} {{ width: 15rem; }}"
             $"#{nameof model.EmailFromAddress} {{ width: 20rem; }}"
             $"{fontsId} {{ width: 40rem; }}"
             $"@media screen and (max-width: 40rem) {{ {fontsId} {{ width: 100%%; }} }}"
@@ -412,13 +413,16 @@ let preferences (model : EditPreferences) ctx viewInfo =
                     ]
                 ]
             ]
-            fieldset [] [
+            fieldset [ _fieldRow ] [
                 legend [] [ strong [] [ icon "sort"; rawText " &nbsp;"; locStr s["Request Sorting"] ] ]
-                radio (nameof model.RequestSort) $"{nameof model.RequestSort}_D" "D" model.RequestSort
-                label [ _for $"{nameof model.RequestSort}_D" ] [ locStr s["Sort by Last Updated Date"] ]
-                rawText " &nbsp; "
-                radio (nameof model.RequestSort) $"{nameof model.RequestSort}_R" "R" model.RequestSort
-                label [ _for $"{nameof model.RequestSort}_R" ] [ locStr s["Sort by Requestor Name"] ]
+                label [] [
+                    radio (nameof model.RequestSort) "" "D" model.RequestSort
+                    locStr s["Sort by Last Updated Date"]
+                ]
+                label [] [
+                    radio (nameof model.RequestSort) "" "R" model.RequestSort
+                    locStr s["Sort by Requestor Name"]
+                ]
             ]
             fieldset [] [
                 legend [] [ strong [] [ icon "mail_outline"; rawText " &nbsp;"; locStr s["E-mail"] ] ]
@@ -450,45 +454,63 @@ let preferences (model : EditPreferences) ctx viewInfo =
                 legend [] [ strong [] [ icon "color_lens"; rawText " &nbsp;"; locStr s["Colors"] ]; rawText " ***" ]
                 div [ _fieldRow ] [
                     div [ _inputField ] [
-                        label [ _class "pt-center-text" ] [ locStr s["Color of Heading Lines"] ]
-                        span [] [
-                            radio (nameof model.LineColorType) $"{nameof model.LineColorType}_Name" "Name"
-                                  model.LineColorType
-                            label [ _for $"{nameof model.LineColorType}_Name" ] [ locStr s["Named Color"] ]
-                            namedColorList (nameof model.LineColor) model.LineColor [
-                                _id $"{nameof model.LineColor}_Select"
-                                if model.LineColor.StartsWith "#" then _disabled ] s
-                            rawText "&nbsp; &nbsp; "; str (s["or"].Value.ToUpper ())
-                            radio (nameof model.LineColorType) $"{nameof model.LineColorType}_RGB" "RGB"
-                                   model.LineColorType
-                            label [ _for $"{nameof model.LineColorType}_RGB" ] [ locStr s["Custom Color"] ]
-                            input [ _type  "color" 
-                                    _name  (nameof model.LineColor)
-                                    _id    $"{nameof model.LineColor}_Color"
-                                    _value (colorToHex model.LineColor)
-                                    if not (model.LineColor.StartsWith "#") then _disabled ]
+                        label [] [ locStr s["Color of Heading Lines"] ]
+                        span [ _class "pt-radio-group" ] [
+                            span [] [
+                                label [] [
+                                    radio (nameof model.LineColorType) $"{nameof model.LineColorType}_Name" "Name"
+                                          model.LineColorType
+                                    locStr s["Named Color"]
+                                ]
+                                space
+                                namedColorList (nameof model.LineColor) model.LineColor [
+                                    _id $"{nameof model.LineColor}_Select"
+                                    if model.LineColor.StartsWith "#" then _disabled ] s
+                            ]
+                            span [] [
+                                label [ _for $"{nameof model.LineColorType}_RGB" ] [
+                                    radio (nameof model.LineColorType) $"{nameof model.LineColorType}_RGB" "RGB"
+                                          model.LineColorType
+                                    locStr s["Custom Color"]
+                                ]
+                                space
+                                input [ _type  "color" 
+                                        _name  (nameof model.LineColor)
+                                        _id    $"{nameof model.LineColor}_Color"
+                                        _value (colorToHex model.LineColor)
+                                        if not (model.LineColor.StartsWith "#") then _disabled ]
+                            ]
                         ]
                     ]
                 ]
                 div [ _fieldRow ] [
                     div [ _inputField ] [
-                        label [ _class "pt-center-text" ] [ locStr s["Color of Heading Text"] ]
-                        span [] [
-                            radio (nameof model.HeadingColorType) $"{nameof model.HeadingColorType}_Name" "Name"
-                                  model.HeadingColorType
-                            label [ _for $"{nameof model.HeadingColorType}_Name" ] [ locStr s["Named Color"] ]
-                            namedColorList (nameof model.HeadingColor) model.HeadingColor [
-                                _id $"{nameof model.HeadingColor}_Select"
-                                if model.HeadingColor.StartsWith "#" then _disabled ] s
-                            rawText "&nbsp; &nbsp; "; str (s["or"].Value.ToUpper ())
-                            radio (nameof model.HeadingColorType) $"{nameof model.HeadingColorType}_RGB" "RGB"
-                                  model.HeadingColorType
-                            label [ _for $"{nameof model.HeadingColorType}_RGB" ] [ locStr s["Custom Color"] ]
-                            input [ _type  "color"
-                                    _name  (nameof model.HeadingColor)
-                                    _id    $"{nameof model.HeadingColor}_Color"
-                                    _value (colorToHex model.HeadingColor)
-                                    if not (model.HeadingColor.StartsWith "#") then _disabled ]
+                        label [] [ locStr s["Color of Heading Text"] ]
+                        span [ _class "pt-radio-group" ] [
+                            span [] [
+                                label [] [
+                                    radio (nameof model.HeadingColorType) $"{nameof model.HeadingColorType}_Name" "Name"
+                                          model.HeadingColorType
+                                    locStr s["Named Color"]
+                                ]
+                                space
+                                namedColorList (nameof model.HeadingColor) model.HeadingColor [
+                                    _id $"{nameof model.HeadingColor}_Select"
+                                    if model.HeadingColor.StartsWith "#" then _disabled ] s
+                            ]
+                            span [] [
+                                label [] [
+                                    radio (nameof model.HeadingColorType) $"{nameof model.HeadingColorType}_RGB" "RGB"
+                                          model.HeadingColorType
+                                    locStr s["Custom Color"]
+                                ]
+                                space
+                                input [ _type  "color"
+                                        _name  (nameof model.HeadingColor)
+                                        _id    $"{nameof model.HeadingColor}_Color"
+                                        _value (colorToHex model.HeadingColor)
+                                        if not (model.HeadingColor.StartsWith "#") then _disabled ]
+                            ]
                         ]
                     ]
                 ]
@@ -518,29 +540,23 @@ let preferences (model : EditPreferences) ctx viewInfo =
                 legend [] [ strong [] [ icon "settings"; rawText " &nbsp;"; locStr s["Other Settings"] ] ]
                 div [ _fieldRow ] [
                     div [ _inputField ] [
-                        label [ _for (nameof model.TimeZone) ] [ locStr s["Time Zone"] ]
-                        seq {
-                            "", selectDefault s["Select"].Value
-                            yield!
-                                TimeZones.all
-                                |> List.map (fun tz -> TimeZoneId.toString tz, (TimeZones.name tz s).Value)
-                        }
-                        |> selectList (nameof model.TimeZone) model.TimeZone [ _required ]
-                    ]
-                ]
-                div [ _inputField ] [
-                    label [] [ locStr s["Request List Visibility"] ]
-                    span [] [
-                        let name  = nameof model.Visibility
-                        let value = string model.Visibility
-                        radio name $"{name}_Public" (string GroupVisibility.PublicList) value
-                        label [ _for $"{name}_Public" ] [ locStr s["Public"] ]
-                        rawText " &nbsp;"
-                        radio name $"{name}_Private" (string GroupVisibility.PrivateList) value
-                        label [ _for $"{name}_Private" ] [ locStr s["Private"] ]
-                        rawText " &nbsp;"
-                        radio name $"{name}_Password" (string GroupVisibility.HasPassword) value
-                        label [ _for $"{name}_Password" ] [ locStr s["Password Protected"] ]
+                        label [] [ locStr s["Request List Visibility"] ]
+                        span [ _class "pt-radio-group" ] [
+                            let name  = nameof model.Visibility
+                            let value = string model.Visibility
+                            label [] [
+                                radio name $"{name}_Public" (string GroupVisibility.PublicList) value
+                                locStr s["Public"]
+                            ]
+                            label [] [
+                                radio name $"{name}_Private" (string GroupVisibility.PrivateList) value
+                                locStr s["Private"]
+                            ]
+                            label [] [
+                                radio name $"{name}_Password" (string GroupVisibility.HasPassword) value
+                                locStr s["Password Protected"]
+                            ]
+                        ]
                     ]
                 ]
                 let classSuffix = if model.Visibility = GroupVisibility.HasPassword then [ "pt-show" ] else []
@@ -551,6 +567,16 @@ let preferences (model : EditPreferences) ctx viewInfo =
                     ]
                 ]
                 div [ _fieldRow ] [
+                    div [ _inputField ] [
+                        label [ _for (nameof model.TimeZone) ] [ locStr s["Time Zone"] ]
+                        seq {
+                            "", selectDefault s["Select"].Value
+                            yield!
+                                TimeZones.all
+                                |> List.map (fun tz -> TimeZoneId.toString tz, (TimeZones.name tz s).Value)
+                        }
+                        |> selectList (nameof model.TimeZone) model.TimeZone [ _required ]
+                    ]
                     div [ _inputField ] [
                         label [ _for (nameof model.PageSize) ] [ locStr s["Page Size"] ]
                         inputField "number" (nameof model.PageSize) (string model.PageSize) [

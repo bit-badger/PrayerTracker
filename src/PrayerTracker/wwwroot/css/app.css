@@ -165,9 +165,6 @@ select {
   font-family: var(--native-fonts);
   border-width: 1px;
 }
-input:nth-of-type(2) {
-  margin-left: 2rem;
-}
 button[type=submit] {
   border-radius: .6rem;
   padding: .2rem 1rem;
@@ -256,6 +253,11 @@ footer a:hover {
   font-size: .75rem;
   text-transform: uppercase;
   color: #777;
+}
+.pt-radio-group {
+  display: flex;
+  flex-flow: row;
+  gap: 2rem;
 }
 .pt-center-text {
   text-align: center;

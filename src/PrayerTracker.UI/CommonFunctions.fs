@@ -104,7 +104,7 @@ let colorToHex (color : string) =
 let radio name domId value current =
     input [ _type "radio"
             _name name
-            _id domId
+            if domId <> "" then _id domId
             _value value
             if value = current then _checked ]
 
