@@ -2,7 +2,6 @@
 module PrayerTracker.Extensions
 
 open Microsoft.AspNetCore.Http
-open Microsoft.FSharpLu
 open Newtonsoft.Json
 open NodaTime
 open NodaTime.Serialization.JsonNet
@@ -17,18 +16,18 @@ let private jsonSettings = JsonSerializerSettings().ConfigureForNodaTime DateTim
 type ISession with
     
     /// Set an object in the session
-    member this.SetObject key value =
+    member this.SetObject<'T> key (value : 'T) =
         this.SetString (key, JsonConvert.SerializeObject (value, jsonSettings))
     
     /// Get an object from the session
-    member this.GetObject<'T> key =
+    member this.TryGetObject<'T> key =
         match this.GetString key with
-        | null -> Unchecked.defaultof<'T>
-        | v -> JsonConvert.DeserializeObject<'T> (v, jsonSettings)
+        | null -> None
+        | v -> Some (JsonConvert.DeserializeObject<'T> (v, jsonSettings))
 
     /// The currently logged on small group
     member this.CurrentGroup
-      with get () = this.GetObject<SmallGroup> Key.Session.currentGroup |> Option.fromObject
+      with get () = this.TryGetObject<SmallGroup> Key.Session.currentGroup
        and set (v : SmallGroup option) = 
           match v with
           | Some group -> this.SetObject Key.Session.currentGroup group
@@ -36,7 +35,7 @@ type ISession with
 
     /// The currently logged on user
     member this.CurrentUser
-      with get () = this.GetObject<User> Key.Session.currentUser |> Option.fromObject
+      with get () = this.TryGetObject<User> Key.Session.currentUser
        and set (v : User option) =
           match v with
           | Some user -> this.SetObject Key.Session.currentUser { user with PasswordHash = "" }
@@ -45,9 +44,8 @@ type ISession with
     /// Current messages for the session
     member this.Messages
       with get () =
-          match box (this.GetObject<UserMessage list> Key.Session.userMessages) with
-          | null -> List.empty<UserMessage>
-          | msgs -> unbox msgs
+          this.TryGetObject<UserMessage list> Key.Session.userMessages
+          |> Option.defaultValue List.empty<UserMessage>
        and set (v : UserMessage list) = this.SetObject Key.Session.userMessages v
 
 
@@ -69,27 +67,17 @@ type ClaimsPrincipal with
         else None
 
 
-open System.Threading.Tasks
 open Giraffe
-open Microsoft.Extensions.Configuration
 open Npgsql
 
 /// Extensions on the ASP.NET Core HTTP context
 type HttpContext with
     
-    // TODO: is this disposed?
-    member private this.LazyConn : Lazy<Task<NpgsqlConnection>> = lazy (backgroundTask {
-        let cfg  = this.GetService<IConfiguration> ()
-        let conn = new NpgsqlConnection (cfg.GetConnectionString "PrayerTracker")
-        do! conn.OpenAsync ()
-        return conn
-    })
+    /// The system clock (via DI)
+    member this.Clock = this.GetService<IClock> ()
     
     /// The PostgreSQL connection (configured via DI)
     member this.Conn = this.GetService<NpgsqlConnection> ()
-    
-    /// The system clock (via DI)
-    member this.Clock = this.GetService<IClock> ()
     
     /// The current instant
     member this.Now = this.Clock.GetCurrentInstant ()

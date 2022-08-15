@@ -54,15 +54,10 @@ let edit (model : EditRequest) today ctx viewInfo =
         div [ _fieldRow ] [
             div [ _inputField ] [
                 label [] [ locStr s["Expiration"] ]
-                ReferenceList.expirationList s (not model.IsNew)
-                |> List.map (fun exp ->
-                    let radioId = String.concat "_" [ nameof model.Expiration; fst exp ] 
-                    span [ _class "text-nowrap" ] [
-                        radio (nameof model.Expiration) radioId (fst exp) model.Expiration
-                        label [ _for radioId ] [ space; locStr (snd exp) ]
-                        rawText " &nbsp; &nbsp; "
-                    ])
-                |> div [ _class "pt-center-text" ]
+                span [ _class "pt-radio-group" ] [
+                    for code, name in ReferenceList.expirationList s (not model.IsNew) do
+                        label [] [ radio (nameof model.Expiration) "" code model.Expiration; locStr name ]
+                ]
             ]
         ]
         div [ _fieldRow ] [

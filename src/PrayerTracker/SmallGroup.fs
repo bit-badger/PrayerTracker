@@ -23,7 +23,7 @@ let delete grpId : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fu
         let! users = Users.countByGroup          groupId conn
         do! SmallGroups.deleteById groupId conn
         addInfo ctx
-            ctx.Strings["The group {0} and its {1} prayer request(s) were deleted successfully; revoked access from {2} user(s)",
+            ctx.Strings["The group “{0}” and its {1} prayer request(s) were deleted successfully; revoked access from {2} user(s)",
                         grp.Name, reqs, users]
         return! redirectTo false "/small-groups" next ctx
     | None -> return! fourOhFour ctx

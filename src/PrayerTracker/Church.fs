@@ -24,7 +24,7 @@ let delete chId : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun
         let! _, stats = findStats churchId conn
         do! Churches.deleteById churchId conn
         addInfo ctx
-            ctx.Strings["The church {0} and its {1} small groups (with {2} prayer request(s)) were deleted successfully; revoked access from {3} user(s)",
+            ctx.Strings["The church “{0}” and its {1} small group(s) (with {2} prayer request(s)) were deleted successfully; revoked access from {3} user(s)",
                         church.Name, stats.SmallGroups, stats.PrayerRequests, stats.Users]
         return! redirectTo false "/churches" next ctx
     | None -> return! fourOhFour ctx

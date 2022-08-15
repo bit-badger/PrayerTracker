@@ -133,7 +133,7 @@ let edit (model : EditUser) ctx viewInfo =
         ]
         div [ _checkboxField ] [
             inputField "checkbox" (nameof model.IsAdmin) "True" [ if defaultArg model.IsAdmin false then _checked ]
-            label [ _for (nameof model.IsAdmin) ] [ locStr s["This user is a PrayerTracker administrator"] ]
+            label [ _for (nameof model.IsAdmin) ] [ locStr s["This User Is a {0} Administrator", s["PrayerTracker"]] ]
         ]
         div [ _fieldRow ] [ submit [] "save" s["Save User"] ]
     ]

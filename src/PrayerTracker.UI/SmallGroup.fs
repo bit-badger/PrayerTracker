@@ -30,13 +30,15 @@ let announcement isAdmin ctx viewInfo =
             div [ _fieldRow ] [
                 div [ _inputField ] [
                     label [] [ locStr s["Send Announcement to"]; rawText ":" ]
-                    div [ _class "pt-center-text" ] [
-                        radio (nameof model.SendToClass) $"{nameof model.SendToClass}_Y" "Y" "Y"
-                        label [ _for $"{nameof model.SendToClass}_Y" ] [
-                            locStr s["This Group"]; rawText " &nbsp; &nbsp; "
+                    div [ _class "pt-radio-group" ] [
+                        label [] [
+                            radio (nameof model.SendToClass) $"{nameof model.SendToClass}_Y" "Y" "Y"
+                            locStr s["This Group"]
                         ]
-                        radio (nameof model.SendToClass) $"{nameof model.SendToClass}_N" "N" "Y"
-                        label [ _for $"{nameof model.SendToClass}_N" ] [ locStr s["All {0} Users", s["PrayerTracker"]] ]
+                        label [] [
+                            radio (nameof model.SendToClass) $"{nameof model.SendToClass}_N" "N" "Y"
+                            locStr s["All {0} Users", s["PrayerTracker"]]
+                        ]
                     ]
                 ]
             ]
@@ -519,7 +521,21 @@ let preferences (model : EditPreferences) ctx viewInfo =
                 legend [] [ strong [] [ icon "font_download"; rawText " &nbsp;"; locStr s["Fonts"] ] ]
                 div [ _inputField ] [
                     label [ _for (nameof model.Fonts) ] [ locStr s["Fonts** for List"] ]
-                    inputField "text" (nameof model.Fonts) model.Fonts [ _required ]
+                    let value = if model.IsNative then "True" else "False"
+                    span [ _class "pt-radio-group" ] [
+                        label [] [
+                            radio (nameof model.IsNative) $"{nameof model.IsNative}_Y" "True" value
+                            locStr s["Native Fonts"]
+                        ]
+                        inputField "text" "nativeFontSpacer" "" [ _style "visibility:hidden" ]
+                    ]
+                    span [ _class "pt-radio-group" ] [
+                        label [] [
+                            radio (nameof model.IsNative) $"{nameof model.IsNative}_N" "False" value
+                            locStr s["Named Fonts"]
+                        ]
+                        inputField "text" (nameof model.Fonts) (defaultArg model.Fonts "") [ _required ]
+                    ]
                 ]
                 div [ _fieldRow ] [
                     div [ _inputField ] [
@@ -595,11 +611,11 @@ let preferences (model : EditPreferences) ctx viewInfo =
         ]
         p [] [
             rawText "** "
-            raw l["List font names, separated by commas."]
+            raw l["Native fonts match the default font based on the user's device (computer, phone, tablet, etc.)."]
             space
-            raw l["The first font that is matched is the one that is used."]
+            raw l["Named fonts should be separated by commas, and will be displayed using the first one the user has in the list."]
             space
-            raw l["Ending with either “serif” or “sans-serif” will cause the user's browser to use the default “serif” font (“Times New Roman” on Windows) or “sans-serif” font (“Arial” on Windows) if no other fonts in the list are found."]
+            raw l["Ending this list with either “serif” or “sans-serif” will cause the user's browser to use the default “serif” font (“Times New Roman” on Windows) or “sans-serif” font (“Arial” on Windows) if no other fonts in the list are found."]
         ]
         p [] [
             rawText "*** "

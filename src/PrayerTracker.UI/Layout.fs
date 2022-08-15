@@ -302,11 +302,12 @@ let private contentSection viewInfo pgTitle (content : XmlNode) = [
     htmlFooter viewInfo
     match viewInfo.OnLoadScript with
     | Some onLoad ->
+        let doCall = if onLoad.EndsWith ")" then "" else "()"
         script [] [
             rawText $"""
                 window.doOnLoad = () => {{
                     if (window.PT) {{
-                        {onLoad}()
+                        {onLoad}{doCall}
                         delete window.doOnLoad
                     }} else {{ setTimeout(window.doOnLoad, 500) }}
                 }}

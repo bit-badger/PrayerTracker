@@ -244,6 +244,13 @@ this.PT = {
       },
 
       /**
+       * Enable or disable the font list based on whether the native font stack is selected or not
+       */
+      checkFonts() {
+        document.getElementById("Fonts").disabled = document.getElementById("IsNative_Y").checked
+      },
+
+      /**
        * Bind the event handlers
        */
       onPageLoad() {
@@ -261,6 +268,12 @@ this.PT = {
           })
           PT.smallGroup.preferences.toggleType(name)
         })
+        ;["Y", "N"].map(name => {
+          document.getElementById(`IsNative_${name}`).addEventListener("click", () => {
+            PT.smallGroup.preferences.checkFonts()
+          })
+        })
+        PT.smallGroup.preferences.checkFonts()
       },
     },
   },

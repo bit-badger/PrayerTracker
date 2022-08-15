@@ -41,12 +41,14 @@ let edit (model : EditChurch) ctx viewInfo =
             div [ _checkboxField ] [
                 inputField "checkbox" (nameof model.HasInterface) "True"
                            [ if defaultArg model.HasInterface false then _checked ]
-                label [ _for (nameof model.HasInterface) ] [ locStr s["Has an interface with Virtual Prayer Room"] ]
+                label [ _for (nameof model.HasInterface) ] [
+                    locStr s["Has an Interface with “{0}”", "Virtual Prayer Space"]
+                ]
             ]
         ]
         div [ _fieldRowWith [ "pt-fadeable" ]; _id "divInterfaceAddress" ] [
             div [ _inputField ] [
-                label [ _for (nameof model.InterfaceAddress) ] [ locStr s["VPR Interface URL"] ]
+                label [ _for (nameof model.InterfaceAddress) ] [ locStr s["Interface URL"] ]
                 inputField "url" (nameof model.InterfaceAddress) (defaultArg model.InterfaceAddress "") []
             ]
         ]

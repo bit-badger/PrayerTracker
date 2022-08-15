@@ -374,8 +374,11 @@ type EditPreferences =
         /// The named color for the heading text
         HeadingColor : string
         
+        /// Whether the class uses the native font stack
+        IsNative : bool
+        
         /// The fonts to use for the list
-        Fonts : string
+        Fonts : string option
         
         /// The font size for the heading text
         HeadingFontSize : int
@@ -416,7 +419,7 @@ with
             DefaultEmailType    = EmailFormat.fromCode this.DefaultEmailType
             LineColor           = this.LineColor
             HeadingColor        = this.HeadingColor
-            Fonts               = this.Fonts
+            Fonts               = if this.IsNative || Option.isNone this.Fonts then "native" else this.Fonts.Value
             HeadingFontSize     = this.HeadingFontSize
             TextFontSize        = this.ListFontSize
             TimeZoneId          = TimeZoneId this.TimeZone
@@ -442,7 +445,8 @@ module EditPreferences =
             LineColor           = prefs.LineColor
             HeadingColorType    = setType prefs.HeadingColor
             HeadingColor        = prefs.HeadingColor
-            Fonts               = prefs.Fonts
+            IsNative            = (prefs.Fonts = "native")
+            Fonts               = if prefs.Fonts = "native" then None else Some prefs.Fonts
             HeadingFontSize     = prefs.HeadingFontSize
             ListFontSize        = prefs.TextFontSize
             TimeZone            = TimeZoneId.toString prefs.TimeZoneId
@@ -804,7 +808,7 @@ with
                 reqs
                 |> List.map (fun req ->
                     let bullet = if this.IsNew req then "circle" else "disc"
-                    li [ _style $"list-style-type:{bullet};font-family:{p.FontStack};font-size:%i{p.TextFontSize}pt;padding-bottom:.25em;" ] [
+                    li [ _style $"list-style-type:{bullet};padding-bottom:.25em;" ] [
                         match req.Requestor with
                         | Some r when r <> "" ->
                             strong [] [ str r ]
@@ -825,7 +829,7 @@ with
                                 rawText "&nbsp; ("; str s["as of"].Value; str " "; str dt; rawText ")"
                             ]
                     ])
-                  |> ul []
+                  |> ul [ _style $"font-family:{p.FontStack};font-size:%i{p.TextFontSize}pt" ]
                 br []
           ]
         |> RenderView.AsString.htmlNodes

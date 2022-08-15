@@ -11,7 +11,6 @@
 
   <ItemGroup>
     <PackageReference Include="Giraffe" Version="6.0.0" />
-    <PackageReference Include="Microsoft.FSharpLu" Version="0.11.7" />
     <PackageReference Include="NodaTime" Version="3.1.1" />
     <PackageReference Update="FSharp.Core" Version="6.0.5" />
     <PackageReference Include="Npgsql.FSharp" Version="5.3.0" />

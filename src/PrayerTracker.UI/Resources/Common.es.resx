@@ -396,8 +396,8 @@
   <data name="The group member “{0}” was deleted successfully" xml:space="preserve">
     <value>El miembro del grupo “{0}” se eliminó con éxito</value>
   </data>
-  <data name="The group {0} and its {1} prayer request(s) was deleted successfully (revoked access from {2} user(s))" xml:space="preserve">
-    <value>El grupo {0} y sus {1} peticion(es) de oración se ha eliminado correctamente (acceso revocada por {2} usuario(s))</value>
+  <data name="The group “{0}” and its {1} prayer request(s) were deleted successfully; revoked access from {2} user(s)" xml:space="preserve">
+    <value>El grupo “{0}” y sus {1} peticion(es) de oración se ha eliminado correctamente; acceso revocada por {2} usuario(s)</value>
   </data>
   <data name="The old password was incorrect - your password was NOT changed" xml:space="preserve">
     <value>La contraseña antigua es incorrecta - la contraseña NO ha cambiado</value>
@@ -742,7 +742,7 @@
     <value>Este</value>
   </data>
   <data name="MMMM d, yyyy" xml:space="preserve">
-    <value>d \de MMMM yyyy</value>
+    <value>d \d\e MMMM yyyy</value>
   </data>
   <data name="Mountain" xml:space="preserve">
     <value>Montaña</value>
@@ -830,5 +830,56 @@
   </data>
   <data name="Administrators" xml:space="preserve">
       <value>Administradores</value>
+  </data>
+  <data name="Native Fonts" xml:space="preserve">
+    <value>Fuentes Nativas</value>
+  </data>
+  <data name="Named Fonts" xml:space="preserve">
+    <value>Fuentes con Nombre</value>
+  </data>
+  <data name="Select Church" xml:space="preserve">
+    <value>Seleccione una Iglesia</value>
+  </data>
+  <data name="Select Group" xml:space="preserve">
+    <value>Seleccione un Grupo</value>
+  </data>
+  <data name="Member Name" xml:space="preserve">
+    <value>Nombre de Miembro</value>
+  </data>
+  <data name="Custom Color" xml:space="preserve">
+    <value>Color Personalizado</value>
+  </data>
+  <data name="Church Name" xml:space="preserve">
+    <value>Nombre de la Iglesia</value>
+  </data>
+  <data name="City" xml:space="preserve">
+    <value>Ciudad</value>
+  </data>
+  <data name="Has an Interface with “{0}”" xml:space="preserve">
+    <value>Tiene una Interfaz con “{0}”</value>
+  </data>
+  <data name="Interface URL" xml:space="preserve">
+    <value>URL de la Interfaz</value>
+  </data>
+  <data name="Successfully {0} church “{1}”" xml:space="preserve">
+    <value>Iglesia “{1}” {0} con éxito</value>
+  </data>
+  <data name="The church “{0}” and its {1} small group(s) (with {2} prayer request(s)) were deleted successfully; revoked access from {3} user(s)" xml:space="preserve">
+    <value>La iglesia "{0}" y sus {1} grupo(s) (con {2} peticion(es) de oración) se eliminaron correctamente; acceso revocado de {3} usuario(s)</value>
+  </data>
+  <data name="Successfully {0} group “{1}”" xml:space="preserve">
+    <value>El grupo “{1}” {0} con éxito</value>
+  </data>
+  <data name="First Name" xml:space="preserve">
+    <value>Primer Nombre</value>
+  </data>
+  <data name="Last Name" xml:space="preserve">
+    <value>Apellido</value>
+  </data>
+  <data name="Password Again" xml:space="preserve">
+    <value>Contraseña otra Vez</value>
+  </data>
+  <data name="This User Is a {0} Administrator" xml:space="preserve">
+    <value>Este Usuario Es un Administrador de {0}</value>
   </data>
 </root>

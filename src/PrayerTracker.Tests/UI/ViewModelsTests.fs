@@ -261,7 +261,7 @@ let editMemberTests =
 [<Tests>]
 let editPreferencesTests =
     testList "EditPreferences" [
-        test "fromPreferences succeeds for named colors and private list" {
+        test "fromPreferences succeeds for native fonts, named colors, and private list" {
             let prefs = ListPreferences.empty
             let edit  = EditPreferences.fromPreferences prefs
             Expect.equal edit.ExpireDays prefs.DaysToExpire "The expiration days were not filled correctly"
@@ -278,7 +278,8 @@ let editPreferencesTests =
             Expect.equal edit.LineColor prefs.LineColor "The heading line color was not filled correctly"
             Expect.equal edit.HeadingColorType "Name" "The heading text color type was not derived correctly"
             Expect.equal edit.HeadingColor prefs.HeadingColor "The heading text color was not filled correctly"
-            Expect.equal edit.Fonts prefs.Fonts "The list fonts were not filled correctly"
+            Expect.isTrue edit.IsNative "The IsNative flag should have been true (default value)"
+            Expect.isNone edit.Fonts "The list fonts should not exist for native font stack"
             Expect.equal edit.HeadingFontSize prefs.HeadingFontSize "The heading font size was not filled correctly"
             Expect.equal edit.ListFontSize prefs.TextFontSize "The list text font size was not filled correctly"
             Expect.equal edit.TimeZone (TimeZoneId.toString prefs.TimeZoneId) "The time zone was not filled correctly"
@@ -309,6 +310,13 @@ let editPreferencesTests =
             Expect.equal edit.GroupPassword (Some "") "The group password was not filled correctly"
             Expect.equal edit.Visibility GroupVisibility.PublicList
                 "The list visibility was not derived correctly"
+        }
+        test "fromPreferences succeeds for non-native fonts" {
+            let prefs = { ListPreferences.empty with Fonts = "Arial,sans-serif" }
+            let edit  = EditPreferences.fromPreferences prefs
+            Expect.isFalse edit.IsNative "The IsNative flag should have been false"
+            Expect.isSome edit.Fonts "The fonts should have been filled for non-native fonts"
+            Expect.equal edit.Fonts.Value prefs.Fonts "The fonts were not filled correctly"
         }
     ]
 
@@ -529,11 +537,12 @@ let requestListTests =
             "AsHtml succeeds without header or as-of date",
             fun reqList ->
                 let htmlList = { reqList with SmallGroup = { reqList.SmallGroup with Name = "Test HTML Group" } }
-                let html = htmlList.AsHtml _s
+                let html     = htmlList.AsHtml _s
+                let fonts    = reqList.SmallGroup.Preferences.FontStack.Replace ("\"", "&quot;")
                 Expect.equal -1 (html.IndexOf "Test HTML Group")
                     "The small group name should not have existed (no header)"
                 let curReqHeading =
-                    [ """<table style="font-family:Century Gothic,Tahoma,Luxi Sans,sans-serif;page-break-inside:avoid;">"""
+                    [ $"""<table style="font-family:{fonts};page-break-inside:avoid;">"""
                       "<tr>"
                       """<td style="font-size:16pt;color:maroon;padding:3px 0;border-top:solid 3px navy;border-bottom:solid 3px navy;font-weight:bold;">"""
                       "&nbsp; &nbsp; Current Requests&nbsp; &nbsp; </td></tr></table>"
@@ -541,16 +550,16 @@ let requestListTests =
                     |> String.concat ""
                 Expect.stringContains html curReqHeading """Heading for category "Current Requests" not found"""
                 let curReqHtml =
-                    [ "<ul>"
-                      """<li style="list-style-type:circle;font-family:Century Gothic,Tahoma,Luxi Sans,sans-serif;font-size:12pt;padding-bottom:.25em;">"""
+                    [ $"""<ul style="font-family:{fonts};font-size:12pt">"""
+                      """<li style="list-style-type:circle;padding-bottom:.25em;">"""
                       "<strong>Zeb</strong> &ndash; zyx</li>"
-                      """<li style="list-style-type:disc;font-family:Century Gothic,Tahoma,Luxi Sans,sans-serif;font-size:12pt;padding-bottom:.25em;">"""
+                      """<li style="list-style-type:disc;padding-bottom:.25em;">"""
                       "<strong>Aaron</strong> &ndash; abc</li></ul>"
                     ]
                     |> String.concat ""
                 Expect.stringContains html curReqHtml """Expected HTML for "Current Requests" requests not found"""
                 let praiseHeading =
-                    [ """<table style="font-family:Century Gothic,Tahoma,Luxi Sans,sans-serif;page-break-inside:avoid;">"""
+                    [ $"""<table style="font-family:{fonts};page-break-inside:avoid;">"""
                       "<tr>"
                       """<td style="font-size:16pt;color:maroon;padding:3px 0;border-top:solid 3px navy;border-bottom:solid 3px navy;font-weight:bold;">"""
                       "&nbsp; &nbsp; Praise Reports&nbsp; &nbsp; </td></tr></table>"
@@ -558,8 +567,8 @@ let requestListTests =
                     |> String.concat ""
                 Expect.stringContains html praiseHeading """Heading for category "Praise Reports" not found"""
                 let praiseHtml =
-                    [ "<ul>"
-                      """<li style="list-style-type:circle;font-family:Century Gothic,Tahoma,Luxi Sans,sans-serif;font-size:12pt;padding-bottom:.25em;">"""
+                    [ $"""<ul style="font-family:{fonts};font-size:12pt">"""
+                      """<li style="list-style-type:circle;padding-bottom:.25em;">"""
                       "nmo</li></ul>"
                     ]
                     |> String.concat ""
@@ -571,9 +580,10 @@ let requestListTests =
                         SmallGroup  = { reqList.SmallGroup with Name = "Test HTML Group" }
                         ShowHeader = true
                     }
-                let html = htmlList.AsHtml _s
+                let html  = htmlList.AsHtml _s
+                let fonts = reqList.SmallGroup.Preferences.FontStack.Replace ("\"", "&quot;")
                 let lstHeading =
-                    [ """<div style="text-align:center;font-family:Century Gothic,Tahoma,Luxi Sans,sans-serif">"""
+                    [ $"""<div style="text-align:center;font-family:{fonts}">"""
                       """<span style="font-size:16pt;"><strong>Prayer Requests</strong></span><br>"""
                       """<span style="font-size:12pt;"><strong>Test HTML Group</strong><br>"""
                       htmlList.Date.ToString ("MMMM d, yyyy", null)

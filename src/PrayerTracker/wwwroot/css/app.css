@@ -257,7 +257,8 @@ footer a:hover {
 .pt-radio-group {
   display: flex;
   flex-flow: row;
-  gap: 2rem;
+  gap: 1.5rem;
+  align-items: baseline;
 }
 .pt-center-text {
   text-align: center;
