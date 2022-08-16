@@ -301,3 +301,23 @@ this.PT = {
 htmx.on("htmx:configRequest", function (e) {
   e.detail.headers["X-Target"] = e.detail.target
 })
+htmx.on("htmx:responseError", function (e) {
+  /** @type {XMLHttpRequest} */
+  const xhr = e.detail.xhr
+  
+  const detail = document.createElement("div")
+  detail.className = "description"
+  detail.innerHTML = `<em>(Status code ${xhr.status}: ${xhr.statusText})</em>`
+  
+  const msg = document.createElement("div")
+  msg.className = "pt-msg error"
+  msg.innerHTML = `<strong>ERROR</strong> &#xbb; ${xhr.responseText}<br>`
+  msg.appendChild(detail)
+  
+  const messages = document.createElement("div")
+  messages.className = "pt-messages"
+  messages.appendChild(msg)
+  
+  const title = document.getElementById("pt-page-title")
+  title.parentNode.insertBefore(messages, title.nextSibling)
+})

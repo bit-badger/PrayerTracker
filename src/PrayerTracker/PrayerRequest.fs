@@ -126,7 +126,7 @@ let expire reqId : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task
 
 /// GET /prayer-requests/[group-id]/list
 let list groupId : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx -> task {
-    match! SmallGroups.tryByIdWithPreferences groupId ctx.Conn with
+    match! SmallGroups.tryByIdWithPreferences (SmallGroupId groupId) ctx.Conn with
     | Some group when group.Preferences.IsPublic ->
         let! reqs =
             PrayerRequests.forGroup

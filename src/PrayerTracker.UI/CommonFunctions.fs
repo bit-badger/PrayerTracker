@@ -150,6 +150,9 @@ let _inputField = _inputFieldWith []
 /// The class that designates a checkbox / label pair
 let _checkboxField = _class "pt-checkbox-field"
 
+/// A group of related fields, inputs, links, etc., displayed in a row
+let _group = _class "pt-group"
+
 /// Create an input field of the given type, with matching name and ID and the given value
 let inputField typ name value attrs =
     List.concat [ [ _type typ; _name name; _id name; if value <> "" then _value value ]; attrs ] |> input

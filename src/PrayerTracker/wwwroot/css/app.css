@@ -254,7 +254,7 @@ footer a:hover {
   text-transform: uppercase;
   color: #777;
 }
-.pt-radio-group {
+.pt-group {
   display: flex;
   flex-flow: row;
   gap: 1.5rem;

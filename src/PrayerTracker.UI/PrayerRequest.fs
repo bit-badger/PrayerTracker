@@ -54,7 +54,7 @@ let edit (model : EditRequest) today ctx viewInfo =
         div [ _fieldRow ] [
             div [ _inputField ] [
                 label [] [ locStr s["Expiration"] ]
-                span [ _class "pt-radio-group" ] [
+                span [ _group ] [
                     for code, name in ReferenceList.expirationList s (not model.IsNew) do
                         label [] [ radio (nameof model.Expiration) "" code model.Expiration; locStr name ]
                 ]
@@ -212,22 +212,22 @@ let maintain (model : MaintainRequests) (ctx : HttpContext) viewInfo =
                 ]
             ])
         |> List.ofSeq
-    [   div [ _class "pt-center-text" ] [
-            br []
-            a [ _href $"/prayer-request/{emptyGuid}/edit"; _title s["Add a New Request"].Value ] [
-                icon "add_circle"; rawText " &nbsp;"; locStr s["Add a New Request"]
-            ]
-            rawText " &nbsp; &nbsp; &nbsp; "
-            a [ _href "/prayer-requests/view"; _title s["View Prayer Request List"].Value ] [
-                icon "list"; rawText " &nbsp;"; locStr s["View Prayer Request List"]
-            ]
-            match model.SearchTerm with
-            | Some _ ->
-                rawText " &nbsp; &nbsp; &nbsp; "
-                a [ _href "/prayer-requests"; _title l["Clear Search Criteria"].Value ] [
-                    icon "highlight_off"; rawText " &nbsp;"; raw l["Clear Search Criteria"]
+    [   br []
+        div [ _fieldRow ] [
+            span [ _group ] [
+                a [ _href $"/prayer-request/{emptyGuid}/edit"; _title s["Add a New Request"].Value ] [
+                    icon "add_circle"; rawText " &nbsp;"; locStr s["Add a New Request"]
                 ]
-            | None -> ()
+                a [ _href "/prayer-requests/view"; _title s["View Prayer Request List"].Value ] [
+                    icon "list"; rawText " &nbsp;"; locStr s["View Prayer Request List"]
+                ]
+                match model.SearchTerm with
+                | Some _ ->
+                    a [ _href "/prayer-requests"; _title l["Clear Search Criteria"].Value ] [
+                        icon "highlight_off"; rawText " &nbsp;"; raw l["Clear Search Criteria"]
+                    ]
+                | None -> ()
+            ]
         ]
         form [ _action "/prayer-requests"; _method "get"; _class "pt-center-text pt-search-form"; Target.content ] [
             inputField "text" "search" (defaultArg model.SearchTerm "") [ _placeholder l["Search requests..."].Value ]
@@ -300,9 +300,9 @@ let print model version =
         br []
         hr []
         div [ _style $"font-size:70%%;font-family:{model.SmallGroup.Preferences.FontStack};" ] [
-            img [ _src $"""/img/{s["footer_en"].Value}.png"""
+            img [ _src   $"""/img/{s["footer_en"].Value}.png"""
                   _style "vertical-align:text-bottom;"
-                  _alt imgAlt
+                  _alt   imgAlt
                   _title imgAlt ]
             space
             str version
@@ -315,38 +315,36 @@ let print model version =
 let view model viewInfo =
     let s         = I18N.localizer.Force ()
     let pageTitle = $"""{s["Prayer Requests"].Value} • {model.SmallGroup.Name}"""
-    let spacer    = rawText " &nbsp; &nbsp; &nbsp; "
     let dtString  = model.Date.ToString ("yyyy-MM-dd", CultureInfo.InvariantCulture)
-    [   div [ _class "pt-center-text" ] [
-            br []
-            a [ _class  "pt-icon-link"
-                _href   $"/prayer-requests/print/{dtString}"
-                _target "_blank"
-                _title  s["View Printable"].Value ] [
-                icon "print"; rawText " &nbsp;"; locStr s["View Printable"]
-            ]
-            if model.CanEmail then
-                spacer
-                if model.Date.DayOfWeek <> IsoDayOfWeek.Sunday then
-                    let rec findSunday (date : LocalDate) =
-                        if date.DayOfWeek = IsoDayOfWeek.Sunday then date else findSunday (date.PlusDays 1)
-                    let sunday = findSunday model.Date
-                    a [ _class "pt-icon-link"
-                        _href  $"""/prayer-requests/view/{sunday.ToString ("yyyy-MM-dd", CultureInfo.InvariantCulture)}"""
-                        _title s["List for Next Sunday"].Value ] [
-                        icon "update"; rawText " &nbsp;"; locStr s["List for Next Sunday"]
-                    ]
-                    spacer
-                let emailPrompt = s["This will e-mail the current list to every member of your group, without further prompting.  Are you sure this is what you are ready to do?"].Value
-                a [ _class   "pt-icon-link"
-                    _href    $"/prayer-requests/email/{dtString}"
-                    _title   s["Send via E-mail"].Value
-                    _onclick $"return PT.requests.view.promptBeforeEmail('{emailPrompt}')" ] [
-                    icon "mail_outline"; rawText " &nbsp;"; locStr s["Send via E-mail"]
+    [   br []
+        div [ _fieldRow ] [
+            span [ _group ] [
+                a [ _class  "pt-icon-link"
+                    _href   $"/prayer-requests/print/{dtString}"
+                    _target "_blank"
+                    _title  s["View Printable"].Value ] [
+                    icon "print"; rawText " &nbsp;"; locStr s["View Printable"]
                 ]
-            spacer
-            a [ _class "pt-icon-link"; _href "/prayer-requests"; _title s["Maintain Prayer Requests"].Value ] [
-                icon "compare_arrows"; rawText " &nbsp;"; locStr s["Maintain Prayer Requests"]
+                if model.CanEmail then
+                    if model.Date.DayOfWeek <> IsoDayOfWeek.Sunday then
+                        let rec findSunday (date : LocalDate) =
+                            if date.DayOfWeek = IsoDayOfWeek.Sunday then date else findSunday (date.PlusDays 1)
+                        let sunday = findSunday model.Date
+                        a [ _class "pt-icon-link"
+                            _href  $"""/prayer-requests/view/{sunday.ToString ("yyyy-MM-dd", CultureInfo.InvariantCulture)}"""
+                            _title s["List for Next Sunday"].Value ] [
+                            icon "update"; rawText " &nbsp;"; locStr s["List for Next Sunday"]
+                        ]
+                    let emailPrompt = s["This will e-mail the current list to every member of your group, without further prompting.  Are you sure this is what you are ready to do?"].Value
+                    a [ _class   "pt-icon-link"
+                        _href    $"/prayer-requests/email/{dtString}"
+                        _title   s["Send via E-mail"].Value
+                        _onclick $"return PT.requests.view.promptBeforeEmail('{emailPrompt}')" ] [
+                        icon "mail_outline"; rawText " &nbsp;"; locStr s["Send via E-mail"]
+                    ]
+                    a [ _class "pt-icon-link"; _href "/prayer-requests"; _title s["Maintain Prayer Requests"].Value ] [
+                        icon "compare_arrows"; rawText " &nbsp;"; locStr s["Maintain Prayer Requests"]
+                    ]
             ]
         ]
         br []

@@ -30,7 +30,7 @@ let announcement isAdmin ctx viewInfo =
             div [ _fieldRow ] [
                 div [ _inputField ] [
                     label [] [ locStr s["Send Announcement to"]; rawText ":" ]
-                    div [ _class "pt-radio-group" ] [
+                    div [ _group ] [
                         label [] [
                             radio (nameof model.SendToClass) $"{nameof model.SendToClass}_Y" "Y" "Y"
                             locStr s["This Group"]
@@ -457,7 +457,7 @@ let preferences (model : EditPreferences) ctx viewInfo =
                 div [ _fieldRow ] [
                     div [ _inputField ] [
                         label [] [ locStr s["Color of Heading Lines"] ]
-                        span [ _class "pt-radio-group" ] [
+                        span [ _group ] [
                             span [] [
                                 label [] [
                                     radio (nameof model.LineColorType) $"{nameof model.LineColorType}_Name" "Name"
@@ -488,7 +488,7 @@ let preferences (model : EditPreferences) ctx viewInfo =
                 div [ _fieldRow ] [
                     div [ _inputField ] [
                         label [] [ locStr s["Color of Heading Text"] ]
-                        span [ _class "pt-radio-group" ] [
+                        span [ _group ] [
                             span [] [
                                 label [] [
                                     radio (nameof model.HeadingColorType) $"{nameof model.HeadingColorType}_Name" "Name"
@@ -522,14 +522,14 @@ let preferences (model : EditPreferences) ctx viewInfo =
                 div [ _inputField ] [
                     label [ _for (nameof model.Fonts) ] [ locStr s["Fonts** for List"] ]
                     let value = if model.IsNative then "True" else "False"
-                    span [ _class "pt-radio-group" ] [
+                    span [ _group ] [
                         label [] [
                             radio (nameof model.IsNative) $"{nameof model.IsNative}_Y" "True" value
                             locStr s["Native Fonts"]
                         ]
                         inputField "text" "nativeFontSpacer" "" [ _style "visibility:hidden" ]
                     ]
-                    span [ _class "pt-radio-group" ] [
+                    span [ _group ] [
                         label [] [
                             radio (nameof model.IsNative) $"{nameof model.IsNative}_N" "False" value
                             locStr s["Named Fonts"]
@@ -557,7 +557,7 @@ let preferences (model : EditPreferences) ctx viewInfo =
                 div [ _fieldRow ] [
                     div [ _inputField ] [
                         label [] [ locStr s["Request List Visibility"] ]
-                        span [ _class "pt-radio-group" ] [
+                        span [ _group ] [
                             let name  = nameof model.Visibility
                             let value = string model.Visibility
                             label [] [
