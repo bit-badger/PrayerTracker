@@ -14,7 +14,7 @@ Si está buscando una solicitud en particular, ingrese un texto en el cuadro de 
 
 ## Editar la Petición
 
-Para editar una petición, haga clic en el icono de lápiz azul, el primer icono bajo el título de columna “Acciones”.
+Para editar una petición, haga clic en el icono de lápiz, el primer icono bajo el título de columna “Acciones”.
 
 ## Expirar una petición
 
@@ -26,4 +26,4 @@ Cuando la página se muestra por primera vez, que no muestra peticiones inactivo
 
 ## Eliminar una Petición
 
-Eliminación de una petición es contraria a la intención de SeguidorOración, como se puede recuperar peticiones que han expirado. Sin embargo, si hay una solicitud que debe ser eliminado, haga clic en el icono azul de la papelera en la columna “Acciones” le permitirá hacerlo. Utilice esta opción con cuidado, ya que estas supresiones no se puede deshacer, una vez a la petición se ha borrado, ha desaparecido para siempre.
+Eliminación de una petición es contraria a la intención de SeguidorOración, como se puede recuperar peticiones que han expirado. Sin embargo, si hay una solicitud que debe ser eliminado, haga clic en el icono de la papelera en la columna “Acciones” le permitirá hacerlo. Utilice esta opción con cuidado, ya que estas supresiones no se puede deshacer, una vez a la petición se ha borrado, ha desaparecido para siempre.
