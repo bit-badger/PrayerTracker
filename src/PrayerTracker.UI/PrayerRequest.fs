@@ -335,11 +335,10 @@ let view model viewInfo =
                             _title s["List for Next Sunday"].Value ] [
                             icon "update"; rawText " &nbsp;"; locStr s["List for Next Sunday"]
                         ]
-                    let emailPrompt = s["This will e-mail the current list to every member of your group, without further prompting.  Are you sure this is what you are ready to do?"].Value
-                    a [ _class   "pt-icon-link"
-                        _href    $"/prayer-requests/email/{dtString}"
-                        _title   s["Send via E-mail"].Value
-                        _onclick $"return PT.requests.view.promptBeforeEmail('{emailPrompt}')" ] [
+                    a [ _class     "pt-icon-link"
+                        _href      $"/prayer-requests/email/{dtString}"
+                        _title     s["Send via E-mail"].Value
+                        _hxConfirm s["This will e-mail the current list to every member of your group, without further prompting.  Are you sure this is what you are ready to do?"].Value ] [
                         icon "mail_outline"; rawText " &nbsp;"; locStr s["Send via E-mail"]
                     ]
                     a [ _class "pt-icon-link"; _href "/prayer-requests"; _title s["Maintain Prayer Requests"].Value ] [

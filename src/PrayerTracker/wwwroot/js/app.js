@@ -14,34 +14,12 @@ this.PT = {
   },
 
   /**
-   * Confirm, then submit a delete action
-   * @param {string} action The URL for the action attribute of the delete form.
-   * @param {string} prompt The localized prompt for confirmation.
-   */
-  confirmDelete(action, prompt) {
-    if (confirm(prompt)) {
-      let form = document.querySelector("#DeleteForm")
-      form.setAttribute("action", action)
-      form.submit()
-    }
-    return false
-  },
-
-  /**
    * Make fields required
    * @param {string[]|string} fields The field(s) to require
    */
   requireFields(fields) {
     (Array.isArray(fields) ? fields : [fields])
       .forEach(f => document.getElementById(f).required = true)
-  },
-
-  /**
-   * Queue an action to occur when the DOM content is loaded
-   * @param {Function} func The function to run once the DOM content is loaded
-   */
-  onLoad(func) {
-    document.addEventListener("DOMContentLoaded", func)
   },
 
   /**
@@ -129,24 +107,6 @@ this.PT = {
           .addEventListener("click", PT.church.edit.checkInterface)
       }
     }
-  },
-
-  /**
-   * Scripts for pages served by the Requests controller
-   */
-  requests: {
-    /**
-     * Script for the request view page
-     */
-    view: {
-      /**
-       * Prompt the user to remind them that they are about to e-mail their class
-       * @param {string} confirmationPrompt The text to display to the user
-       */
-      promptBeforeEmail(confirmationPrompt) {
-        return confirm(confirmationPrompt)
-      },
-    },
   },
 
   /**
