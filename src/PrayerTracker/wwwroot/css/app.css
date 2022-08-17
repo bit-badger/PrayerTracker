@@ -440,6 +440,9 @@ article.pt-overview section div p {
 .material-icons {
   vertical-align: middle;
 }
+.pt-help-link {
+  padding-right: .25rem;
+}
 #pt-help {
   background-color: #fcfcfc;
 }

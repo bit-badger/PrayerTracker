@@ -213,12 +213,12 @@ open Giraffe.ViewEngine.Htmx
 /// Render a link to the help page for the current page
 let private helpLink link =
     let s = I18N.localizer.Force ()
-    sup [] [
+    sup [ _class "pt-help-link" ] [
         a [ _href    link
             _title   s["Click for Help on This Page"].Value
             _onclick $"return PT.showHelp('{link}')"
             _hxNoBoost ] [
-            icon "help_outline"
+            iconSized 18 "help_outline"
         ]
     ]
 
