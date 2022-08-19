@@ -35,13 +35,13 @@ module Configure =
         (ctx.Configuration.GetSection >> opts.Configure >> ignore) "Kestrel"
 
     open System.Globalization
-    open System.IO
     open Microsoft.AspNetCore.Authentication.Cookies
     open Microsoft.AspNetCore.Localization
+    open Microsoft.Extensions.Caching.Distributed
     open Microsoft.Extensions.DependencyInjection
-    open NeoSmart.Caching.Sqlite
     open NodaTime
     open Npgsql
+    open PrayerTracker.Data
     
     /// Configure ASP.NET Core's service collection (dependency injection container)
     let services (svc : IServiceCollection) =
@@ -63,7 +63,10 @@ module Configure =
                     opts.SlidingExpiration <- true
                     opts.AccessDeniedPath  <- "/error/403")
         let _ = svc.AddAuthorization ()
-        let _ = svc.AddSqliteCache (fun opts -> opts.CachePath <- Path.Combine (".", "session.db"))
+        let _ =
+            svc.AddSingleton<IDistributedCache> (fun sp ->
+                let cfg = sp.GetService<IConfiguration> ()
+                DistributedCache (cfg.GetConnectionString "PrayerTracker") :> IDistributedCache)
         let _ = svc.AddSession ()
         let _ = svc.AddAntiforgery ()
         let _ = svc.AddRouting ()
