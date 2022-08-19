@@ -214,47 +214,6 @@ module Configure =
 /// The web application
 module App =
     
-    open System.Text
-    open Microsoft.Extensions.DependencyInjection
-    open Npgsql
-    open Npgsql.FSharp
-    open PrayerTracker.Entities
-    
-    let migratePasswords (app : IWebHost) =
-        task {
-            let config = app.Services.GetService<IConfiguration> ()
-            use conn   = new NpgsqlConnection (config.GetConnectionString "PrayerTracker")
-            do! conn.OpenAsync ()
-            let! v1Users =
-                   Sql.existingConnection conn
-                |> Sql.query "SELECT id, password_hash FROM pt.pt_user WHERE salt IS NULL"
-                |> Sql.executeAsync (fun row -> UserId (row.uuid "id"), row.string "password_hash") 
-            for userId, oldHash in v1Users do
-                let pw = Convert.ToBase64String [| 254uy; yield! (Encoding.UTF8.GetBytes oldHash) |] 
-                let! _ =
-                       Sql.existingConnection conn
-                    |> Sql.query "UPDATE pt.pt_user SET password_hash = @hash WHERE id = @id"
-                    |> Sql.parameters [ "@id", Sql.uuid userId.Value; "@hash", Sql.string pw ]
-                    |> Sql.executeNonQueryAsync
-                ()
-            printfn $"Updated {v1Users.Length} users with version 1 password"
-            let! v2Users =
-                   Sql.existingConnection conn
-                |> Sql.query "SELECT id, password_hash, salt FROM pt.pt_user WHERE salt IS NOT NULL"
-                |> Sql.executeAsync (fun row -> UserId (row.uuid "id"), row.string "password_hash", row.uuid "salt")
-            for userId, oldHash, salt in v2Users do
-                let pw =
-                    Convert.ToBase64String
-                        [| 255uy; yield! (salt.ToByteArray ()); yield! (Encoding.UTF8.GetBytes oldHash) |]
-                let! _ =
-                       Sql.existingConnection conn
-                    |> Sql.query "UPDATE pt.pt_user SET password_hash = @hash WHERE id = @id"
-                    |> Sql.parameters [ "@id", Sql.uuid userId.Value; "@hash", Sql.string pw ]
-                    |> Sql.executeNonQueryAsync
-                ()
-            printfn $"Updated {v2Users.Length} users with version 2 password"
-        } |> Async.AwaitTask |> Async.RunSynchronously
-    
     open System.IO
 
     [<EntryPoint>]
@@ -270,8 +229,5 @@ module App =
                 .ConfigureLogging(Configure.logging)
                 .Configure(System.Action<IApplicationBuilder> Configure.app)
                 .Build()
-        if args.Length > 0 then
-            if args[0] = "migrate-passwords" then migratePasswords app
-            else printfn $"Unrecognized option {args[0]}"
-        else app.Run ()
+        if args.Length > 0 then printfn $"Unrecognized option {args[0]}" else app.Run ()
         0
