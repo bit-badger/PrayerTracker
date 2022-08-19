@@ -1,98 +1,78 @@
 ﻿module PrayerTracker.Handlers.Church
 
+open System.Threading.Tasks
 open Giraffe
 open PrayerTracker
+open PrayerTracker.Data
 open PrayerTracker.Entities
 open PrayerTracker.ViewModels
-open PrayerTracker.Views.CommonFunctions
-open System
-open System.Threading.Tasks
 
 /// Find statistics for the given church
-let private findStats (db : AppDbContext) churchId = task {
-  let! grps = db.CountGroupsByChurch   churchId
-  let! reqs = db.CountRequestsByChurch churchId
-  let! usrs = db.CountUsersByChurch    churchId
-  return flatGuid churchId, { smallGroups = grps; prayerRequests = reqs; users = usrs }
-  }
-
+let private findStats churchId conn = task {
+    let! groups   = SmallGroups.countByChurch    churchId conn
+    let! requests = PrayerRequests.countByChurch churchId conn
+    let! users    = Users.countByChurch          churchId conn
+    return shortGuid churchId.Value, { SmallGroups = groups; PrayerRequests = requests; Users = users }
+}
 
 /// POST /church/[church-id]/delete
-let delete churchId : HttpHandler =
-  requireAccess [ Admin ]
-  >=> validateCSRF
-  >=> fun next ctx -> task {
-    match! ctx.db.TryChurchById churchId with
+let delete chId : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next ctx -> task {
+    let churchId = ChurchId chId
+    let conn     = ctx.Conn
+    match! Churches.tryById churchId conn with
     | Some church ->
-        let! _, stats = findStats ctx.db churchId
-        ctx.db.RemoveEntry church
-        let! _ = ctx.db.SaveChangesAsync ()
-        let  s = Views.I18N.localizer.Force ()
+        let! _, stats = findStats churchId conn
+        do! Churches.deleteById churchId conn
         addInfo ctx
-          s.["The church {0} and its {1} small groups (with {2} prayer request(s)) were deleted successfully; revoked access from {3} user(s)",
-              church.name, stats.smallGroups, stats.prayerRequests, stats.users]
-        return! redirectTo false "/web/churches" next ctx
-    | None -> return! fourOhFour next ctx
-    }
+            ctx.Strings["The church “{0}” and its {1} small group(s) (with {2} prayer request(s)) were deleted successfully; revoked access from {3} user(s)",
+                        church.Name, stats.SmallGroups, stats.PrayerRequests, stats.Users]
+        return! redirectTo false "/churches" next ctx
+    | None -> return! fourOhFour ctx
+}
 
+open System
 
 /// GET /church/[church-id]/edit
-let edit churchId : HttpHandler =
-  requireAccess [ Admin ]
-  >=> fun next ctx -> task {
-    let startTicks = DateTime.Now.Ticks
-    match churchId with
-    | x when x = Guid.Empty ->
+let edit churchId : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> task {
+    if churchId = Guid.Empty then
         return!
-          viewInfo ctx startTicks
-          |> Views.Church.edit EditChurch.empty ctx
-          |> renderHtml next ctx
-    | _ ->
-        match! ctx.db.TryChurchById churchId with
+            viewInfo ctx
+            |> Views.Church.edit EditChurch.empty ctx
+            |> renderHtml next ctx
+    else
+        match! Churches.tryById (ChurchId churchId) ctx.Conn with
         | Some church -> 
             return!
-              viewInfo ctx startTicks
-              |> Views.Church.edit (EditChurch.fromChurch church) ctx
-              |> renderHtml next ctx
-        | None -> return! fourOhFour next ctx
-    }
-
+                viewInfo ctx
+                |> Views.Church.edit (EditChurch.fromChurch church) ctx
+                |> renderHtml next ctx
+        | None -> return! fourOhFour ctx
+}
 
 /// GET /churches
-let maintain : HttpHandler =
-  requireAccess [ Admin ]
-  >=> fun next ctx -> task {
-    let  startTicks = DateTime.Now.Ticks
-    let  await      = Async.AwaitTask >> Async.RunSynchronously
-    let! churches   = ctx.db.AllChurches ()
-    let  stats      = churches |> List.map (fun c -> await (findStats ctx.db c.churchId))
+let maintain : HttpHandler = requireAccess [ Admin ] >=> fun next ctx -> task {
+    let  conn     = ctx.Conn
+    let! churches = Churches.all conn
+    let  stats    = churches |> List.map (fun c -> findStats c.Id conn |> Async.AwaitTask |> Async.RunSynchronously)
     return!
-      viewInfo ctx startTicks
-      |> Views.Church.maintain churches (stats |> Map.ofList) ctx
-      |> renderHtml next ctx
-    }
-
+        viewInfo ctx
+        |> Views.Church.maintain churches (stats |> Map.ofList) ctx
+        |> renderHtml next ctx
+}
 
 /// POST /church/save
-let save : HttpHandler =
-  requireAccess [ Admin ]
-  >=> validateCSRF
-  >=> fun next ctx -> task {
+let save : HttpHandler = requireAccess [ Admin ] >=> validateCsrf >=> fun next ctx -> task {
     match! ctx.TryBindFormAsync<EditChurch> () with
-    | Ok m ->
+    | Ok model ->
         let! church =
-          match m.isNew () with
-          | true -> Task.FromResult<Church option>(Some { Church.empty with churchId = Guid.NewGuid () })
-          | false -> ctx.db.TryChurchById m.churchId
+            if model.IsNew then Task.FromResult (Some { Church.empty with Id = (Guid.NewGuid >> ChurchId) () })
+            else Churches.tryById (idFromShort ChurchId model.ChurchId) ctx.Conn
         match church with
         | Some ch ->
-            m.populateChurch ch
-            |> (match m.isNew () with true -> ctx.db.AddEntry | false -> ctx.db.UpdateEntry)
-            let! _   = ctx.db.SaveChangesAsync ()
-            let  s   = Views.I18N.localizer.Force ()
-            let  act = s.[match m.isNew () with true -> "Added" | _ -> "Updated"].Value.ToLower ()
-            addInfo ctx s.["Successfully {0} church “{1}”", act, m.name]
-            return! redirectTo false "/web/churches" next ctx
-        | None -> return! fourOhFour next ctx
-    | Error e -> return! bindError e next ctx
-    }
+            do! Churches.save (model.PopulateChurch ch) ctx.Conn
+            let act = ctx.Strings[if model.IsNew then "Added" else "Updated"].Value.ToLower ()
+            addInfo ctx ctx.Strings["Successfully {0} church “{1}”", act, model.Name]
+            return! redirectTo false "/churches" next ctx
+        | None -> return! fourOhFour ctx
+    | Result.Error e -> return! bindError e next ctx
+}

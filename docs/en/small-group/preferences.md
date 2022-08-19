@@ -34,7 +34,10 @@ You can customize the colors that are used for the headings and lines in your re
 
 ## Fonts for List
 
-This is a comma-separated list of fonts that will be used for your request list. A warning is good here; just because you have an obscure font and like the way that it looks does not mean that others have that same font. It is generally best to stick with the fonts that come with Windows - fonts like “Arial”, “Times New Roman”, “Tahoma”, and “Comic Sans MS”. You should also end the font list with either “serif” or “sans-serif”, which will use the browser's default serif (like “Times New Roman”) or sans-serif (like “Arial”) font.
+There are two options for fonts that will be used in the prayer request list.
+
+* “Native Fonts” uses a list of fonts that will render the prayer requests in the best available font for their device, whether that is a desktop or laptop computer, mobile device, or tablet. (This is the default for new small groups.) 
+* “Named Fonts” uses a comma-separated list of fonts that you specify. A warning is good here; just because you have an obscure font and like the way that it looks does not mean that others have that same font. It is generally best to stick with the fonts that come with Windows - fonts like “Arial”, “Times New Roman”, “Tahoma”, and “Comic Sans MS”. You should also end the font list with either “serif” or “sans-serif”, which will use the browser's default serif (like “Times New Roman”) or sans-serif (like “Arial”) font.
 
 ## Heading / List Text Size
 
@@ -44,22 +47,22 @@ This is the point size to use for each. The default for the heading is 16pt, and
 
 If your group is comprised mostly of people who prefer large print, the following settings will make your list look like the typical large-print publication:
 
-> _Fonts_<br>
-> &#8212; 'Times New Roman',serif
+> **Fonts**<br>
+> Named Fonts: "Times New Roman",serif
 >
-> _Heading Text Size_<br>
-> &#8212; 18pt
+> **Heading Text Size**<br>
+> 18pt
 >
-> _List Text Size_<br>
-> &#8212; 16pt
-
-## Time Zone
-
-This is the time zone that you would like to use for your group. If you do not see your time zone listed, just [contact Daniel](mailto:daniel@djs-consulting.com?subject=PrayerTracker%20Time%20Zone) and tell him what time zone you need.
+> **List Text Size**<br>
+> 16pt
 
 ## Request List Visibility
 
 The group's request list can be either public, private, or password-protected. Public lists are available without logging in, and private lists are only available online to administrators (though the list can still be sent via e-mail by an administrator). Password-protected lists allow group members to log in and view the current request list online, using the “Group Log On” link and providing this password. As this is a shared password, it is stored in plain text, so you can easily see what it is. If you select “Password Protected” but do not enter a password, the list remains private, which is also the default value. (Changing this password will force all members of the group who logged in with the “Remember Me” box checked to provide the new password.)
+
+## Time Zone
+
+This is the time zone that you would like to use for your group. If you do not see your time zone listed, just [contact Daniel](mailto:daniel@bitbadger.solutions?subject=PrayerTracker%20Time%20Zone) and tell him what time zone you need.
 
 ## Page Size
 

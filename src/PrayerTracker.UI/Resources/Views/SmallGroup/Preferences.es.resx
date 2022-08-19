@@ -117,16 +117,16 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="Ending with either “serif” or “sans-serif” will cause the user's browser to use the default “serif” font (“Times New Roman” on Windows) or “sans-serif” font (“Arial” on Windows) if no other fonts in the list are found." xml:space="preserve">
-    <value>Con la extensión “serif” o el “sans-serif” hará que el navegador del usuario para utilizar el valor predeterminado “serif” de la fuente (“Times New Roman” en Windows) o “sans-serif” de la fuente (“Arial” en Windows) si no otras fuentes en la lista se encuentran.</value>
+  <data name="Ending this list with either “serif” or “sans-serif” will cause the user's browser to use the default “serif” font (“Times New Roman” on Windows) or “sans-serif” font (“Arial” on Windows) if no other fonts in the list are found." xml:space="preserve">
+    <value>Terminar esta lista con “serif” o “sans-serif” hará que el navegador del usuario utilice la fuente predeterminado “serif” (“Times New Roman” en Windows) o “sans-serif” (“Arial” en Windows) si no se encuentran otras fuentes en la lista.</value>
   </data>
   <data name="If you want a custom color, you may be able to get some ideas (and a list of RGB values for those colors) from the W3 School's &lt;a href=&quot;http://www.w3schools.com/html/html_colornames.asp&quot; title=&quot;HTML Color List - W3 School&quot;&gt;HTML color name list&lt;/a&gt;." xml:space="preserve">
     <value>Si desea un color personalizado, que puede ser capaz de obtener algunas ideas (y una lista de valores RGB para los colores) de la lista de la Escuela de W3 de &lt;a href="http://www.w3schools.com/html/html_colornames.asp" title="La Lista de Nombres de Colores HTML - La Escuela de W3"&gt;nombres de colores HTML&lt;/a&gt;.</value>
   </data>
-  <data name="List font names, separated by commas." xml:space="preserve">
-    <value>Lista de nombres de fuentes separados por comas.</value>
+  <data name="Native fonts match the default font based on the user's device (computer, phone, tablet, etc.)." xml:space="preserve">
+    <value>Las fuentes nativas coinciden con la fuente predeterminada según el dispositivo del usuario (computadora, teléfono, tableta, etc.).</value>
   </data>
-  <data name="The first font that is matched is the one that is used." xml:space="preserve">
-    <value>La primera fuente que se corresponde es el que se utiliza.</value>
+  <data name="Named fonts should be separated by commas, and will be displayed using the first one the user has in the list." xml:space="preserve">
+    <value>Las fuentes con nombre deben estar separadas por comas y se mostrarán usando la primera que el usuario tenga en la lista.</value>
   </data>
 </root>

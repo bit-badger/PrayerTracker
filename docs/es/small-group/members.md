@@ -10,8 +10,8 @@ Para agregar una dirección de correo electrónico, haga clic en el icono o el t
 
 ## Editar el Miembro del Grupo
 
-Para editar una dirección de correo electrónico, haga clic en el icono de lápiz azul, es el primer icono bajo el título de columna “Acciones”. Esto le permitirá actualizar el nombre y / o la dirección de correo electrónico para ese miembro.
+Para editar una dirección de correo electrónico, haga clic en el icono de lápiz, es el primer icono bajo el título de columna “Acciones”. Esto le permitirá actualizar el nombre y / o la dirección de correo electrónico para ese miembro.
 
 ## Eliminar un Miembro del Grupo
 
-Para eliminar una dirección de correo electrónico, haga clic en el icono azul de la papelera en la columna “Acciones”. Tenga en cuenta que una vez que la dirección de correo electrónico se ha eliminado, se ha ido. (Por supuesto, si usted lo elimine por error, se puede entrar de nuevo utilizando la opción “Agregar” instrucciones de arriba.)
+Para eliminar una dirección de correo electrónico, haga clic en el icono de la papelera en la columna “Acciones”. Tenga en cuenta que una vez que la dirección de correo electrónico se ha eliminado, se ha ido. (Por supuesto, si usted lo elimine por error, se puede entrar de nuevo utilizando la opción “Agregar” instrucciones de arriba.)

@@ -1,226 +1,245 @@
 ﻿module PrayerTracker.Views.User
 
 open Giraffe.ViewEngine
-open PrayerTracker.Entities
+open Giraffe.ViewEngine.Accessibility
+open Giraffe.ViewEngine.Htmx
+open PrayerTracker
 open PrayerTracker.ViewModels
 
 /// View for the group assignment page
-let assignGroups m groups curGroups ctx vi =
-  let s         = I18N.localizer.Force ()
-  let pageTitle = sprintf "%s • %A" m.userName s.["Assign Groups"]
-  form [ _action "/web/user/small-groups/save"; _method "post"; _class "pt-center-columns" ] [
-    csrfToken ctx
-    input [ _type "hidden"; _name "userId"; _value (flatGuid m.userId) ]
-    input [ _type "hidden"; _name "userName"; _value m.userName ]
-    table [ _class "pt-table" ] [
-      thead [] [
-        tr [] [
-          th [] [ rawText "&nbsp;" ]
-          th [] [ locStr s.["Group"] ]
-          ]
+let assignGroups model groups curGroups ctx viewInfo =
+    let s         = I18N.localizer.Force ()
+    let pageTitle = sprintf "%s • %A" model.UserName s["Assign Groups"]
+    let vi        = AppViewInfo.withScopedStyles [ "#groupList { grid-template-columns: auto; }" ] viewInfo
+    form [ _action "/user/small-groups/save"; _method "post"; _class "pt-center-columns"; Target.content ] [
+        csrfToken ctx
+        inputField "hidden" (nameof model.UserId) model.UserId []
+        inputField "hidden" (nameof model.UserName) model.UserName []
+        section [ _id "groupList"; _class "pt-table"; _ariaLabel "Assigned small groups" ] [
+            div [ _class "row head" ] [
+                header [ _class "cell" ] [ locStr s["Group"] ]
+            ]
+            for groupId, name in groups do
+                div [ _class "row" ] [
+                    div [ _class "cell" ] [
+                        input [ _type  "checkbox"
+                                _name  (nameof model.SmallGroups)
+                                _id    groupId
+                                _value groupId
+                                if List.contains groupId curGroups then _checked ]
+                        space
+                        label [ _for groupId ] [ str name ]
+                    ]
+                ]
         ]
-      groups
-      |> List.map (fun (grpId, grpName) ->
-          let inputId = $"id-{grpId}"
-          tr [] [
-            td [] [
-              input [ _type "checkbox"
-                      _name "smallGroups"
-                      _id inputId
-                      _value grpId
-                      match curGroups |> List.contains grpId with true -> _checked | false -> () ]
-              ]
-            td [] [ label [ _for inputId ] [ str grpName ] ]
-            ])
-      |> tbody []
-      ]
-    div [ _class "pt-field-row" ] [ submit [] "save" s.["Save Group Assignments"] ]
+        div [ _fieldRow ] [ submit [] "save" s["Save Group Assignments"] ]
     ]
-  |> List.singleton
-  |> Layout.Content.standard
-  |> Layout.standard vi pageTitle
+    |> List.singleton
+    |> Layout.Content.standard
+    |> Layout.standard vi pageTitle
 
 
 /// View for the password change page
-let changePassword ctx vi =
-  let s = I18N.localizer.Force ()
-  [ p [ _class "pt-center-text" ] [
-      locStr s.["To change your password, enter your current password in the specified box below, then enter your new password twice."]
-      ]
-    form [ _action "/web/user/password/change"
-           _method "post"
-           _onsubmit $"""return PT.compareValidation('newPassword','newPasswordConfirm','%A{s.["The passwords do not match"]}')""" ] [
-      style [ _scoped ] [ rawText "#oldPassword, #newPassword, #newPasswordConfirm { width: 10rem; } "]
-      csrfToken ctx
-      div [ _class "pt-field-row" ] [
-        div [ _class "pt-field" ] [
-          label [ _for "oldPassword" ] [ locStr s.["Current Password"] ]
-          input [ _type "password"; _name "oldPassword"; _id "oldPassword"; _required; _autofocus ]
-          ]
+let changePassword ctx viewInfo =
+    let s    = I18N.localizer.Force ()
+    let model = { OldPassword = ""; NewPassword = ""; NewPasswordConfirm = "" }
+    let vi    =
+        viewInfo
+        |> AppViewInfo.withScopedStyles [
+            let fields =
+                toHtmlIds [ nameof model.OldPassword; nameof model.NewPassword; nameof model.NewPasswordConfirm ]
+            $"{fields} {{ width: 10rem; }}"
         ]
-      div [ _class "pt-field-row" ] [
-        div [ _class "pt-field" ] [
-          label [ _for "newPassword" ] [ locStr s.["New Password Twice"] ]
-          input [ _type "password"; _name "newPassword"; _id "newPassword"; _required ]
-          ]
-        div [ _class "pt-field" ] [
-          label [] [ rawText "&nbsp;" ]
-          input [ _type "password"; _name "newPasswordConfirm"; _id "newPasswordConfirm"; _required ]
-          ]
+    [   p [ _class "pt-center-text" ] [
+            locStr s["To change your password, enter your current password in the specified box below, then enter your new password twice."]
         ]
-      div [ _class "pt-field-row" ] [
-        submit [ _onclick "document.getElementById('newPasswordConfirm').setCustomValidity('')" ] "done"
-               s.["Change Your Password"]
+        form [ _action   "/user/password/change"
+               _method   "post"
+               _onsubmit $"""return PT.compareValidation('{nameof model.NewPassword}','{nameof model.NewPasswordConfirm}','%A{s["The passwords do not match"]}')"""
+               Target.content ] [
+            csrfToken ctx
+            div [ _fieldRow ] [
+                div [ _inputField ] [
+                    label [ _for (nameof model.OldPassword) ] [ locStr s["Current Password"] ]
+                    inputField "password" (nameof model.OldPassword) "" [ _required; _autofocus ]
+                ]
+            ]
+            div [ _fieldRow ] [
+                div [ _inputField ] [
+                    label [ _for (nameof model.NewPassword) ] [ locStr s["New Password Twice"] ]
+                    inputField "password" (nameof model.NewPassword) "" [ _required ]
+                ]
+                div [ _inputField ] [
+                    label [ _for (nameof model.NewPasswordConfirm) ] [ rawText "&nbsp;" ]
+                    inputField "password" (nameof model.NewPasswordConfirm) "" [ _required ]
+                ]
+            ]
+            div [ _fieldRow ] [
+                submit [
+                    _onclick $"document.getElementById('{nameof model.NewPasswordConfirm}').setCustomValidity('')"
+                ] "done" s["Change Your Password"]
+            ]
         ]
-      ]
     ]
-  |> Layout.Content.standard
-  |> Layout.standard vi "Change Your Password"
+    |> Layout.Content.standard
+    |> Layout.standard vi "Change Your Password"
 
 
 /// View for the edit user page
-let edit (m : EditUser) ctx vi =
-  let s             = I18N.localizer.Force ()
-  let pageTitle     = match m.isNew () with true -> "Add a New User" | false -> "Edit User"
-  let pwPlaceholder = s.[match m.isNew () with true -> "" | false -> "No change"].Value
-  [ form [ _action "/web/user/edit/save"; _method "post"; _class "pt-center-columns"
-           _onsubmit $"""return PT.compareValidation('password','passwordConfirm','%A{s.["The passwords do not match"]}')""" ] [
-      style [ _scoped ]
-        [ rawText "#firstName, #lastName, #password, #passwordConfirm { width: 10rem; } #emailAddress { width: 20rem; } " ]
-      csrfToken ctx
-      input [ _type "hidden"; _name "userId"; _value (flatGuid m.userId) ]
-      div [ _class "pt-field-row" ] [
-        div [ _class "pt-field" ] [
-          label [ _for "firstName" ] [ locStr s.["First Name"] ]
-          input [ _type "text"; _name "firstName"; _id "firstName"; _value m.firstName; _required; _autofocus ]
-          ]
-        div [ _class "pt-field" ] [
-          label [ _for "lastName" ] [ locStr s.["Last Name"] ]
-          input [ _type "text"; _name "lastName"; _id "lastName"; _value m.lastName; _required ]
-          ]
-        div [ _class "pt-field" ] [
-          label [ _for "emailAddress" ] [ locStr s.["E-mail Address"] ]
-          input [ _type "email"; _name "emailAddress"; _id "emailAddress"; _value m.emailAddress; _required ]
-          ]
+let edit (model : EditUser) ctx viewInfo =
+    let s             = I18N.localizer.Force ()
+    let pageTitle     = if model.IsNew then "Add a New User" else "Edit User"
+    let pwPlaceholder = s[if model.IsNew then "" else "No change"].Value
+    let vi            =
+        viewInfo
+        |> AppViewInfo.withScopedStyles [
+            let fields =
+                [ nameof model.FirstName; nameof model.LastName; nameof model.Password; nameof model.PasswordConfirm ]
+                |> toHtmlIds
+            $"{fields} {{ width: 10rem; }}"
+            $"#{nameof model.Email} {{ width: 20rem; }}"
         ]
-      div [ _class "pt-field-row" ] [
-        div [ _class "pt-field" ] [
-          label [ _for "password" ] [ locStr s.["Password"] ]
-          input [ _type "password"; _name "password"; _id "password"; _placeholder pwPlaceholder ]
-          ]
-        div [ _class "pt-field" ] [
-          label [ _for "passwordConfirm" ] [ locStr s.["Password Again"] ]
-          input [ _type "password"; _name "passwordConfirm"; _id "passwordConfirm"; _placeholder pwPlaceholder ]
-          ]
+        |> AppViewInfo.withOnLoadScript $"PT.user.edit.onPageLoad({(string model.IsNew).ToLowerInvariant ()})"
+    form [ _action   "/user/edit/save"
+           _method   "post"
+           _class    "pt-center-columns"
+           _onsubmit $"""return PT.compareValidation('{nameof model.Password}','{nameof model.PasswordConfirm}','%A{s["The passwords do not match"]}')"""
+           Target.content ] [
+        csrfToken ctx
+        inputField "hidden" (nameof model.UserId) model.UserId []
+        div [ _fieldRow ] [
+            div [ _inputField ] [
+                label [ _for (nameof model.FirstName) ] [ locStr s["First Name"] ]
+                inputField "text" (nameof model.FirstName) model.FirstName [ _required; _autofocus ]
+            ]
+            div [ _inputField ] [
+                label [ _for (nameof model.LastName) ] [ locStr s["Last Name"] ]
+                inputField "text" (nameof model.LastName) model.LastName [ _required ]
+            ]
+            div [ _inputField ] [
+                label [ _for (nameof model.Email) ] [ locStr s["E-mail Address"] ]
+                inputField "email" (nameof model.Email) model.Email [ _required ]
+            ]
         ]
-      div [ _class "pt-checkbox-field" ] [
-        input [ _type "checkbox"
-                _name "isAdmin"
-                _id "isAdmin"
-                _value "True"
-                match m.isAdmin with Some x when x -> _checked | _ -> () ]
-        label [ _for "isAdmin" ] [ locStr s.["This user is a PrayerTracker administrator"] ]
+        div [ _fieldRow ] [
+            div [ _inputField ] [
+                label [ _for (nameof model.Password) ] [ locStr s["Password"] ]
+                inputField "password" (nameof model.Password) "" [ _placeholder pwPlaceholder ]
+            ]
+            div [ _inputField ] [
+                label [ _for "passwordConfirm" ] [ locStr s["Password Again"] ]
+                inputField "password" (nameof model.PasswordConfirm) "" [ _placeholder pwPlaceholder ]
+            ]
         ]
-      div [ _class "pt-field-row" ] [ submit [] "save" s.["Save User"] ]
-      ]
-    script [] [ rawText $"PT.onLoad(PT.user.edit.onPageLoad({(string (m.isNew ())).ToLower ()}))" ]
+        div [ _checkboxField ] [
+            inputField "checkbox" (nameof model.IsAdmin) "True" [ if defaultArg model.IsAdmin false then _checked ]
+            label [ _for (nameof model.IsAdmin) ] [ locStr s["This User Is a {0} Administrator", s["PrayerTracker"]] ]
+        ]
+        div [ _fieldRow ] [ submit [] "save" s["Save User"] ]
     ]
-  |> Layout.Content.standard
-  |> Layout.standard vi pageTitle
-
+    |> List.singleton
+    |> Layout.Content.standard
+    |> Layout.standard vi pageTitle
 
 /// View for the user log on page
-let logOn (m : UserLogOn) groups ctx vi =
-  let s = I18N.localizer.Force ()
-  form [ _action "/web/user/log-on"; _method "post"; _class "pt-center-columns" ] [
-    style [ _scoped ] [ rawText "#emailAddress { width: 20rem; }" ]
-    csrfToken ctx
-    input [ _type "hidden"; _name "redirectUrl"; _value (defaultArg m.redirectUrl "") ]
-    div [ _class "pt-field-row" ] [
-      div [ _class "pt-field" ] [
-        label [ _for "emailAddress"] [ locStr s.["E-mail Address"] ]
-        input [ _type "email"; _name "emailAddress"; _id "emailAddress"; _value m.emailAddress; _required; _autofocus ]
+let logOn (model : UserLogOn) groups ctx viewInfo =
+    let s  = I18N.localizer.Force ()
+    let vi = AppViewInfo.withScopedStyles [ $"#{nameof model.Email} {{ width: 20rem; }}" ] viewInfo
+    form [ _action "/user/log-on"; _method "post"; _class "pt-center-columns"; Target.body ] [
+        csrfToken ctx
+        inputField "hidden" (nameof model.RedirectUrl) (defaultArg model.RedirectUrl "") []
+        div [ _fieldRow ] [
+            div [ _inputField ] [
+                label [ _for (nameof model.Email) ] [ locStr s["E-mail Address"] ]
+                inputField "email" (nameof model.Email) model.Email [ _required; _autofocus ]
+            ]
+            div [ _inputField ] [
+                label [ _for (nameof model.Password) ] [ locStr s["Password"] ]
+                inputField "password" (nameof model.Password) "" [
+                    _placeholder $"""({s["Case-Sensitive"].Value.ToLower ()})"""; _required
+                ]
+            ]
         ]
-      div [ _class "pt-field" ] [
-        label [ _for "password" ] [ locStr s.["Password"] ]
-        input [ _type "password"; _name "password"; _id "password"; _required;
-                _placeholder (sprintf "(%s)" (s.["Case-Sensitive"].Value.ToLower ())) ]
+        div [ _fieldRow ] [
+            div [ _inputField ] [
+                label [ _for (nameof model.SmallGroupId) ] [ locStr s["Group"] ]
+                seq { "", selectDefault s["Select Group"].Value; yield! groups }
+                |> selectList (nameof model.SmallGroupId) "" [ _required ]
+            ]
         ]
-      ]
-    div [ _class "pt-field-row" ] [
-      div [ _class "pt-field" ] [
-        label [ _for "smallGroupId" ] [ locStr s.["Group"] ]
-        seq {
-          "", selectDefault s.["Select Group"].Value
-          yield! groups
-          }
-        |> selectList "smallGroupId" "" [ _required ]
-               
+        div [ _checkboxField ] [
+            inputField "checkbox" (nameof model.RememberMe) "True" []
+            label [ _for "rememberMe" ] [ locStr s["Remember Me"] ]
+            br []
+            small [] [ em [] [ str $"""({s["Requires Cookies"].Value.ToLower ()})""" ] ]
         ]
-      ]
-    div [ _class "pt-checkbox-field" ] [
-      input [ _type "checkbox"; _name "rememberMe"; _id "rememberMe"; _value "True" ]
-      label [ _for "rememberMe" ] [ locStr s.["Remember Me"] ]
-      br []
-      small [] [ em [] [ rawText "("; str (s.["Requires Cookies"].Value.ToLower ()); rawText ")" ] ]
-      ]
-    div [ _class "pt-field-row" ] [ submit [] "account_circle" s.["Log On"] ]
+        div [ _fieldRow ] [ submit [] "account_circle" s["Log On"] ]
     ]
-  |> List.singleton
-  |> Layout.Content.standard
-  |> Layout.standard vi "User Log On"
+    |> List.singleton
+    |> Layout.Content.standard
+    |> Layout.standard vi "User Log On"
 
+
+open PrayerTracker.Entities
 
 /// View for the user maintenance page
-let maintain (users : User list) ctx vi =
-  let s      = I18N.localizer.Force ()
-  let usrTbl =
-    match users with
-    | [] -> space
-    | _ ->
-        table [ _class "pt-table pt-action-table" ] [
-          thead [] [
-            tr [] [
-              th [] [ locStr s.["Actions"] ]
-              th [] [ locStr s.["Name"] ]
-              th [] [ locStr s.["Admin?"] ]
-              ]
+let maintain (users : User list) ctx viewInfo =
+    let s  = I18N.localizer.Force ()
+    let vi = AppViewInfo.withScopedStyles [ "#userList { grid-template-columns: repeat(4, auto); }" ] viewInfo
+    let userTable =
+        match users with
+        | [] -> space
+        | _ ->
+            section [ _id "userList"; _class "pt-table"; _ariaLabel "User list" ] [
+                div [ _class "row head" ] [
+                    header [ _class "cell" ] [ locStr s["Actions"] ]
+                    header [ _class "cell" ] [ locStr s["Name"] ]
+                    header [ _class "cell" ] [ locStr s["Last Seen"] ]
+                    header [ _class "cell" ] [ locStr s["Admin?"] ]  
+                ]
+                for user in users do
+                    let userId    = shortGuid user.Id.Value
+                    let delAction = $"/user/{userId}/delete"
+                    let delPrompt = s["Are you sure you want to delete this {0}?  This action cannot be undone.",
+                                      $"""{s["User"].Value.ToLower ()} ({user.Name})"""].Value
+                    div [ _class "row" ] [
+                        div [ _class "cell actions" ] [
+                            a [ _href $"/user/{userId}/edit"; _title s["Edit This User"].Value ] [ iconSized 18 "edit" ]
+                            a [ _href $"/user/{userId}/small-groups"; _title s["Assign Groups to This User"].Value ] [
+                                iconSized 18 "group"
+                            ]
+                            a [ _href      delAction
+                                _title     s["Delete This User"].Value
+                                _hxPost    delAction
+                                _hxConfirm delPrompt ] [
+                                iconSized 18 "delete_forever"
+                            ]
+                        ]
+                        div [ _class "cell" ] [ str user.Name ]
+                        div [ _class "cell" ] [
+                            match user.LastSeen with
+                            | Some dt -> dt.ToString (s["MMMM d, yyyy"].Value, null)
+                            | None -> "--"
+                            |> str
+                        ]
+                        div [ _class "cell pt-center-text" ] [
+                            if user.IsAdmin then strong [] [ locStr s["Yes"] ] else locStr s["No"]
+                        ]
+                    ]
             ]
-          users
-          |> List.map (fun user ->
-              let userId    = flatGuid user.userId
-              let delAction = $"/web/user/{userId}/delete"
-              let delPrompt = s.["Are you sure you want to delete this {0}?  This action cannot be undone.",
-                                  $"""{s.["User"].Value.ToLower ()} ({user.fullName})"""].Value
-              tr [] [
-                td [] [
-                  a [ _href $"/web/user/{userId}/edit"; _title s.["Edit This User"].Value ] [ icon "edit" ]
-                  a [ _href $"/web/user/{userId}/small-groups"; _title s.["Assign Groups to This User"].Value ]
-                    [ icon "group" ]
-                  a [ _href delAction
-                      _title s.["Delete This User"].Value
-                      _onclick $"return PT.confirmDelete('{delAction}','{delPrompt}')" ]
-                    [ icon "delete_forever" ]
-                  ]
-                td [] [ str user.fullName ]
-                td [ _class "pt-center-text" ] [
-                  match user.isAdmin with
-                  | true -> strong [] [ locStr s.["Yes"] ]
-                  | false -> locStr s.["No"]
-                  ]
-                ])
-          |> tbody []
-          ]
-  [ div [ _class "pt-center-text" ] [
-      br []
-      a [ _href $"/web/user/{emptyGuid}/edit"; _title s.["Add a New User"].Value ]
-        [ icon "add_circle"; rawText " &nbsp;"; locStr s.["Add a New User"] ]
-      br []
-      br []
-      ]
-    tableSummary users.Length s
-    usrTbl
-    form [ _id "DeleteForm"; _action ""; _method "post" ] [ csrfToken ctx ]
+    [   div [ _class "pt-center-text" ] [
+            br []
+            a [ _href $"/user/{emptyGuid}/edit"; _title s["Add a New User"].Value ] [
+                icon "add_circle"; rawText " &nbsp;"; locStr s["Add a New User"]
+            ]
+            br []
+            br []
+        ]
+        tableSummary users.Length s
+        form [ _method "post" ] [
+            csrfToken ctx
+            userTable
+        ]
     ]
-  |> Layout.Content.standard
-  |> Layout.standard vi "Maintain Users"
+    |> Layout.Content.standard
+    |> Layout.standard vi "Maintain Users"

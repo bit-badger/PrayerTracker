@@ -2,283 +2,275 @@
 
 open Giraffe
 open Microsoft.AspNetCore.Http
-open NodaTime
 open PrayerTracker
+open PrayerTracker.Data
 open PrayerTracker.Entities
 open PrayerTracker.ViewModels
-open System
-open System.Threading.Tasks
 
 /// Retrieve a prayer request, and ensure that it belongs to the current class
 let private findRequest (ctx : HttpContext) reqId = task {
-  match! ctx.db.TryRequestById reqId with
-  | Some req when req.smallGroupId = (currentGroup ctx).smallGroupId -> return Ok req
-  | Some _ ->
-      let s = Views.I18N.localizer.Force ()
-      addError ctx s.["The prayer request you tried to access is not assigned to your group"]
-      return Error (redirectTo false "/web/unauthorized")
-  | None -> return Error fourOhFour
-  }
+    match! PrayerRequests.tryById reqId ctx.Conn with
+    | Some req when req.SmallGroupId = ctx.Session.CurrentGroup.Value.Id -> return Ok req
+    | Some _ ->
+        addError ctx ctx.Strings["The prayer request you tried to access is not assigned to your group"]
+        return Result.Error (redirectTo false "/unauthorized" earlyReturn ctx)
+    | None -> return Result.Error (fourOhFour ctx)
+}
 
 /// Generate a list of requests for the given date
-let private generateRequestList ctx date =
-  let grp   = currentGroup ctx
-  let clock = ctx.GetService<IClock> ()
-  let listDate =
-    match date with
-    | Some d -> d
-    | None -> grp.localDateNow clock
-  let reqs = ctx.db.AllRequestsForSmallGroup grp clock (Some listDate) true 0
-  { requests   = reqs |> List.ofSeq
-    date       = listDate
-    listGroup  = grp
-    showHeader = true
-    canEmail   = ctx.Session.user |> Option.isSome
-    recipients = []
-    }
+let private generateRequestList (ctx : HttpContext) date = task {
+    let  group    = ctx.Session.CurrentGroup.Value
+    let  listDate = match date with Some d -> d | None -> SmallGroup.localDateNow ctx.Clock group
+    let! reqs     =
+        PrayerRequests.forGroup
+            {   SmallGroup = group
+                Clock      = ctx.Clock
+                ListDate   = Some listDate
+                ActiveOnly = true
+                PageNumber = 0
+            } ctx.Conn
+    return
+        {   Requests   = reqs
+            Date       = listDate
+            SmallGroup = group
+            ShowHeader = true
+            CanEmail   = Option.isSome ctx.User.UserId
+            Recipients = []
+        }
+}
+
+open NodaTime.Text
 
 /// Parse a string into a date (optionally, of course)
 let private parseListDate (date : string option) =
-  match date with
-  | Some dt -> match DateTime.TryParse dt with true, d -> Some d | false, _ -> None
-  | None -> None
+    match date with
+    | Some dt -> match LocalDatePattern.Iso.Parse dt with it when it.Success -> Some it.Value | _ -> None
+    | None -> None
 
+open System
 
 /// GET /prayer-request/[request-id]/edit
-let edit (reqId : PrayerRequestId) : HttpHandler =
-  requireAccess [ User ]
-  >=> fun next ctx -> task {
-    let startTicks = DateTime.Now.Ticks
-    let grp        = currentGroup ctx
-    let now        = grp.localDateNow (ctx.GetService<IClock> ())
-    match reqId = Guid.Empty with
-    | true ->
+let edit reqId : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task {
+    let group     = ctx.Session.CurrentGroup.Value
+    let now       = SmallGroup.localDateNow ctx.Clock group
+    let requestId = PrayerRequestId reqId
+    if requestId.Value = Guid.Empty then
         return!
-          { viewInfo ctx startTicks with script = [ "ckeditor/ckeditor" ]; helpLink = Some Help.editRequest }
-          |> Views.PrayerRequest.edit EditRequest.empty (now.ToString "yyyy-MM-dd") ctx
-          |> renderHtml next ctx
-    | false ->
-        match! findRequest ctx reqId with
+            { viewInfo ctx with HelpLink = Some Help.editRequest }
+            |> Views.PrayerRequest.edit EditRequest.empty (now.ToString ("R", null)) ctx
+            |> renderHtml next ctx
+    else
+        match! findRequest ctx requestId with
         | Ok req ->
-            let s = Views.I18N.localizer.Force ()
-            match req.isExpired now grp.preferences.daysToExpire with
-            | true ->
+            let s = ctx.Strings
+            if PrayerRequest.isExpired now group req then
                 { UserMessage.warning with
-                    text        = htmlLocString s.["This request is expired."]
-                    description =
-                      s.["To make it active again, update it as necessary, leave “{0}” and “{1}” unchecked, and it will return as an active request.",
-                          s.["Expire Immediately"], s.["Check to not update the date"]]
-                      |> (htmlLocString >> Some)
+                    Text        = htmlLocString s["This request is expired."]
+                    Description =
+                        s["To make it active again, update it as necessary, leave “{0}” and “{1}” unchecked, and it will return as an active request.",
+                          s["Expire Immediately"], s["Check to not update the date"]]
+                        |> (htmlLocString >> Some)
                   }
                 |> addUserMessage ctx
-            | false -> ()
             return!
-              { viewInfo ctx startTicks with script = [ "ckeditor/ckeditor" ]; helpLink = Some Help.editRequest }
-              |> Views.PrayerRequest.edit (EditRequest.fromRequest req) "" ctx
-              |> renderHtml next ctx
-        | Error e -> return! e next ctx
-    }
-
+                { viewInfo ctx with HelpLink = Some Help.editRequest }
+                |> Views.PrayerRequest.edit (EditRequest.fromRequest req) "" ctx
+                |> renderHtml next ctx
+        | Result.Error e -> return! e
+}
 
 /// GET /prayer-requests/email/[date]
-let email date : HttpHandler =
-  requireAccess [ User ]
-  >=> fun next ctx -> task {
-    let  startTicks  = DateTime.Now.Ticks
-    let  s           = Views.I18N.localizer.Force ()
-    let  listDate    = parseListDate (Some date)
-    let  grp         = currentGroup ctx
-    let  list        = generateRequestList ctx listDate
-    let! recipients  = ctx.db.AllMembersForSmallGroup grp.smallGroupId
-    use! client      = Email.getConnection ()
-    do! Email.sendEmails client recipients
-          grp s.["Prayer Requests for {0} - {1:MMMM d, yyyy}", grp.name, list.date].Value
-          (list.asHtml s) (list.asText s) s
+let email date : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task {
+    let  s          = ctx.Strings
+    let  listDate   = parseListDate (Some date)
+    let! list       = generateRequestList ctx listDate
+    let  group      = ctx.Session.CurrentGroup.Value
+    let! recipients = Members.forGroup group.Id ctx.Conn
+    use! client     = Email.getConnection ()
+    do! Email.sendEmails
+            {   Client        = client
+                Recipients    = recipients
+                Group         = group
+                Subject       = s["Prayer Requests for {0} - {1:MMMM d, yyyy}", group.Name, list.Date].Value
+                HtmlBody      = list.AsHtml s
+                PlainTextBody = list.AsText s
+                Strings       = s
+            }
     return!
-      viewInfo ctx startTicks
-      |> Views.PrayerRequest.email { list with recipients = recipients }
-      |> renderHtml next ctx
-    }
-
+        viewInfo ctx
+        |> Views.PrayerRequest.email { list with Recipients = recipients }
+        |> renderHtml next ctx
+}
 
 /// POST /prayer-request/[request-id]/delete
-let delete reqId : HttpHandler =
-  requireAccess [ User ]
-  >=> validateCSRF
-  >=> fun next ctx -> task {
-    match! findRequest ctx reqId with
+let delete reqId : HttpHandler = requireAccess [ User ] >=> validateCsrf >=> fun next ctx -> task {
+    let requestId = PrayerRequestId reqId
+    match! findRequest ctx requestId with
     | Ok req ->
-        let s  = Views.I18N.localizer.Force ()
-        ctx.db.PrayerRequests.Remove req |> ignore
-        let! _ = ctx.db.SaveChangesAsync ()
-        addInfo ctx s.["The prayer request was deleted successfully"]
-        return! redirectTo false "/web/prayer-requests" next ctx
-    | Error e -> return! e next ctx
-    }
-
+        do! PrayerRequests.deleteById req.Id ctx.Conn
+        addInfo ctx ctx.Strings["The prayer request was deleted successfully"]
+        return! redirectTo false "/prayer-requests" next ctx
+    | Result.Error e -> return! e
+}
 
 /// GET /prayer-request/[request-id]/expire
-let expire reqId : HttpHandler =
-  requireAccess [ User ]
-  >=> fun next ctx -> task {
-    match! findRequest ctx reqId with
+let expire reqId : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task {
+    let requestId = PrayerRequestId reqId
+    match! findRequest ctx requestId with
     | Ok req ->
-        let s  = Views.I18N.localizer.Force ()
-        ctx.db.UpdateEntry { req with expiration = Forced }
-        let! _ = ctx.db.SaveChangesAsync ()
-        addInfo ctx s.["Successfully {0} prayer request", s.["Expired"].Value.ToLower ()]
-        return! redirectTo false "/web/prayer-requests" next ctx
-    | Error e -> return! e next ctx
-    }
-
+        do! PrayerRequests.updateExpiration { req with Expiration = Forced } false ctx.Conn
+        addInfo ctx ctx.Strings["Successfully {0} prayer request", ctx.Strings["Expired"].Value.ToLower ()]
+        return! redirectTo false "/prayer-requests" next ctx
+    | Result.Error e -> return! e
+}
 
 /// GET /prayer-requests/[group-id]/list
-let list groupId : HttpHandler =
-  requireAccess [ AccessLevel.Public ]
-  >=> fun next ctx -> task {
-    let startTicks = DateTime.Now.Ticks
-    match! ctx.db.TryGroupById groupId with
-    | Some grp when grp.preferences.isPublic ->
-        let clock = ctx.GetService<IClock> ()
-        let reqs  = ctx.db.AllRequestsForSmallGroup grp clock None true 0
+let list groupId : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx -> task {
+    match! SmallGroups.tryByIdWithPreferences (SmallGroupId groupId) ctx.Conn with
+    | Some group when group.Preferences.IsPublic ->
+        let! reqs =
+            PrayerRequests.forGroup
+                {   SmallGroup = group
+                    Clock      = ctx.Clock
+                    ListDate   = None
+                    ActiveOnly = true
+                    PageNumber = 0
+                } ctx.Conn
         return!
-          viewInfo ctx startTicks
-          |> Views.PrayerRequest.list
-              { requests   = List.ofSeq reqs
-                date       = grp.localDateNow clock
-                listGroup  = grp
-                showHeader = true
-                canEmail   = ctx.Session.user |> Option.isSome
-                recipients = []
+            viewInfo ctx
+            |> Views.PrayerRequest.list
+                {   Requests   = reqs
+                    Date       = SmallGroup.localDateNow ctx.Clock group
+                    SmallGroup = group
+                    ShowHeader = true
+                    CanEmail   = Option.isSome ctx.User.UserId
+                    Recipients = []
                 }
-          |> renderHtml next ctx
+            |> renderHtml next ctx
     | Some _ ->
-        let s = Views.I18N.localizer.Force ()
-        addError ctx s.["The request list for the group you tried to view is not public."]
-        return! redirectTo false "/web/unauthorized" next ctx
-    | None -> return! fourOhFour next ctx
-    }
-
+        addError ctx ctx.Strings["The request list for the group you tried to view is not public."]
+        return! redirectTo false "/unauthorized" next ctx
+    | None -> return! fourOhFour ctx
+}
 
 /// GET /prayer-requests/lists
-let lists : HttpHandler =
-  requireAccess [ AccessLevel.Public ]
-  >=> fun next ctx -> task {
-    let  startTicks = DateTime.Now.Ticks
-    let! grps       = ctx.db.PublicAndProtectedGroups ()
+let lists : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx -> task {
+    let! groups = SmallGroups.listPublicAndProtected ctx.Conn
     return!
-      viewInfo ctx startTicks
-      |> Views.PrayerRequest.lists grps
-      |> renderHtml next ctx
-    }
-
+        viewInfo ctx
+        |> Views.PrayerRequest.lists groups
+        |> renderHtml next ctx
+}
 
 /// GET /prayer-requests[/inactive?]
 ///  - OR -
 /// GET /prayer-requests?search=[search-query]
-let maintain onlyActive : HttpHandler =
-  requireAccess [ User ]
-  >=> fun next ctx ->
-    let startTicks = DateTime.Now.Ticks
-    let grp        = currentGroup ctx
-    let pageNbr    =
-      match ctx.GetQueryStringValue "page" with
-      | Ok pg -> match Int32.TryParse pg with true, p -> p | false, _ -> 1
-      | Error _ -> 1
-    let m = 
-      match ctx.GetQueryStringValue "search" with
-      | Ok srch ->
-          { MaintainRequests.empty with
-              requests   = ctx.db.SearchRequestsForSmallGroup grp srch pageNbr
-              searchTerm = Some srch
-              pageNbr    = Some pageNbr
-            }
-      | Error _ ->
-          { MaintainRequests.empty with
-              requests   = ctx.db.AllRequestsForSmallGroup grp (ctx.GetService<IClock> ()) None onlyActive pageNbr
-              onlyActive = Some onlyActive
-              pageNbr    = match onlyActive with true -> None | false -> Some pageNbr
-            }
-    { viewInfo ctx startTicks with helpLink = Some Help.maintainRequests }
-    |> Views.PrayerRequest.maintain { m with smallGroup = grp } ctx
-    |> renderHtml next ctx
-
+let maintain onlyActive : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task {
+    let group   = ctx.Session.CurrentGroup.Value
+    let pageNbr =
+        match ctx.GetQueryStringValue "page" with
+        | Ok pg -> match Int32.TryParse pg with true, p -> p | false, _ -> 1
+        | Result.Error _ -> 1
+    let! model = backgroundTask {
+        match ctx.GetQueryStringValue "search" with
+        | Ok search ->
+            let! reqs = PrayerRequests.searchForGroup group search pageNbr ctx.Conn
+            return
+                { MaintainRequests.empty with
+                    Requests   = reqs
+                    SearchTerm = Some search
+                    PageNbr    = Some pageNbr
+                }
+        | Result.Error _ ->
+            let! reqs =
+                PrayerRequests.forGroup
+                    {   SmallGroup = group
+                        Clock      = ctx.Clock
+                        ListDate   = None
+                        ActiveOnly = onlyActive
+                        PageNumber = pageNbr
+                    } ctx.Conn
+            return
+                { MaintainRequests.empty with
+                    Requests   = reqs
+                    OnlyActive = Some onlyActive
+                    PageNbr    = if onlyActive then None else Some pageNbr
+                }
+    }
+    return!
+        { viewInfo ctx with HelpLink = Some Help.maintainRequests }
+        |> Views.PrayerRequest.maintain { model with SmallGroup = group } ctx
+        |> renderHtml next ctx
+}
 
 /// GET /prayer-request/print/[date]
-let print date : HttpHandler =
-  requireAccess [ User; Group ]
-  >=> fun next ctx ->
-    let list = parseListDate (Some date) |> generateRequestList ctx
-    Views.PrayerRequest.print list appVersion
-    |> renderHtml next ctx
-    
-
+let print date : HttpHandler = requireAccess [ User; Group ] >=> fun next ctx -> task {
+    let! list = generateRequestList ctx (parseListDate (Some date))
+    return!
+        Views.PrayerRequest.print list appVersion
+        |> renderHtml next ctx
+}
 
 /// GET /prayer-request/[request-id]/restore
-let restore reqId : HttpHandler =
-  requireAccess [ User ]
-  >=> fun next ctx -> task {
-    match! findRequest ctx reqId with
+let restore reqId : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task {
+    let requestId = PrayerRequestId reqId
+    match! findRequest ctx requestId with
     | Ok req ->
-        let s  = Views.I18N.localizer.Force ()
-        ctx.db.UpdateEntry { req with expiration = Automatic; updatedDate = DateTime.Now }
-        let! _ = ctx.db.SaveChangesAsync ()
-        addInfo ctx s.["Successfully {0} prayer request", s.["Restored"].Value.ToLower ()]
-        return! redirectTo false "/web/prayer-requests" next ctx
-    | Error e -> return! e next ctx
-    }
+        do! PrayerRequests.updateExpiration { req with Expiration = Automatic; UpdatedDate = ctx.Now } true ctx.Conn
+        addInfo ctx ctx.Strings["Successfully {0} prayer request", ctx.Strings["Restored"].Value.ToLower ()]
+        return! redirectTo false "/prayer-requests" next ctx
+    | Result.Error e -> return! e
+}
 
+open System.Threading.Tasks
 
 /// POST /prayer-request/save
-let save : HttpHandler =
-  requireAccess [ User ]
-  >=> validateCSRF
-  >=> fun next ctx -> task {
+let save : HttpHandler = requireAccess [ User ] >=> validateCsrf >=> fun next ctx -> task {
     match! ctx.TryBindFormAsync<EditRequest> () with
-    | Ok m ->
-        let! req =
-          match m.isNew () with
-          | true -> Task.FromResult (Some { PrayerRequest.empty with prayerRequestId = Guid.NewGuid () })
-          | false -> ctx.db.TryRequestById m.requestId
-        match req with
-        | Some pr ->
-            let upd8 =
-              { pr with
-                  requestType = PrayerRequestType.fromCode m.requestType
-                  requestor   = match m.requestor with Some x when x.Trim () = "" -> None | x -> x
-                  text        = ckEditorToText m.text
-                  expiration  = Expiration.fromCode m.expiration
+    | Ok model ->
+        let  group = ctx.Session.CurrentGroup.Value
+        let! req   =
+            if model.IsNew then
+                { PrayerRequest.empty with
+                    Id           = (Guid.NewGuid >> PrayerRequestId) ()
+                    SmallGroupId = group.Id
+                    UserId       = ctx.User.UserId.Value
                 }
-            let grp = currentGroup ctx
-            let now = grp.localDateNow (ctx.GetService<IClock> ())
-            match m.isNew () with
-            | true ->
-                let dt = match m.enteredDate with Some x -> x | None -> now
-                { upd8 with
-                    smallGroupId = grp.smallGroupId
-                    userId       = (currentUser ctx).userId
-                    enteredDate  = dt
-                    updatedDate  = dt
-                  }
-            | false when Option.isSome m.skipDateUpdate && Option.get m.skipDateUpdate -> upd8
-            | false -> { upd8 with updatedDate = now }
-            |> (match m.isNew () with true -> ctx.db.AddEntry | false -> ctx.db.UpdateEntry)
-            let! _   = ctx.db.SaveChangesAsync ()
-            let  s   = Views.I18N.localizer.Force ()
-            let  act = match m.isNew () with true -> "Added" | false -> "Updated"
-            addInfo ctx s.["Successfully {0} prayer request", s.[act].Value.ToLower ()]
-            return! redirectTo false "/web/prayer-requests" next ctx
-        | None -> return! fourOhFour next ctx
-    | Error e -> return! bindError e next ctx
-    }
-
+                |> (Some >> Task.FromResult)
+            else PrayerRequests.tryById (idFromShort PrayerRequestId model.RequestId) ctx.Conn
+        match req with
+        | Some pr when pr.SmallGroupId = group.Id ->
+            let now  = SmallGroup.localDateNow ctx.Clock group
+            let updated =
+                { pr with
+                    RequestType = PrayerRequestType.fromCode model.RequestType
+                    Requestor   = match model.Requestor with Some x when x.Trim () = "" -> None | x -> x
+                    Text        = ckEditorToText model.Text
+                    Expiration  = Expiration.fromCode model.Expiration
+                }
+                |> function
+                | it when model.IsNew ->
+                    let dt =
+                        (defaultArg (parseListDate model.EnteredDate) now)
+                            .AtStartOfDayInZone(SmallGroup.timeZone group)
+                            .ToInstant()
+                    { it with EnteredDate = dt; UpdatedDate = dt }
+                | it when defaultArg model.SkipDateUpdate false -> it
+                | it -> { it with UpdatedDate = ctx.Now }
+            do! PrayerRequests.save updated ctx.Conn
+            let act = if model.IsNew then "Added" else "Updated"
+            addInfo ctx ctx.Strings["Successfully {0} prayer request", ctx.Strings[act].Value.ToLower ()]
+            return! redirectTo false "/prayer-requests" next ctx
+        | Some _
+        | None -> return! fourOhFour ctx
+    | Result.Error e -> return! bindError e next ctx
+}
 
 /// GET /prayer-request/view/[date?]
-let view date : HttpHandler =
-  requireAccess [ User; Group ]
-  >=> fun next ctx ->
-    let startTicks = DateTime.Now.Ticks
-    let list       = parseListDate date |> generateRequestList ctx
-    viewInfo ctx startTicks
-    |> Views.PrayerRequest.view { list with showHeader = false }
-    |> renderHtml next ctx
+let view date : HttpHandler = requireAccess [ User; Group ] >=> fun next ctx -> task {
+    let! list = generateRequestList ctx (parseListDate date)
+    return!
+        viewInfo ctx
+        |> Views.PrayerRequest.view { list with ShowHeader = false }
+        |> renderHtml next ctx
+}

@@ -14,7 +14,7 @@ If you are looking for a particular requests, enter some text in the search box 
 
 ## Edit Request
       
-To edit a request, click the blue pencil icon; it's the first icon under the “Actions” column heading.
+To edit a request, click the pencil icon; it's the first icon under the “Actions” column heading.
 
 ## Expire a Request
 
@@ -26,4 +26,4 @@ When the page is first displayed, it does not display inactive requests. However
 
 ## Delete a Request
 
-Deleting a request is contrary to the intent of PrayerTracker, as you can retrieve requests that have expired. However, if there is a request that needs to be deleted, clicking the blue trash can icon in the “Actions” column will allow you to do it. Use this option carefully, as these deletions cannot be undone; once a request is deleted, it is gone for good.
+Deleting a request is contrary to the intent of PrayerTracker, as you can retrieve requests that have expired. However, if there is a request that needs to be deleted, clicking the trash can icon in the “Actions” column will allow you to do it. Use this option carefully, as these deletions cannot be undone; once a request is deleted, it is gone for good.

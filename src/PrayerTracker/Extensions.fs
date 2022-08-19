@@ -2,51 +2,117 @@
 module PrayerTracker.Extensions
 
 open Microsoft.AspNetCore.Http
-open Microsoft.Extensions.DependencyInjection
-open Microsoft.FSharpLu
 open Newtonsoft.Json
+open NodaTime
+open NodaTime.Serialization.JsonNet
+open PrayerTracker.Data
 open PrayerTracker.Entities
 open PrayerTracker.ViewModels
 
-// fsharplint:disable MemberNames
+/// JSON.NET serializer settings for NodaTime
+let private jsonSettings = JsonSerializerSettings().ConfigureForNodaTime DateTimeZoneProviders.Tzdb
 
+/// Extensions on the .NET session object
 type ISession with
-  /// Set an object in the session
-  member this.SetObject key value =
-    this.SetString (key, JsonConvert.SerializeObject value)
     
-  /// Get an object from the session
-  member this.GetObject<'T> key =
-    match this.GetString key with
-    | null -> Unchecked.defaultof<'T>
-    | v -> JsonConvert.DeserializeObject<'T> v
+    /// Set an object in the session
+    member this.SetObject<'T> key (value : 'T) =
+        this.SetString (key, JsonConvert.SerializeObject (value, jsonSettings))
+    
+    /// Get an object from the session
+    member this.TryGetObject<'T> key =
+        match this.GetString key with
+        | null -> None
+        | v -> Some (JsonConvert.DeserializeObject<'T> (v, jsonSettings))
 
-  /// The current small group for the session
-  member this.smallGroup
-    with get () = this.GetObject<SmallGroup> Key.Session.currentGroup |> Option.fromObject
-     and set (v : SmallGroup option) = 
-        match v with
-        | Some group -> this.SetObject Key.Session.currentGroup group
-        | None -> this.Remove Key.Session.currentGroup
+    /// The currently logged on small group
+    member this.CurrentGroup
+      with get () = this.TryGetObject<SmallGroup> Key.Session.currentGroup
+       and set (v : SmallGroup option) = 
+          match v with
+          | Some group -> this.SetObject Key.Session.currentGroup group
+          | None -> this.Remove Key.Session.currentGroup
 
-  /// The current user for the session
-  member this.user
-    with get () = this.GetObject<User> Key.Session.currentUser |> Option.fromObject
-     and set (v : User option) =
-        match v with
-        | Some user -> this.SetObject Key.Session.currentUser user
-        | None -> this.Remove Key.Session.currentUser
+    /// The currently logged on user
+    member this.CurrentUser
+      with get () = this.TryGetObject<User> Key.Session.currentUser
+       and set (v : User option) =
+          match v with
+          | Some user -> this.SetObject Key.Session.currentUser { user with PasswordHash = "" }
+          | None -> this.Remove Key.Session.currentUser
+    
+    /// Current messages for the session
+    member this.Messages
+      with get () =
+          this.TryGetObject<UserMessage list> Key.Session.userMessages
+          |> Option.defaultValue List.empty<UserMessage>
+       and set (v : UserMessage list) = this.SetObject Key.Session.userMessages v
 
-  /// Current messages for the session
-  member this.messages
-    with get () =
-        match box (this.GetObject<UserMessage list> Key.Session.userMessages) with
-        | null -> List.empty<UserMessage>
-        | msgs -> unbox msgs
-     and set (v : UserMessage list) = this.SetObject Key.Session.userMessages v
+
+open System.Security.Claims
+
+/// Extensions on the claims principal
+type ClaimsPrincipal with
+    
+    /// The ID of the currently logged on small group    
+    member this.SmallGroupId =
+        if this.HasClaim (fun c -> c.Type = ClaimTypes.GroupSid) then
+            Some (idFromShort SmallGroupId (this.FindFirst(fun c -> c.Type = ClaimTypes.GroupSid).Value))
+        else None
+    
+    /// The ID of the currently signed in user    
+    member this.UserId =
+        if this.HasClaim (fun c -> c.Type = ClaimTypes.NameIdentifier) then
+            Some (idFromShort UserId (this.FindFirst(fun c -> c.Type = ClaimTypes.NameIdentifier).Value))
+        else None
 
 
+open Giraffe
+open Npgsql
+
+/// Extensions on the ASP.NET Core HTTP context
 type HttpContext with
-  /// The EF Core database context (via DI)
-  member this.db
-    with get () = this.RequestServices.GetRequiredService<AppDbContext> ()
+    
+    /// The system clock (via DI)
+    member this.Clock = this.GetService<IClock> ()
+    
+    /// The PostgreSQL connection (configured via DI)
+    member this.Conn = this.GetService<NpgsqlConnection> ()
+    
+    /// The current instant
+    member this.Now = this.Clock.GetCurrentInstant ()
+    
+    /// The common string localizer
+    member this.Strings = Views.I18N.localizer.Force ()
+    
+    /// The currently logged on small group (sets the value in the session if it is missing)
+    member this.CurrentGroup () = task {
+        match this.Session.CurrentGroup with
+        | Some group -> return Some group
+        | None ->
+            match this.User.SmallGroupId with
+            | Some groupId ->
+                match! SmallGroups.tryByIdWithPreferences groupId this.Conn with
+                | Some group ->
+                    this.Session.CurrentGroup <- Some group
+                    return Some group
+                | None -> return None
+            | None -> return None
+    }
+
+    /// The currently logged on user (sets the value in the session if it is missing)
+    member this.CurrentUser () = task {
+        match this.Session.CurrentUser with
+        | Some user -> return Some user
+        | None ->
+            match this.User.UserId with
+            | Some userId ->
+                match! Users.tryById userId this.Conn with
+                | Some user ->
+                    // Set last seen for user
+                    do! Users.updateLastSeen userId this.Now this.Conn
+                    this.Session.CurrentUser <- Some user
+                    return Some user
+                | None -> return None
+            | None -> return None
+    }

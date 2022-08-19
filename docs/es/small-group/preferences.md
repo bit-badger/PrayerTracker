@@ -34,7 +34,10 @@ Usted puede personalizar los colores que se utilizan para las partidas y líneas
 
 ## Fuentes de la Lista
 
-Esta es una lista separada por comas de fuentes que se utilizarán para su lista de peticiones. Una advertencia de que es bueno aquí, sólo porque usted tiene una fuente oscura y gusta la forma en que se vea no significa que los demás tienen de que la misma fuente. Generalmente es mejor quedarse con las fuentes que vienen con Windows - Fuentes como “Arial”, “Times New Roman”, “Tahoma”, y “Comic Sans MS”. También debe poner fin a la lista de fuentes, ya sea con “serif” o el “sans-serif”, que utilizará el fuente serif predeterminado (como “Times New Roman”) o el fuente sans-serif predeterminado (como “Arial”).
+Hay dos opciones para las fuentes que se utilizarán en la lista de peticiones de oración.
+
+* “Fuentes Nativas” utiliza una lista de fuentes que representarán las peticiones de oración en la mejor fuente disponible para su dispositivo, ya sea una computadora de escritorio o portátil, un dispositivo móvil o una tableta. (Este es el valor predeterminado para los nuevos grupos pequeños).
+* “Fuentes con Nombre” utiliza una lista de fuentes separadas por comas que usted especifica. Una advertencia de que es bueno aquí, sólo porque usted tiene una fuente oscura y gusta la forma en que se vea no significa que los demás tienen de que la misma fuente. Generalmente es mejor quedarse con las fuentes que vienen con Windows - Fuentes como “Arial”, “Times New Roman”, “Tahoma”, y “Comic Sans MS”. También debe poner fin a la lista de fuentes, ya sea con “serif” o el “sans-serif”, que utilizará el fuente serif predeterminado (como “Times New Roman”) o el fuente sans-serif predeterminado (como “Arial”).
 
 ## Tamaño del Texto de Partida y Lista
 
@@ -44,22 +47,22 @@ Este es el tamaño de punto a utilizar para cada uno. El valor predeterminado pa
 
 Si el grupo está compuesta en su mayoría de la gente que prefiere letras grandes, los siguientes ajustes harán que su lista de parecerse a la típica la publicación “Letra Grande”:
 
-> _Fuentes_<br>
-> &#8212; 'Times New Roman',serif
+> **Fuentes**<br>
+> Fuentes con Nombre: "Times New Roman",serif
 >
-> _Partida el Tamaño del Texto_<br>
-> &#8212; 18pt
+> **Partida el Tamaño del Texto**<br>
+> 18pt
 >
-> _Lista el Tamaño del Texto_<br>
-> &#8212; 16pt
-
-## Zona Horaria
-
-Esta es la zona horaria que desea utilizar para su clase. Si no puede ver la zona horaria en la lista, ponte en [contacto con Daniel](mailto:daniel@djs-consulting.com?subject=Zona%20Horaria%20por%20SeguidorOración) y decirle lo que la zona horaria que usted necesita.
+> **Lista el Tamaño del Texto**<br>
+> 16pt
 
 ## La Visibilidad del la Lista de las Peticiones
 
 La lista de peticiones del grupo puede ser pública, privada o protegida por contraseña. Las listas públicas están disponibles sin iniciar sesión, y listas privadas sólo están disponibles en línea a los administradores (aunque la lista todavía puede ser enviado por correo electrónico por el administrador). Protegidos con contraseña listas permiten miembros del grupo iniciar sesión y ver la lista de peticiones actual en el sito, utilizando el "Iniciar Sesión como Grupo" enlace y proporcionar la contraseña. Como se trata de una contraseña compartida, se almacena en texto plano, así que usted puede ver fácilmente lo que es. Si selecciona "Protegido por Contraseña" pero no introduce una contraseña, la lista sigue siendo privado, que también es el valor predeterminado. (Cambiar esta contraseña obligará a todos los miembros del grupo que se iniciar sesión en el "Acuérdate de Mí" caja marcada para proporcionar la nueva contraseña.)
+
+## Zona Horaria
+
+Esta es la zona horaria que desea utilizar para su clase. Si no puede ver la zona horaria en la lista, ponte en [contacto con Daniel](mailto:daniel@bitbadger.solutions?subject=Zona%20Horaria%20por%20SeguidorOración) y decirle lo que la zona horaria que usted necesita.
 
 ## Tamaño de Página
 
