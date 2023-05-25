@@ -335,3 +335,4 @@ docs/_site
 **/*.db*
 
 .ionide
+.vscode

@@ -604,7 +604,7 @@ let requestListTests =
                     }
                 let html     = htmlList.AsHtml _s
                 let expected =
-                    htmlList.Requests[0].UpdatedDate.InUtc().Date.ToString ("d", null)
+                    htmlList.Requests[0].UpdatedDate.InZone(SmallGroup.timeZone reqList.SmallGroup).Date.ToString ("d", null)
                     |> sprintf """<strong>Zeb</strong> &ndash; zyx<i style="font-size:9.60pt">&nbsp; (as of %s)</i>"""
                 // spot check; if one request has it, they all should
                 Expect.stringContains html expected "Expected short as-of date not found"    
@@ -619,7 +619,7 @@ let requestListTests =
                     }
                 let html     = htmlList.AsHtml _s
                 let expected =
-                    htmlList.Requests[0].UpdatedDate.InUtc().Date.ToString ("D", null)
+                    htmlList.Requests[0].UpdatedDate.InZone(SmallGroup.timeZone reqList.SmallGroup).Date.ToString ("D", null)
                     |> sprintf """<strong>Zeb</strong> &ndash; zyx<i style="font-size:9.60pt">&nbsp; (as of %s)</i>"""
                 // spot check; if one request has it, they all should
                 Expect.stringContains html expected "Expected long as-of date not found"    
