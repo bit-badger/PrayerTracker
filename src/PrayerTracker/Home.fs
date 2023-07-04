@@ -7,19 +7,19 @@ open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Localization
 open PrayerTracker
 
-/// GET /error/[error-code]
+// GET /error/[error-code]
 let error code : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx ->
     viewInfo ctx
     |> Views.Home.error code
     |> renderHtml next ctx
 
-/// GET /
+// GET /
 let homePage : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx ->
     viewInfo ctx
     |> Views.Home.index
     |> renderHtml next ctx
 
-/// GET /language/[culture]
+// GET /language/[culture]
 let language culture : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx ->
     try
         match culture with
@@ -42,13 +42,13 @@ let language culture : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fu
     let url = match string ctx.Request.Headers["Referer"] with null | "" -> "/" | r -> r
     redirectTo false url next ctx
 
-/// GET /legal/privacy-policy
+// GET /legal/privacy-policy
 let privacyPolicy : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx ->
     viewInfo ctx
     |> Views.Home.privacyPolicy
     |> renderHtml next ctx
 
-/// GET /legal/terms-of-service
+// GET /legal/terms-of-service
 let tos : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx ->
     viewInfo ctx
     |> Views.Home.termsOfService
@@ -57,7 +57,7 @@ let tos : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx ->
 open Microsoft.AspNetCore.Authentication
 open Microsoft.AspNetCore.Authentication.Cookies
 
-/// GET /log-off
+// GET /log-off
 let logOff : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx -> task {
     ctx.Session.Clear ()
     do! ctx.SignOutAsync CookieAuthenticationDefaults.AuthenticationScheme
@@ -65,7 +65,7 @@ let logOff : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx
     return! redirectTo false "/" next ctx
 }
 
-/// GET /unauthorized
+// GET /unauthorized
 let unauthorized : HttpHandler = requireAccess [ AccessLevel.Public ] >=> fun next ctx ->
     viewInfo ctx
     |> Views.Home.unauthorized

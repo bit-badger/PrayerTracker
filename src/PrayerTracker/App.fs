@@ -35,6 +35,7 @@ module Configure =
         (ctx.Configuration.GetSection >> opts.Configure >> ignore) "Kestrel"
 
     open System.Globalization
+    open BitBadger.Npgsql.FSharp.Documents
     open Microsoft.AspNetCore.Authentication.Cookies
     open Microsoft.AspNetCore.Localization
     open Microsoft.Extensions.Caching.Distributed
@@ -63,21 +64,18 @@ module Configure =
                     opts.SlidingExpiration <- true
                     opts.AccessDeniedPath  <- "/error/403")
         let _ = svc.AddAuthorization ()
-        let _ =
-            svc.AddSingleton<IDistributedCache> (fun sp ->
-                let cfg = sp.GetService<IConfiguration> ()
-                DistributedCache (cfg.GetConnectionString "PrayerTracker") :> IDistributedCache)
+
+        let cfg = svc.BuildServiceProvider().GetService<IConfiguration> ()
+        let dsb = NpgsqlDataSourceBuilder (cfg.GetConnectionString "PrayerTracker")
+        let _   = dsb.UseNodaTime()
+        Configuration.useDataSource (dsb.Build ())
+
+        let _ = svc.AddSingleton<IDistributedCache, DistributedCache> ()
         let _ = svc.AddSession ()
         let _ = svc.AddAntiforgery ()
         let _ = svc.AddRouting ()
         let _ = svc.AddSingleton<IClock> SystemClock.Instance
-        let _ =
-            svc.AddScoped<NpgsqlConnection>(fun sp ->
-                let cfg  = sp.GetService<IConfiguration> ()
-                let conn = new NpgsqlConnection (cfg.GetConnectionString "PrayerTracker")
-                conn.OpenAsync () |> Async.AwaitTask |> Async.RunSynchronously
-                conn)
-        let _ = NpgsqlConnection.GlobalTypeMapper.UseNodaTime ()
+        
         ()
     
     open Giraffe

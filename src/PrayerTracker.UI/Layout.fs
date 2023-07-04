@@ -304,14 +304,14 @@ let private contentSection viewInfo pgTitle (content : XmlNode) = [
     | Some onLoad ->
         let doCall = if onLoad.EndsWith ")" then "" else "()"
         script [] [
-            rawText $"""
+            rawText $"
                 window.doOnLoad = () => {{
                     if (window.PT) {{
                         {onLoad}{doCall}
                         delete window.doOnLoad
                     }} else {{ setTimeout(window.doOnLoad, 500) }}
                 }}
-                window.doOnLoad()"""
+                window.doOnLoad()"
         ]
     | None -> ()
 ]

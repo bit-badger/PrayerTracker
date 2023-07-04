@@ -103,126 +103,93 @@ module private Helpers =
         }
 
 
+open BitBadger.Npgsql.FSharp.Documents
+
 /// Functions to manipulate churches
 module Churches =
     
     /// Get a list of all churches
-    let all conn =
-           Sql.existingConnection conn
-        |> Sql.query "SELECT * FROM pt.church ORDER BY church_name"
-        |> Sql.executeAsync mapToChurch
+    let all () =
+        Custom.list "SELECT * FROM pt.church ORDER BY church_name" [] mapToChurch
     
     /// Delete a church by its ID
-    let deleteById (churchId : ChurchId) conn = backgroundTask {
+    let deleteById (churchId : ChurchId) = backgroundTask {
         let idParam = [ [ "@churchId", Sql.uuid churchId.Value ] ]
         let where   = "WHERE small_group_id IN (SELECT id FROM pt.small_group WHERE church_id = @churchId)"
         let! _ =
-               Sql.existingConnection conn
+            Configuration.dataSource ()
+            |> Sql.fromDataSource
             |> Sql.executeTransactionAsync
                 [   $"DELETE FROM pt.prayer_request {where}", idParam
                     $"DELETE FROM pt.user_small_group {where}", idParam
                     $"DELETE FROM pt.list_preference {where}", idParam
                     "DELETE FROM pt.small_group WHERE church_id = @churchId", idParam
                     "DELETE FROM pt.church WHERE id = @churchId", idParam ]
-        return ()
+        ()
     }
     
     /// Save a church's information
-    let save (church : Church) conn = backgroundTask {
-        let! _ =
-               Sql.existingConnection conn
-            |> Sql.query """
-                INSERT INTO pt.church (
-                    id, church_name, city, state, has_vps_interface, interface_address
-                ) VALUES (
-                    @id, @name, @city, @state, @hasVpsInterface, @interfaceAddress
-                ) ON CONFLICT (id) DO UPDATE
-                SET church_name       = EXCLUDED.church_name,
-                    city              = EXCLUDED.city,
-                    state             = EXCLUDED.state,
-                    has_vps_interface = EXCLUDED.has_vps_interface,
-                    interface_address = EXCLUDED.interface_address"""
-            |> Sql.parameters
-                [   "@id",               Sql.uuid         church.Id.Value
-                    "@name",             Sql.string       church.Name
-                    "@city",             Sql.string       church.City
-                    "@state",            Sql.string       church.State
-                    "@hasVpsInterface",  Sql.bool         church.HasVpsInterface
-                    "@interfaceAddress", Sql.stringOrNone church.InterfaceAddress ]
-            |> Sql.executeNonQueryAsync
-        return ()
-    }
+    let save (church : Church) =
+        Custom.nonQuery
+            "INSERT INTO pt.church (
+                id, church_name, city, state, has_vps_interface, interface_address
+            ) VALUES (
+                @id, @name, @city, @state, @hasVpsInterface, @interfaceAddress
+            ) ON CONFLICT (id) DO UPDATE
+            SET church_name       = EXCLUDED.church_name,
+                city              = EXCLUDED.city,
+                state             = EXCLUDED.state,
+                has_vps_interface = EXCLUDED.has_vps_interface,
+                interface_address = EXCLUDED.interface_address"
+            [   "@id",               Sql.uuid         church.Id.Value
+                "@name",             Sql.string       church.Name
+                "@city",             Sql.string       church.City
+                "@state",            Sql.string       church.State
+                "@hasVpsInterface",  Sql.bool         church.HasVpsInterface
+                "@interfaceAddress", Sql.stringOrNone church.InterfaceAddress ]
     
     /// Find a church by its ID
-    let tryById (churchId : ChurchId) conn = backgroundTask {
-        let! church =
-               Sql.existingConnection conn
-            |> Sql.query "SELECT * FROM pt.church WHERE id = @id"
-            |> Sql.parameters [ "@id", Sql.uuid churchId.Value ]
-            |> Sql.executeAsync mapToChurch
-        return List.tryHead church
-    }
+    let tryById (churchId : ChurchId) =
+        Custom.single "SELECT * FROM pt.church WHERE id = @id" [ "@id", Sql.uuid churchId.Value ] mapToChurch
 
 
 /// Functions to manipulate small group members
 module Members =
     
     /// Count members for the given small group
-    let countByGroup (groupId : SmallGroupId) conn =
-           Sql.existingConnection conn
-        |> Sql.query "SELECT COUNT(id) AS mbr_count FROM pt.member WHERE small_group_id = @groupId"
-        |> Sql.parameters [ "@groupId", Sql.uuid groupId.Value ]
-        |> Sql.executeRowAsync (fun row -> row.int "mbr_count")
+    let countByGroup (groupId : SmallGroupId) =
+        Custom.scalar "SELECT COUNT(id) AS mbr_count FROM pt.member WHERE small_group_id = @groupId"
+                      [ "@groupId", Sql.uuid groupId.Value ] (fun row -> row.int "mbr_count")
     
     /// Delete a small group member by its ID
-    let deleteById (memberId : MemberId) conn = backgroundTask {
-        let! _ =
-               Sql.existingConnection conn
-            |> Sql.query "DELETE FROM pt.member WHERE id = @id"
-            |> Sql.parameters [ "@id", Sql.uuid memberId.Value ]
-            |> Sql.executeNonQueryAsync
-        return ()
-    }
+    let deleteById (memberId : MemberId) =
+        Custom.nonQuery "DELETE FROM pt.member WHERE id = @id" [ "@id", Sql.uuid memberId.Value ]
     
     /// Retrieve all members for a given small group
-    let forGroup (groupId : SmallGroupId) conn =
-           Sql.existingConnection conn
-        |> Sql.query "SELECT * FROM pt.member WHERE small_group_id = @groupId ORDER BY member_name"
-        |> Sql.parameters [ "@groupId", Sql.uuid groupId.Value ]
-        |> Sql.executeAsync mapToMember
+    let forGroup (groupId : SmallGroupId) =
+        Custom.list "SELECT * FROM pt.member WHERE small_group_id = @groupId ORDER BY member_name"
+                    [ "@groupId", Sql.uuid groupId.Value ] mapToMember
     
     /// Save a small group member
-    let save (mbr : Member) conn = backgroundTask {
-        let! _ =
-               Sql.existingConnection conn
-            |> Sql.query """
-                INSERT INTO pt.member (
-                    id, small_group_id, member_name, email, email_format
-                ) VALUES (
-                    @id, @groupId, @name, @email, @format
-                ) ON CONFLICT (id) DO UPDATE
-                SET member_name  = EXCLUDED.member_name,
-                    email        = EXCLUDED.email,
-                    email_format = EXCLUDED.email_format"""
-            |> Sql.parameters
-                [   "@id",      Sql.uuid         mbr.Id.Value
-                    "@groupId", Sql.uuid         mbr.SmallGroupId.Value
-                    "@name",    Sql.string       mbr.Name
-                    "@email",   Sql.string       mbr.Email
-                    "@format",  Sql.stringOrNone (mbr.Format |> Option.map EmailFormat.toCode) ]
-            |> Sql.executeNonQueryAsync
-        return ()
-    }
+    let save (mbr : Member) =
+        Custom.nonQuery
+            "INSERT INTO pt.member (
+                id, small_group_id, member_name, email, email_format
+            ) VALUES (
+                @id, @groupId, @name, @email, @format
+            ) ON CONFLICT (id) DO UPDATE
+            SET member_name  = EXCLUDED.member_name,
+                email        = EXCLUDED.email,
+                email_format = EXCLUDED.email_format"
+            [   "@id",      Sql.uuid         mbr.Id.Value
+                "@groupId", Sql.uuid         mbr.SmallGroupId.Value
+                "@name",    Sql.string       mbr.Name
+                "@email",   Sql.string       mbr.Email
+                "@format",  Sql.stringOrNone (mbr.Format |> Option.map EmailFormat.toCode) ]
     
     /// Retrieve a small group member by its ID
-    let tryById (memberId : MemberId) conn = backgroundTask {
-        let! mbr =
-               Sql.existingConnection conn
-            |> Sql.query "SELECT * FROM pt.member WHERE id = @id"
-            |> Sql.parameters [ "@id", Sql.uuid memberId.Value ]
-            |> Sql.executeAsync mapToMember
-        return List.tryHead mbr
-    }
+    let tryById (memberId : MemberId) =
+        Custom.single "SELECT * FROM pt.member WHERE id = @id" [ "@id", Sql.uuid memberId.Value ] mapToMember
 
 
 /// Options to retrieve a list of requests
@@ -258,34 +225,24 @@ module PrayerRequests =
         if pageNbr > 0 then $"LIMIT {pageSize} OFFSET {(pageNbr - 1) * pageSize}" else ""
     
     /// Count the number of prayer requests for a church
-    let countByChurch (churchId : ChurchId) conn =
-           Sql.existingConnection conn
-        |> Sql.query """
-            SELECT COUNT(id) AS req_count
-              FROM pt.prayer_request
-             WHERE small_group_id IN (SELECT id FROM pt.small_group WHERE church_id = @churchId)"""
-        |> Sql.parameters [ "@churchId", Sql.uuid churchId.Value ]
-        |> Sql.executeRowAsync (fun row -> row.int "req_count")
+    let countByChurch (churchId : ChurchId) =
+        Custom.scalar
+            "SELECT COUNT(id) AS req_count
+               FROM pt.prayer_request
+              WHERE small_group_id IN (SELECT id FROM pt.small_group WHERE church_id = @churchId)"
+            [ "@churchId", Sql.uuid churchId.Value ] (fun row -> row.int "req_count")
     
     /// Count the number of prayer requests for a small group
-    let countByGroup (groupId : SmallGroupId) conn =
-           Sql.existingConnection conn
-        |> Sql.query "SELECT COUNT(id) AS req_count FROM pt.prayer_request WHERE small_group_id = @groupId"
-        |> Sql.parameters [ "@groupId", Sql.uuid groupId.Value ]
-        |> Sql.executeRowAsync (fun row -> row.int "req_count")
+    let countByGroup (groupId : SmallGroupId) =
+        Custom.scalar "SELECT COUNT(id) AS req_count FROM pt.prayer_request WHERE small_group_id = @groupId"
+                      [ "@groupId", Sql.uuid groupId.Value ] (fun row -> row.int "req_count")
     
     /// Delete a prayer request by its ID
-    let deleteById (reqId : PrayerRequestId) conn = backgroundTask {
-        let! _ =
-               Sql.existingConnection conn
-            |> Sql.query "DELETE FROM pt.prayer_request WHERE id = @id"
-            |> Sql.parameters [ "@id", Sql.uuid reqId.Value ]
-            |> Sql.executeNonQueryAsync
-        return ()
-    }
+    let deleteById (reqId : PrayerRequestId) =
+        Custom.nonQuery "DELETE FROM pt.prayer_request WHERE id = @id" [ "@id", Sql.uuid reqId.Value ]
     
     /// Get all (or active) requests for a small group as of now or the specified date
-    let forGroup (opts : PrayerRequestOptions) conn =
+    let forGroup (opts : PrayerRequestOptions) =
         let theDate = defaultArg opts.ListDate (SmallGroup.localDateNow opts.Clock opts.SmallGroup)
         let where, parameters =
             if opts.ActiveOnly then
@@ -294,198 +251,167 @@ module PrayerRequests =
                     (theDate.AtStartOfDayInZone(SmallGroup.timeZone opts.SmallGroup)
                             - Duration.FromDays opts.SmallGroup.Preferences.DaysToExpire)
                         .ToInstant ())
-                """ AND (   updated_date > @asOf
+                "   AND (   updated_date > @asOf
                          OR expiration   = @manual
                          OR request_type = @longTerm
                          OR request_type = @expecting)
-                    AND expiration <> @forced""",
+                    AND expiration <> @forced",
                 [   "@asOf",      Sql.parameter asOf
                     "@manual",    Sql.string    (Expiration.toCode Manual)
                     "@longTerm",  Sql.string    (PrayerRequestType.toCode LongTermRequest)
                     "@expecting", Sql.string    (PrayerRequestType.toCode Expecting)
                     "@forced",    Sql.string    (Expiration.toCode Forced) ]
             else "", []
-        Sql.existingConnection conn
-        |> Sql.query $"""
-            SELECT *
-              FROM pt.prayer_request
-             WHERE small_group_id = @groupId {where}
-             ORDER BY {orderBy opts.SmallGroup.Preferences.RequestSort}
-             {paginate opts.PageNumber opts.SmallGroup.Preferences.PageSize}"""
-        |> Sql.parameters (("@groupId", Sql.uuid opts.SmallGroup.Id.Value) :: parameters)
-        |> Sql.executeAsync mapToPrayerRequest
+        Custom.list
+            $"SELECT *
+                FROM pt.prayer_request
+               WHERE small_group_id = @groupId {where}
+               ORDER BY {orderBy opts.SmallGroup.Preferences.RequestSort}
+               {paginate opts.PageNumber opts.SmallGroup.Preferences.PageSize}"
+            (("@groupId", Sql.uuid opts.SmallGroup.Id.Value) :: parameters) mapToPrayerRequest
     
     /// Save a prayer request
-    let save (req : PrayerRequest) conn = backgroundTask {
-        let! _ =
-               Sql.existingConnection conn
-            |> Sql.query """
-                INSERT into pt.prayer_request (
-                    id, request_type, user_id, small_group_id, entered_date, updated_date, requestor, request_text,
-                    notify_chaplain, expiration
-                ) VALUES (
-                    @id, @type, @userId, @groupId, @entered, @updated, @requestor, @text,
-                    @notifyChaplain, @expiration
-                ) ON CONFLICT (id) DO UPDATE
-                SET request_type    = EXCLUDED.request_type,
-                    updated_date    = EXCLUDED.updated_date,
-                    requestor       = EXCLUDED.requestor,
-                    request_text    = EXCLUDED.request_text,
-                    notify_chaplain = EXCLUDED.notify_chaplain,
-                    expiration      = EXCLUDED.expiration"""
-            |> Sql.parameters
-                [   "@id",             Sql.uuid         req.Id.Value
-                    "@type",           Sql.string       (PrayerRequestType.toCode req.RequestType)
-                    "@userId",         Sql.uuid         req.UserId.Value
-                    "@groupId",        Sql.uuid         req.SmallGroupId.Value
-                    "@entered",        Sql.parameter    (NpgsqlParameter ("@entered", req.EnteredDate))
-                    "@updated",        Sql.parameter    (NpgsqlParameter ("@updated", req.UpdatedDate))
-                    "@requestor",      Sql.stringOrNone req.Requestor
-                    "@text",           Sql.string       req.Text
-                    "@notifyChaplain", Sql.bool         req.NotifyChaplain
-                    "@expiration",     Sql.string       (Expiration.toCode req.Expiration)
-                ]
-            |> Sql.executeNonQueryAsync
-        return ()
-    }
+    let save (req : PrayerRequest) =
+        Custom.nonQuery
+            "INSERT into pt.prayer_request (
+                id, request_type, user_id, small_group_id, entered_date, updated_date, requestor, request_text,
+                notify_chaplain, expiration
+            ) VALUES (
+                @id, @type, @userId, @groupId, @entered, @updated, @requestor, @text,
+                @notifyChaplain, @expiration
+            ) ON CONFLICT (id) DO UPDATE
+            SET request_type    = EXCLUDED.request_type,
+                updated_date    = EXCLUDED.updated_date,
+                requestor       = EXCLUDED.requestor,
+                request_text    = EXCLUDED.request_text,
+                notify_chaplain = EXCLUDED.notify_chaplain,
+                expiration      = EXCLUDED.expiration"
+            [   "@id",             Sql.uuid         req.Id.Value
+                "@type",           Sql.string       (PrayerRequestType.toCode req.RequestType)
+                "@userId",         Sql.uuid         req.UserId.Value
+                "@groupId",        Sql.uuid         req.SmallGroupId.Value
+                "@entered",        Sql.parameter    (NpgsqlParameter ("@entered", req.EnteredDate))
+                "@updated",        Sql.parameter    (NpgsqlParameter ("@updated", req.UpdatedDate))
+                "@requestor",      Sql.stringOrNone req.Requestor
+                "@text",           Sql.string       req.Text
+                "@notifyChaplain", Sql.bool         req.NotifyChaplain
+                "@expiration",     Sql.string       (Expiration.toCode req.Expiration) ]
     
     /// Search prayer requests for the given term
-    let searchForGroup group searchTerm pageNbr conn =
-           Sql.existingConnection conn
-        |> Sql.query $"""
-            SELECT * FROM pt.prayer_request WHERE small_group_id = @groupId AND request_text ILIKE @search
-                UNION
-            SELECT * FROM pt.prayer_request WHERE small_group_id = @groupId AND COALESCE(requestor, '') ILIKE @search
-            ORDER BY {orderBy group.Preferences.RequestSort}
-            {paginate pageNbr group.Preferences.PageSize}"""
-        |> Sql.parameters [ "@groupId", Sql.uuid group.Id.Value; "@search", Sql.string $"%%%s{searchTerm}%%" ]
-        |> Sql.executeAsync mapToPrayerRequest
+    let searchForGroup group searchTerm pageNbr =
+        Custom.list 
+            $"SELECT * FROM pt.prayer_request WHERE small_group_id = @groupId AND request_text ILIKE @search
+                  UNION
+              SELECT * FROM pt.prayer_request WHERE small_group_id = @groupId AND COALESCE(requestor, '') ILIKE @search
+              ORDER BY {orderBy group.Preferences.RequestSort}
+              {paginate pageNbr group.Preferences.PageSize}"
+            [ "@groupId", Sql.uuid group.Id.Value; "@search", Sql.string $"%%%s{searchTerm}%%" ] mapToPrayerRequest
 
     /// Retrieve a prayer request by its ID
-    let tryById (reqId : PrayerRequestId) conn = backgroundTask {
-        let! req =
-               Sql.existingConnection conn
-            |> Sql.query "SELECT * FROM pt.prayer_request WHERE id = @id"
-            |> Sql.parameters [ "@id", Sql.uuid reqId.Value ]
-            |> Sql.executeAsync mapToPrayerRequest
-        return List.tryHead req
-    }
+    let tryById (reqId : PrayerRequestId) =
+        Custom.single "SELECT * FROM pt.prayer_request WHERE id = @id" [ "@id", Sql.uuid reqId.Value ]
+                      mapToPrayerRequest
     
     /// Update the expiration for the given prayer request
-    let updateExpiration (req : PrayerRequest) withTime conn = backgroundTask {
+    let updateExpiration (req : PrayerRequest) withTime =
         let sql, parameters =
             if withTime then
                 ", updated_date = @updated",
                 [ "@updated", Sql.parameter (NpgsqlParameter ("@updated", req.UpdatedDate)) ]
             else "", []
-        let! _ =
-               Sql.existingConnection conn
-            |> Sql.query $"UPDATE pt.prayer_request SET expiration = @expiration{sql} WHERE id = @id"
-            |> Sql.parameters
-                ([  "@expiration", Sql.string (Expiration.toCode req.Expiration)
-                    "@id",         Sql.uuid   req.Id.Value ]
-                 |> List.append parameters)
-            |> Sql.executeNonQueryAsync
-        return ()
-    }
+        Custom.nonQuery $"UPDATE pt.prayer_request SET expiration = @expiration{sql} WHERE id = @id"
+                        ([  "@expiration", Sql.string (Expiration.toCode req.Expiration)
+                            "@id",         Sql.uuid   req.Id.Value ]
+                        |> List.append parameters)
 
 
 /// Functions to retrieve small group information
 module SmallGroups =
     
     /// Count the number of small groups for a church
-    let countByChurch (churchId : ChurchId) conn =
-           Sql.existingConnection conn
-        |> Sql.query "SELECT COUNT(id) AS group_count FROM pt.small_group WHERE church_id = @churchId"
-        |> Sql.parameters [ "@churchId", Sql.uuid churchId.Value ]
-        |> Sql.executeRowAsync (fun row -> row.int "group_count")
+    let countByChurch (churchId : ChurchId) =
+        Custom.scalar "SELECT COUNT(id) AS group_count FROM pt.small_group WHERE church_id = @churchId"
+                      [ "@churchId", Sql.uuid churchId.Value ] (fun row -> row.int "group_count")
     
     /// Delete a small group by its ID
-    let deleteById (groupId : SmallGroupId) conn = backgroundTask {
+    let deleteById (groupId : SmallGroupId) = backgroundTask {
         let idParam = [ [ "@groupId", Sql.uuid groupId.Value ] ]
         let! _ =
-               Sql.existingConnection conn
+            Configuration.dataSource ()
+            |> Sql.fromDataSource
             |> Sql.executeTransactionAsync
                 [   "DELETE FROM pt.prayer_request   WHERE small_group_id = @groupId", idParam
                     "DELETE FROM pt.user_small_group WHERE small_group_id = @groupId", idParam
                     "DELETE FROM pt.list_preference  WHERE small_group_id = @groupId", idParam
                     "DELETE FROM pt.small_group      WHERE id             = @groupId", idParam ]
-        return ()
+        ()
     }
     
     /// Get information for all small groups
-    let infoForAll conn =
-           Sql.existingConnection conn
-        |> Sql.query """
-            SELECT sg.id, sg.group_name, c.church_name, lp.time_zone_id, lp.is_public
-              FROM pt.small_group sg
-                   INNER JOIN pt.church c ON c.id = sg.church_id
-                   INNER JOIN pt.list_preference lp ON lp.small_group_id = sg.id
-             ORDER BY sg.group_name"""
-        |> Sql.executeAsync mapToSmallGroupInfo
+    let infoForAll () =
+        Custom.list
+            "SELECT sg.id, sg.group_name, c.church_name, lp.time_zone_id, lp.is_public
+               FROM pt.small_group sg
+                    INNER JOIN pt.church c ON c.id = sg.church_id
+                    INNER JOIN pt.list_preference lp ON lp.small_group_id = sg.id
+              ORDER BY sg.group_name"
+            [] mapToSmallGroupInfo
     
     /// Get a list of small group IDs along with a description that includes the church name
-    let listAll conn =
-           Sql.existingConnection conn
-        |> Sql.query """
-            SELECT g.group_name, g.id, c.church_name
-              FROM pt.small_group g
-                   INNER JOIN pt.church c ON c.id = g.church_id
-             ORDER BY c.church_name, g.group_name"""
-        |> Sql.executeAsync mapToSmallGroupItem
+    let listAll () =
+        Custom.list
+            "SELECT g.group_name, g.id, c.church_name
+               FROM pt.small_group g
+                    INNER JOIN pt.church c ON c.id = g.church_id
+              ORDER BY c.church_name, g.group_name"
+            [] mapToSmallGroupItem
     
     /// Get a list of small group IDs and descriptions for groups with a group password
-    let listProtected conn =
-           Sql.existingConnection conn
-        |> Sql.query """
-            SELECT g.group_name, g.id, c.church_name, lp.is_public
-              FROM pt.small_group g
-                   INNER JOIN pt.church           c ON c.id = g.church_id
-                   INNER JOIN pt.list_preference lp ON lp.small_group_id = g.id
-             WHERE COALESCE(lp.group_password, '') <> ''
-             ORDER BY c.church_name, g.group_name"""
-        |> Sql.executeAsync mapToSmallGroupItem
+    let listProtected () =
+        Custom.list
+            "SELECT g.group_name, g.id, c.church_name, lp.is_public
+               FROM pt.small_group g
+                    INNER JOIN pt.church           c ON c.id = g.church_id
+                    INNER JOIN pt.list_preference lp ON lp.small_group_id = g.id
+              WHERE COALESCE(lp.group_password, '') <> ''
+              ORDER BY c.church_name, g.group_name"
+            [] mapToSmallGroupItem
     
     /// Get a list of small group IDs and descriptions for groups that are public or have a group password
-    let listPublicAndProtected conn =
-           Sql.existingConnection conn
-        |> Sql.query """
-            SELECT g.group_name, g.id, c.church_name, lp.time_zone_id, lp.is_public
-              FROM pt.small_group g
-                   INNER JOIN pt.church           c ON c.id = g.church_id
-                   INNER JOIN pt.list_preference lp ON lp.small_group_id = g.id
-             WHERE lp.is_public = TRUE
-                OR COALESCE(lp.group_password, '') <> ''
-             ORDER BY c.church_name, g.group_name"""
-        |> Sql.executeAsync mapToSmallGroupInfo
+    let listPublicAndProtected () =
+        Custom.list
+            "SELECT g.group_name, g.id, c.church_name, lp.time_zone_id, lp.is_public
+               FROM pt.small_group g
+                    INNER JOIN pt.church           c ON c.id = g.church_id
+                    INNER JOIN pt.list_preference lp ON lp.small_group_id = g.id
+              WHERE lp.is_public = TRUE
+                 OR COALESCE(lp.group_password, '') <> ''
+              ORDER BY c.church_name, g.group_name"
+            [] mapToSmallGroupInfo
     
     /// Log on for a small group (includes list preferences)
-    let logOn (groupId : SmallGroupId) password conn = backgroundTask {
-        let! group =
-               Sql.existingConnection conn
-            |> Sql.query """
-                SELECT sg.*, lp.*
-                  FROM pt.small_group sg
-                       INNER JOIN pt.list_preference lp ON lp.small_group_id = sg.id
-                 WHERE sg.id             = @id
-                   AND lp.group_password = @password"""
-            |> Sql.parameters [ "@id", Sql.uuid groupId.Value; "@password", Sql.string password ]
-            |> Sql.executeAsync mapToSmallGroupWithPreferences
-        return List.tryHead group
-    }
+    let logOn (groupId : SmallGroupId) password =
+        Custom.single
+            "SELECT sg.*, lp.*
+               FROM pt.small_group sg
+                    INNER JOIN pt.list_preference lp ON lp.small_group_id = sg.id
+              WHERE sg.id             = @id
+                AND lp.group_password = @password"
+            [ "@id", Sql.uuid groupId.Value; "@password", Sql.string password ] mapToSmallGroupWithPreferences
     
     /// Save a small group
-    let save (group : SmallGroup) isNew conn = backgroundTask {
+    let save (group : SmallGroup) isNew = backgroundTask {
         let! _ =
-               Sql.existingConnection conn
+            Configuration.dataSource ()
+            |> Sql.fromDataSource
             |> Sql.executeTransactionAsync [
-                """ INSERT INTO pt.small_group (
+                "INSERT INTO pt.small_group (
                         id, church_id, group_name
-                    ) VALUES (
-                        @id, @churchId, @name
-                    ) ON CONFLICT (id) DO UPDATE
-                    SET church_id  = EXCLUDED.church_id,
-                        group_name = EXCLUDED.group_name""",
+                ) VALUES (
+                    @id, @churchId, @name
+                ) ON CONFLICT (id) DO UPDATE
+                SET church_id  = EXCLUDED.church_id,
+                    group_name = EXCLUDED.group_name",
                 [ [ "@id",       Sql.uuid   group.Id.Value
                     "@churchId", Sql.uuid   group.ChurchId.Value
                     "@name",     Sql.string group.Name ] ]
@@ -493,216 +419,154 @@ module SmallGroups =
                     "INSERT INTO pt.list_preference (small_group_id) VALUES (@id)",
                     [ [ "@id", Sql.uuid group.Id.Value ] ]
             ]
-        return ()
+        ()
     }
     
     /// Save a small group's list preferences
-    let savePreferences (pref : ListPreferences) conn = backgroundTask {
-        let! _ =
-               Sql.existingConnection conn
-            |> Sql.query """
-                UPDATE pt.list_preference
-                   SET days_to_keep_new       = @daysToKeepNew,
-                       days_to_expire         = @daysToExpire,
-                       long_term_update_weeks = @longTermUpdateWeeks,
-                       email_from_name        = @emailFromName,
-                       email_from_address     = @emailFromAddress,
-                       fonts                  = @fonts,
-                       heading_color          = @headingColor,
-                       line_color             = @lineColor,
-                       heading_font_size      = @headingFontSize,
-                       text_font_size         = @textFontSize,
-                       request_sort           = @requestSort,
-                       group_password         = @groupPassword,
-                       default_email_type     = @defaultEmailType,
-                       is_public              = @isPublic,
-                       time_zone_id           = @timeZoneId,
-                       page_size              = @pageSize,
-                       as_of_date_display     = @asOfDateDisplay
-                 WHERE small_group_id = @groupId"""
-            |> Sql.parameters
-                [   "@groupId",             Sql.uuid   pref.SmallGroupId.Value
-                    "@daysToKeepNew",       Sql.int    pref.DaysToKeepNew
-                    "@daysToExpire",        Sql.int    pref.DaysToExpire
-                    "@longTermUpdateWeeks", Sql.int    pref.LongTermUpdateWeeks
-                    "@emailFromName",       Sql.string pref.EmailFromName
-                    "@emailFromAddress",    Sql.string pref.EmailFromAddress
-                    "@fonts",               Sql.string pref.Fonts
-                    "@headingColor",        Sql.string pref.HeadingColor
-                    "@lineColor",           Sql.string pref.LineColor
-                    "@headingFontSize",     Sql.int    pref.HeadingFontSize
-                    "@textFontSize",        Sql.int    pref.TextFontSize
-                    "@requestSort",         Sql.string (RequestSort.toCode pref.RequestSort)
-                    "@groupPassword",       Sql.string pref.GroupPassword
-                    "@defaultEmailType",    Sql.string (EmailFormat.toCode pref.DefaultEmailType)
-                    "@isPublic",            Sql.bool   pref.IsPublic
-                    "@timeZoneId",          Sql.string (TimeZoneId.toString pref.TimeZoneId)
-                    "@pageSize",            Sql.int    pref.PageSize
-                    "@asOfDateDisplay",     Sql.string (AsOfDateDisplay.toCode pref.AsOfDateDisplay)
-                ]
-            |> Sql.executeNonQueryAsync
-        return ()
-    }
+    let savePreferences (pref : ListPreferences) =
+        Custom.nonQuery
+            "UPDATE pt.list_preference
+                SET days_to_keep_new       = @daysToKeepNew,
+                    days_to_expire         = @daysToExpire,
+                    long_term_update_weeks = @longTermUpdateWeeks,
+                    email_from_name        = @emailFromName,
+                    email_from_address     = @emailFromAddress,
+                    fonts                  = @fonts,
+                    heading_color          = @headingColor,
+                    line_color             = @lineColor,
+                    heading_font_size      = @headingFontSize,
+                    text_font_size         = @textFontSize,
+                    request_sort           = @requestSort,
+                    group_password         = @groupPassword,
+                    default_email_type     = @defaultEmailType,
+                    is_public              = @isPublic,
+                    time_zone_id           = @timeZoneId,
+                    page_size              = @pageSize,
+                    as_of_date_display     = @asOfDateDisplay
+              WHERE small_group_id = @groupId"
+            [   "@groupId",             Sql.uuid   pref.SmallGroupId.Value
+                "@daysToKeepNew",       Sql.int    pref.DaysToKeepNew
+                "@daysToExpire",        Sql.int    pref.DaysToExpire
+                "@longTermUpdateWeeks", Sql.int    pref.LongTermUpdateWeeks
+                "@emailFromName",       Sql.string pref.EmailFromName
+                "@emailFromAddress",    Sql.string pref.EmailFromAddress
+                "@fonts",               Sql.string pref.Fonts
+                "@headingColor",        Sql.string pref.HeadingColor
+                "@lineColor",           Sql.string pref.LineColor
+                "@headingFontSize",     Sql.int    pref.HeadingFontSize
+                "@textFontSize",        Sql.int    pref.TextFontSize
+                "@requestSort",         Sql.string (RequestSort.toCode pref.RequestSort)
+                "@groupPassword",       Sql.string pref.GroupPassword
+                "@defaultEmailType",    Sql.string (EmailFormat.toCode pref.DefaultEmailType)
+                "@isPublic",            Sql.bool   pref.IsPublic
+                "@timeZoneId",          Sql.string (TimeZoneId.toString pref.TimeZoneId)
+                "@pageSize",            Sql.int    pref.PageSize
+                "@asOfDateDisplay",     Sql.string (AsOfDateDisplay.toCode pref.AsOfDateDisplay) ]
     
     /// Get a small group by its ID
-    let tryById (groupId : SmallGroupId) conn = backgroundTask {
-        let! group =
-               Sql.existingConnection conn
-            |> Sql.query "SELECT * FROM pt.small_group WHERE id = @id"
-            |> Sql.parameters [ "@id", Sql.uuid groupId.Value ]
-            |> Sql.executeAsync mapToSmallGroup
-        return List.tryHead group
-    }
+    let tryById (groupId : SmallGroupId) =
+        Custom.single "SELECT * FROM pt.small_group WHERE id = @id" [ "@id", Sql.uuid groupId.Value ] mapToSmallGroup
     
     /// Get a small group by its ID with its list preferences populated
-    let tryByIdWithPreferences (groupId : SmallGroupId) conn = backgroundTask {
-        let! group =
-               Sql.existingConnection conn
-            |> Sql.query """
-                SELECT sg.*, lp.*
-                  FROM pt.small_group sg
-                       INNER JOIN pt.list_preference lp ON lp.small_group_id = sg.id
-                 WHERE sg.id = @id"""
-            |> Sql.parameters [ "@id", Sql.uuid groupId.Value ]
-            |> Sql.executeAsync mapToSmallGroupWithPreferences
-        return List.tryHead group
-    }
+    let tryByIdWithPreferences (groupId : SmallGroupId) =
+        Custom.single
+            "SELECT sg.*, lp.*
+               FROM pt.small_group sg
+                    INNER JOIN pt.list_preference lp ON lp.small_group_id = sg.id
+              WHERE sg.id = @id"
+            [ "@id", Sql.uuid groupId.Value ] mapToSmallGroupWithPreferences
 
 
 /// Functions to manipulate users
 module Users =
     
     /// Retrieve all PrayerTracker users
-    let all conn =
-           Sql.existingConnection conn
-        |> Sql.query "SELECT * FROM pt.pt_user ORDER BY last_name, first_name"
-        |> Sql.executeAsync mapToUser
+    let all () =
+        Custom.list "SELECT * FROM pt.pt_user ORDER BY last_name, first_name" [] mapToUser
     
     /// Count the number of users for a church
-    let countByChurch (churchId : ChurchId) conn =
-           Sql.existingConnection conn
-        |> Sql.query """
-            SELECT COUNT(u.id) AS user_count
-              FROM pt.pt_user u
-             WHERE EXISTS (
-                   SELECT 1
-                     FROM pt.user_small_group usg
-                          INNER JOIN pt.small_group sg ON sg.id = usg.small_group_id
-                    WHERE usg.user_id = u.id
-                      AND sg.church_id = @churchId)"""
-        |> Sql.parameters [ "@churchId", Sql.uuid churchId.Value ]
-        |> Sql.executeRowAsync (fun row -> row.int "user_count")
+    let countByChurch (churchId : ChurchId) =
+        Custom.scalar
+            "SELECT COUNT(u.id) AS user_count
+               FROM pt.pt_user u
+              WHERE EXISTS (
+                    SELECT 1
+                      FROM pt.user_small_group usg
+                           INNER JOIN pt.small_group sg ON sg.id = usg.small_group_id
+                     WHERE usg.user_id = u.id
+                       AND sg.church_id = @churchId)"
+            [ "@churchId", Sql.uuid churchId.Value ] (fun row -> row.int "user_count")
     
     /// Count the number of users for a small group
-    let countByGroup (groupId : SmallGroupId) conn =
-           Sql.existingConnection conn
-        |> Sql.query "SELECT COUNT(user_id) AS user_count FROM pt.user_small_group WHERE small_group_id = @groupId"
-        |> Sql.parameters [ "@groupId", Sql.uuid groupId.Value ]
-        |> Sql.executeRowAsync (fun row -> row.int "user_count")
+    let countByGroup (groupId : SmallGroupId) =
+        Custom.scalar "SELECT COUNT(user_id) AS user_count FROM pt.user_small_group WHERE small_group_id = @groupId"
+                      [ "@groupId", Sql.uuid groupId.Value ] (fun row -> row.int "user_count")
     
     /// Delete a user by its database ID
-    let deleteById (userId : UserId) conn = backgroundTask {
-        let! _ =
-               Sql.existingConnection conn
-            |> Sql.query "DELETE FROM pt.pt_user WHERE id = @id"
-            |> Sql.parameters [ "@id", Sql.uuid userId.Value ]
-            |> Sql.executeNonQueryAsync
-        return ()
-    }
+    let deleteById (userId : UserId) =
+        Custom.nonQuery "DELETE FROM pt.pt_user WHERE id = @id" [ "@id", Sql.uuid userId.Value ]
     
     /// Get the IDs of the small groups for which the given user is authorized
-    let groupIdsByUserId (userId : UserId) conn =
-           Sql.existingConnection conn
-        |> Sql.query "SELECT small_group_id FROM pt.user_small_group WHERE user_id = @id"
-        |> Sql.parameters [ "@id", Sql.uuid userId.Value ]
-        |> Sql.executeAsync (fun row -> SmallGroupId (row.uuid "small_group_id"))
+    let groupIdsByUserId (userId : UserId) =
+        Custom.list "SELECT small_group_id FROM pt.user_small_group WHERE user_id = @id"
+                   [ "@id", Sql.uuid userId.Value ] (fun row -> SmallGroupId (row.uuid "small_group_id"))
     
     /// Get a list of users authorized to administer the given small group
-    let listByGroupId (groupId : SmallGroupId) conn =
-           Sql.existingConnection conn
-        |> Sql.query """
-            SELECT u.*
-              FROM pt.pt_user u
-                   INNER JOIN pt.user_small_group usg ON usg.user_id = u.id
-             WHERE usg.small_group_id = @groupId
-             ORDER BY u.last_name, u.first_name"""
-        |> Sql.parameters [ "@groupId", Sql.uuid groupId.Value ]
-        |> Sql.executeAsync mapToUser
+    let listByGroupId (groupId : SmallGroupId) =
+        Custom.list
+            "SELECT u.*
+               FROM pt.pt_user u
+                    INNER JOIN pt.user_small_group usg ON usg.user_id = u.id
+              WHERE usg.small_group_id = @groupId
+              ORDER BY u.last_name, u.first_name"
+            [ "@groupId", Sql.uuid groupId.Value ] mapToUser
     
     /// Save a user's information
-    let save (user : User) conn = backgroundTask {
-        let! _ =
-               Sql.existingConnection conn
-            |> Sql.query """
-                INSERT INTO pt.pt_user (
-                    id, first_name, last_name, email, is_admin, password_hash
-                ) VALUES (
-                    @id, @firstName, @lastName, @email, @isAdmin, @passwordHash
-                ) ON CONFLICT (id) DO UPDATE
-                SET first_name    = EXCLUDED.first_name,
-                    last_name     = EXCLUDED.last_name,
-                    email         = EXCLUDED.email,
-                    is_admin      = EXCLUDED.is_admin,
-                    password_hash = EXCLUDED.password_hash"""
-            |> Sql.parameters
-                [   "@id",           Sql.uuid   user.Id.Value
-                    "@firstName",    Sql.string user.FirstName
-                    "@lastName",     Sql.string user.LastName
-                    "@email",        Sql.string user.Email
-                    "@isAdmin",      Sql.bool   user.IsAdmin
-                    "@passwordHash", Sql.string user.PasswordHash
-                ]
-            |> Sql.executeNonQueryAsync
-        return ()
-    }
+    let save (user : User) = 
+        Custom.nonQuery
+            "INSERT INTO pt.pt_user (
+                id, first_name, last_name, email, is_admin, password_hash
+            ) VALUES (
+                @id, @firstName, @lastName, @email, @isAdmin, @passwordHash
+            ) ON CONFLICT (id) DO UPDATE
+            SET first_name    = EXCLUDED.first_name,
+                last_name     = EXCLUDED.last_name,
+                email         = EXCLUDED.email,
+                is_admin      = EXCLUDED.is_admin,
+                password_hash = EXCLUDED.password_hash"
+            [   "@id",           Sql.uuid   user.Id.Value
+                "@firstName",    Sql.string user.FirstName
+                "@lastName",     Sql.string user.LastName
+                "@email",        Sql.string user.Email
+                "@isAdmin",      Sql.bool   user.IsAdmin
+                "@passwordHash", Sql.string user.PasswordHash ]
     
     /// Find a user by its e-mail address and authorized small group
-    let tryByEmailAndGroup email (groupId : SmallGroupId) conn = backgroundTask {
-        let! user =
-               Sql.existingConnection conn
-            |> Sql.query """
-                SELECT u.*
-                  FROM pt.pt_user u
-                       INNER JOIN pt.user_small_group usg ON usg.user_id = u.id AND usg.small_group_id = @groupId
-                 WHERE u.email = @email"""
-            |> Sql.parameters [ "@email", Sql.string email; "@groupId", Sql.uuid groupId.Value ]
-            |> Sql.executeAsync mapToUser
-        return List.tryHead user
-    }
+    let tryByEmailAndGroup email (groupId : SmallGroupId) =
+        Custom.single
+            "SELECT u.*
+               FROM pt.pt_user u
+                    INNER JOIN pt.user_small_group usg ON usg.user_id = u.id AND usg.small_group_id = @groupId
+              WHERE u.email = @email"
+            [ "@email", Sql.string email; "@groupId", Sql.uuid groupId.Value ] mapToUser
     
     /// Find a user by their database ID
-    let tryById (userId : UserId) conn = backgroundTask {
-        let! user =
-               Sql.existingConnection conn
-            |> Sql.query "SELECT * FROM pt.pt_user WHERE id = @id"
-            |> Sql.parameters [ "@id", Sql.uuid userId.Value ]
-            |> Sql.executeAsync mapToUser
-        return List.tryHead user
-    }
+    let tryById (userId : UserId) =
+        Custom.single "SELECT * FROM pt.pt_user WHERE id = @id" [ "@id", Sql.uuid userId.Value ] mapToUser
     
     /// Update a user's last seen date/time
-    let updateLastSeen (userId : UserId) (now : Instant) conn = backgroundTask {
-        let! _ =
-               Sql.existingConnection conn
-            |> Sql.query "UPDATE pt.pt_user SET last_seen = @now WHERE id = @id"
-            |> Sql.parameters [ "@id", Sql.uuid userId.Value; "@now", Sql.parameter (NpgsqlParameter ("@now", now)) ]
-            |> Sql.executeNonQueryAsync
-        return ()            
-    }
+    let updateLastSeen (userId : UserId) (now : Instant) =
+        Custom.nonQuery "UPDATE pt.pt_user SET last_seen = @now WHERE id = @id"
+                        [ "@id", Sql.uuid userId.Value; "@now", Sql.parameter (NpgsqlParameter ("@now", now)) ]
     
     /// Update a user's password hash
-    let updatePassword (user : User) conn = backgroundTask {
-        let! _ =
-               Sql.existingConnection conn
-            |> Sql.query "UPDATE pt.pt_user SET password_hash = @passwordHash WHERE id = @id"
-            |> Sql.parameters [ "@id", Sql.uuid user.Id.Value; "@passwordHash", Sql.string user.PasswordHash ]
-            |> Sql.executeNonQueryAsync
-        return ()
-    }
+    let updatePassword (user : User) =
+        Custom.nonQuery "UPDATE pt.pt_user SET password_hash = @passwordHash WHERE id = @id"
+                        [ "@id", Sql.uuid user.Id.Value; "@passwordHash", Sql.string user.PasswordHash ]
     
     /// Update a user's authorized small groups
-    let updateSmallGroups (userId : UserId) groupIds conn = backgroundTask {
-        let! existingGroupIds = groupIdsByUserId userId conn
+    let updateSmallGroups (userId : UserId) groupIds = backgroundTask {
+        let! existingGroupIds = groupIdsByUserId userId
         let toAdd =
             groupIds |> List.filter (fun it -> existingGroupIds |> List.exists (fun grpId -> grpId = it) |> not)
         let toDelete =
@@ -718,7 +582,8 @@ module Users =
         }
         if not (Seq.isEmpty queries) then
             let! _ =
-                   Sql.existingConnection conn
+                Configuration.dataSource ()
+                |> Sql.fromDataSource
                 |> Sql.executeTransactionAsync (List.ofSeq queries)
             ()
     }
