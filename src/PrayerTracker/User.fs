@@ -9,6 +9,8 @@ open PrayerTracker.Data
 open PrayerTracker.Entities
 open PrayerTracker.ViewModels
 
+#nowarn "44" // The default Rfc2898DeriveBytes is used to identify passwords to be upgraded
+
 /// Password hashing implementation extending ASP.NET Core's identity implementation
 [<AutoOpen>]
 module Hashing =

@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <PublishSingleFile>True</PublishSingleFile>
+    <PublishSingleFile>False</PublishSingleFile>
     <SelfContained>False</SelfContained>
   </PropertyGroup>
 
