@@ -79,6 +79,8 @@ let edit reqId : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task {
         | Result.Error e -> return! e
 }
 
+open Microsoft.Extensions.Configuration
+
 // GET /prayer-requests/email/[date]
 let email date : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task {
     let  s          = ctx.Strings
@@ -86,7 +88,7 @@ let email date : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task {
     let! list       = generateRequestList ctx listDate
     let  group      = ctx.Session.CurrentGroup.Value
     let! recipients = Members.forGroup group.Id
-    use! client     = Email.getConnection ()
+    use! client     = Email.getConnection (ctx.GetService<IConfiguration> ())
     do! Email.sendEmails
             {   Client        = client
                 Recipients    = recipients

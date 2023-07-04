@@ -245,6 +245,7 @@ let savePreferences : HttpHandler = requireAccess [ User ] >=> validateCsrf >=> 
 
 open Giraffe.ViewEngine
 open PrayerTracker.Views.CommonFunctions
+open Microsoft.Extensions.Configuration
 
 // POST /small-group/announcement/send
 let sendAnnouncement : HttpHandler = requireAccess [ User ] >=> validateCsrf >=> fun next ctx -> task {
@@ -268,7 +269,7 @@ let sendAnnouncement : HttpHandler = requireAccess [ User ] >=> validateCsrf >=>
                 return users |> List.map (fun u -> { Member.empty with Name = u.Name; Email = u.Email })
             else return! Members.forGroup group.Id
         }
-        use! client = Email.getConnection ()
+        use! client = Email.getConnection (ctx.GetService<IConfiguration> ())
         do! Email.sendEmails
                 {   Client        = client
                     Recipients    = recipients
