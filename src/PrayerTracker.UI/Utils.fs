@@ -2,9 +2,6 @@
 module PrayerTracker.Utils
 
 open System
-open System.Security.Cryptography
-open System.Text
-
 open Giraffe
 
 /// Parse a short-GUID-based ID from a string

@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <PublishSingleFile>True</PublishSingleFile>
+    <PublishSingleFile>False</PublishSingleFile>
     <SelfContained>False</SelfContained>
   </PropertyGroup>
 
@@ -24,10 +24,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Giraffe" Version="6.0.0" />
-    <PackageReference Include="Giraffe.Htmx" Version="1.8.0" />
-    <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.0.0" />
-    <PackageReference Update="FSharp.Core" Version="6.0.5" />
+    <PackageReference Include="Giraffe.Htmx" Version="1.9.2" />
+    <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.0.1" />
+    <PackageReference Update="FSharp.Core" Version="7.0.300" />
   </ItemGroup>
 
   <ItemGroup>

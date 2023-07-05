@@ -650,7 +650,7 @@ let requestListTests =
                     }
                 let text     = textList.AsText _s
                 let expected =
-                    textList.Requests[0].UpdatedDate.InUtc().Date.ToString ("d", null)
+                    textList.Requests[0].UpdatedDate.InZone(SmallGroup.timeZone reqList.SmallGroup).Date.ToString ("d", null)
                     |> sprintf " + Zeb - zyx  (as of %s)"
                 // spot check; if one request has it, they all should
                 Expect.stringContains text expected "Expected short as-of date not found"    
@@ -665,7 +665,7 @@ let requestListTests =
                     }
                 let text     = textList.AsText _s
                 let expected =
-                    textList.Requests[0].UpdatedDate.InUtc().Date.ToString ("D", null)
+                    textList.Requests[0].UpdatedDate.InZone(SmallGroup.timeZone reqList.SmallGroup).Date.ToString ("D", null)
                     |> sprintf " + Zeb - zyx  (as of %s)"
                 // spot check; if one request has it, they all should
                 Expect.stringContains text expected "Expected long as-of date not found"    

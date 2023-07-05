@@ -26,7 +26,7 @@ Target.create "Test" (fun _ ->
     let testPath = $"{projPath}.Tests"
     DotNet.build (fun opts -> { opts with NoLogo = true }) $"{testPath}/PrayerTracker.Tests.fsproj"
     Expecto.run
-        (fun opts -> { opts with WorkingDirectory = $"{testPath}/bin/Release/net6.0" })
+        (fun opts -> { opts with WorkingDirectory = $"{testPath}/bin/Release/net7.0" })
         [ "PrayerTracker.Tests.dll" ])
 
 Target.create "Publish" (fun _ ->

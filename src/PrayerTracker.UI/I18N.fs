@@ -19,4 +19,4 @@ let localizer = lazy (stringLocFactory.Create ("Common", resAsmName))
   
 /// Get a view localizer
 let forView (view : string) =
-    htmlLocFactory.Create ($"""Views.{view.Replace ('/', '.')}""", resAsmName)
+    htmlLocFactory.Create ($"Views.{view.Replace ('/', '.')}", resAsmName)

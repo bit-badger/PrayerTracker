@@ -2,10 +2,8 @@
 module PrayerTracker.Email
 
 open MailKit.Net.Smtp
-open MailKit.Security
 open Microsoft.Extensions.Localization
 open MimeKit
-open MimeKit.Text
 open PrayerTracker.Entities
 
 /// Parameters required to send an e-mail
@@ -35,11 +33,13 @@ type EmailOptions =
 /// The e-mail address from which e-mail is sent
 let private fromAddress = "prayer@bitbadger.solutions"
 
+open MailKit.Security
+open Microsoft.Extensions.Configuration
+
 /// Get an SMTP client connection
-// FIXME: make host configurable
-let getConnection () = task {
+let getConnection (cfg : IConfiguration) = task {
     let client = new SmtpClient ()
-    do! client.ConnectAsync ("127.0.0.1", 25, SecureSocketOptions.None)
+    do! client.ConnectAsync (cfg.GetConnectionString "SmtpServer", 25, SecureSocketOptions.None)
     return client
 }
       
@@ -50,6 +50,8 @@ let createMessage opts =
     msg.Subject <- opts.Subject
     msg.ReplyTo.Add (MailboxAddress (opts.Group.Preferences.EmailFromName, opts.Group.Preferences.EmailFromAddress))
     msg
+
+open MimeKit.Text
 
 /// Create an HTML-format e-mail message
 let createHtmlMessage opts =
