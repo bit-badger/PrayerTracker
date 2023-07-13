@@ -30,23 +30,39 @@ type EmailOptions =
         Strings : IStringLocalizer
     }
 
-/// The e-mail address from which e-mail is sent
-let private fromAddress = "prayer@bitbadger.solutions"
+/// Options to use when sending e-mail
+type SmtpServerOptions() =
+    /// The hostname of the SMTP server
+    member val SmtpHost : string = "localhost" with get, set
 
-open MailKit.Security
-open Microsoft.Extensions.Configuration
+    /// The port over which SMTP communication should occur
+    member val Port : int = 25 with get, set
+
+    /// Whether to use SSL when communicating with the SMTP server
+    member val UseSsl : bool = false with get, set
+
+    /// The authentication to use with the SMTP server
+    member val Authentication : string = "" with get, set
+
+    /// The e-mail address from which messages should be sent
+    member val FromAddress : string = "prayer@bitbadger.solutions" with get, set
+
+
+/// The options for the SMTP server
+let smtpOptions = SmtpServerOptions ()
 
 /// Get an SMTP client connection
-let getConnection (cfg : IConfiguration) = task {
+let getConnection () = task {
     let client = new SmtpClient ()
-    do! client.ConnectAsync (cfg.GetConnectionString "SmtpServer", 25, SecureSocketOptions.None)
+    do! client.ConnectAsync (smtpOptions.SmtpHost, smtpOptions.Port, smtpOptions.UseSsl)
+    do! client.AuthenticateAsync (smtpOptions.FromAddress, smtpOptions.Authentication)
     return client
 }
       
 /// Create a mail message object, filled with everything but the body content
 let createMessage opts =
     let msg = new MimeMessage ()
-    msg.From.Add (MailboxAddress (opts.Group.Preferences.EmailFromName, fromAddress))
+    msg.From.Add (MailboxAddress (opts.Group.Preferences.EmailFromName, smtpOptions.FromAddress))
     msg.Subject <- opts.Subject
     msg.ReplyTo.Add (MailboxAddress (opts.Group.Preferences.EmailFromName, opts.Group.Preferences.EmailFromAddress))
     msg

@@ -269,7 +269,7 @@ let sendAnnouncement : HttpHandler = requireAccess [ User ] >=> validateCsrf >=>
                 return users |> List.map (fun u -> { Member.empty with Name = u.Name; Email = u.Email })
             else return! Members.forGroup group.Id
         }
-        use! client = Email.getConnection (ctx.GetService<IConfiguration> ())
+        use! client = Email.getConnection ()
         do! Email.sendEmails
                 {   Client        = client
                     Recipients    = recipients
@@ -280,6 +280,7 @@ let sendAnnouncement : HttpHandler = requireAccess [ User ] >=> validateCsrf >=>
                     PlainTextBody = plainText
                     Strings       = s
                 }
+        do! client.DisconnectAsync true
         // Add to the request list if desired
         match model.SendToClass, model.AddToRequestList with
         | "N", _

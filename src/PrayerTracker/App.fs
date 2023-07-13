@@ -70,6 +70,9 @@ module Configure =
         let _   = dsb.UseNodaTime()
         Configuration.useDataSource (dsb.Build ())
 
+        let emailCfg = cfg.GetSection "Email"
+        if (emailCfg.GetChildren >> Seq.isEmpty >> not) () then ConfigurationBinder.Bind(emailCfg, Email.smtpOptions)
+
         let _ = svc.AddSingleton<IDistributedCache, DistributedCache> ()
         let _ = svc.AddSession ()
         let _ = svc.AddAntiforgery ()
@@ -182,19 +185,21 @@ module Configure =
         |> function l -> l.AddConsole().AddDebug()
         |> ignore
     
+    open BitBadger.AspNetCore.CanonicalDomains
     open Microsoft.Extensions.Localization
     open Microsoft.Extensions.Options
     
     /// Configure the application
     let app (app : IApplicationBuilder) =
-        let env = app.ApplicationServices.GetRequiredService<IWebHostEnvironment>()
+        let env = app.ApplicationServices.GetRequiredService<IWebHostEnvironment> ()
         if env.IsDevelopment () then
-            let _ = app.UseDeveloperExceptionPage ()
-            ()
+            app.UseDeveloperExceptionPage ()
         else
-            let _ = app.UseGiraffeErrorHandler errorHandler
-            ()
+            app.UseGiraffeErrorHandler errorHandler
+        |> ignore
         
+        let _ = app.UseForwardedHeaders ()
+        let _ = app.UseCanonicalDomains ()
         let _ = app.UseStatusCodePagesWithReExecute "/error/{0}"
         let _ = app.UseStaticFiles ()
         let _ = app.UseCookiePolicy (CookiePolicyOptions (MinimumSameSitePolicy = SameSiteMode.Strict))

@@ -88,7 +88,7 @@ let email date : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task {
     let! list       = generateRequestList ctx listDate
     let  group      = ctx.Session.CurrentGroup.Value
     let! recipients = Members.forGroup group.Id
-    use! client     = Email.getConnection (ctx.GetService<IConfiguration> ())
+    use! client     = Email.getConnection ()
     do! Email.sendEmails
             {   Client        = client
                 Recipients    = recipients
@@ -98,6 +98,7 @@ let email date : HttpHandler = requireAccess [ User ] >=> fun next ctx -> task {
                 PlainTextBody = list.AsText s
                 Strings       = s
             }
+    do! client.DisconnectAsync true
     return!
         viewInfo ctx
         |> Views.PrayerRequest.email { list with Recipients = recipients }
