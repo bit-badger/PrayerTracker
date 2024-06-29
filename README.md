@@ -1,6 +1,10 @@
-# PrayerTracker
+## NOTE: This repository is archived
 
-[![Build status](https://ci.appveyor.com/api/projects/status/j5nt9o3pu7er7hyi/branch/main?svg=true)](https://ci.appveyor.com/project/danieljsummers/prayertracker/branch/main)
+Development continues at [the Bit Badger Solutions Git Repository](https://git.bitbadger.solutions/bit-badger/PrayerTracker)
+
+----
+
+# PrayerTracker
 
 ### Visit the Site
 
